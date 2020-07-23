@@ -1,0 +1,17 @@
+// C4D-DialogResource
+
+DIALOGSTRINGS DLG_AUTH
+{
+    IDS_AUTH_DIALOG						"Authorize Plugin";
+	
+    IDS_STATIC1							"Registration";
+	
+	IDS_SERNUM							"Your Cinema4D Serial";
+	
+	IDS_BUTTON1							"Get Unlock Serial";
+	
+	IDS_BUTTON12						"Paste Unlock Serial";
+		
+	IDS_BUTTON2							"SUBMIT";
+	IDS_BUTTON3							"Cancel";
+}

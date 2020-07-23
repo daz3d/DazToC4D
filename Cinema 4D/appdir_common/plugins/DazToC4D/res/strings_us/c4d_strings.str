@@ -1,0 +1,6 @@
+// C4D-StringResource
+
+STRINGTABLE
+{
+    IDS_DAZTOC4D			"DazToC4D";
+}
