@@ -51,6 +51,61 @@
 		var oControl = oBone.getXRotControl();
 		oControl.setValue( nValue );
 	};
+	function sel_morph(){
+        var oNode = Scene.getPrimarySelection();
+        if( !oNode ){
+            return;
+        }
+        if( oNode.inherits( "DzBone" ) ){
+            oNode = oNode.getSkeleton();
+        }
+        if( oNode.inherits( "DzSkeleton" ) ){
+            oNode = oNode.findBone( "head" );
+        }
+        if( !oNode ){
+            return;
+        }
+        var oProperty;
+        var	oPropGroup;
+        var	oPropTree;
+        var oPropOwner;
+        var oTgtProperty;
+        var	oTgtPropGroup;
+        var	oTgtPropTree;
+        var oTgtPropOwner;
+        var aProperties = oNode.getPropertyList();
+        var morphRule;
+        var morphName;
+        var morphList=[];
+        var morphRule = "";
+        for( var i = 0, n = aProperties.length; i < n; i += 1 ){
+            oProperty = aProperties[ i ];        
+            if( !oProperty.getPath().startsWith( "/Pose Controls" ) ){
+                continue;
+            }
+
+            if( oProperty.isAlias() ){
+                oTgtProperty = oProperty.getAliasTarget();
+                oTgtPropGroup = oTgtProperty.getGroup();
+                oTgtPropTree = oTgtPropGroup.getTree();
+                oTgtPropOwner = oTgtPropTree.getOwner();
+                morphName =oTgtProperty.name;
+                morphList[i]=morphName;
+                //oTgtPropOwner.name + "." +
+                continue;
+            }
+        }
+        //Remove any nulls or undefined in the array
+        morphList = morphList.filter(Boolean);
+
+	    for( var i = 0, n = morphList.length; i < n; i += 1 ){
+
+            morphRule = morphRule + morphList[i] + "\n1\n";
+            
+            };
+
+	    return morphRule;
+    };
 	
 	function heelsFix( oSkeleton )
 	{
@@ -445,7 +500,8 @@
 				// The names of the morphs are in the form: node_name.parameter_name
 				// The default action is to Bake
 				// So "FBMHeavy\nExport\nThin\nExport" would export all morphs that have FBMHeavy and all morphs that have Thin in the name
-				oSettings.setStringValue( "rules", "head\n1" );
+				//Hard Code Fix added to Deal with Support for new face morphs
+				oSettings.setStringValue( "rules", sel_morph()+"facs\n1" );
 				
 				// Format
 				// Format for format is "Year# -- Type",
