@@ -269,7 +269,7 @@ class convertMaterials:
 
         self.matType = matType
 
-        print(("----- Converting : " + sourceMat.GetName() + ' -----'))
+        print("----- Converting : " + sourceMat.GetName() + ' -----')
 
         matName = sourceMat.GetName()
         mat = None
@@ -308,7 +308,7 @@ class convertMaterials:
         doc.InsertMaterial( mat )
         c4d.EventAdd()
 
-        print(("----- Converted : "+matName+" : "+mat.GetName()+' -----'))
+        print("----- Converted : "+matName+" : "+mat.GetName()+' -----')
         bc = c4d.BaseContainer()
         c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
         return True
@@ -2846,7 +2846,7 @@ class ikmGenerator():
                 globalPos = doc.SearchObject(dazName + globalPosName)
                 obj.SetMg(globalPos.GetMg())
         except:
-            print(('Joint skipped...', jointName))
+            print('Joint skipped...', jointName)
 
         c4d.EventAdd()  # Send global event message
 
@@ -3390,7 +3390,7 @@ class ikmGenerator():
             except:
                 newNull[c4d.NULLOBJECT_ICONCOL] = sourceNull[c4d.NULLOBJECT_ICONCOL]
         except:
-            print(('skip mirrorNulls', nullName))
+            print('skip mirrorNulls', nullName)
 
     def generateRig(self, sideName=""):
         doc = documents.GetActiveDocument()
@@ -3507,7 +3507,7 @@ class ikmGenerator():
             try:
                 self.mirrorNulls(dazName + g, addToName, parentMirrorName)
             except:
-                print(('skip mirror guide', g))
+                print('skip mirror guide', g)
 
     def removeIfZero(self, objName):
         doc = documents.GetActiveDocument()
@@ -5302,7 +5302,7 @@ class DazToC4D():
         for mat in docMaterials:
             try:
                 if mat.GetName() not in skipMatList:
-                    print((mat.GetName()))
+                    print(mat.GetName())
                     if getMatTextures(mat)[0] or getMatTextures(mat)[1]:
                         similarMats = CompareMatTexts(mat)
                         if similarMats:
@@ -6678,7 +6678,7 @@ class IKMAXFastAttach(c4d.gui.GeDialog):
         jointSelected = ''
 
         print('asdasd')
-        print((self.jointPelvis))
+        print(self.jointPelvis)
         print('-------')
 
         if id == self.BUTTON_ATTACH_HEAD:
@@ -7280,7 +7280,7 @@ class EXTRADialog(c4d.gui.GeDialog):
 
 
                 randomColors().randomRigColor(self.jointPelvis)
-                print((self.dazIkmControls.GetName()))
+                print(self.dazIkmControls.GetName())
                 randomColors().randomNullsColor(self.dazIkmControls)
                 randomColors().randomPoleColors(self.jointPelvis)
 
@@ -7785,7 +7785,7 @@ class guiDazToC4DMain(gui.GeDialog):
             pass
 
     def CreateLayout(self):
-        self.SetTitle('DazToC4D v1.1 [b202001209]')
+        self.SetTitle('DazToC4D v1.1')
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
 
         # Logo Image #############################################################
@@ -7796,7 +7796,7 @@ class guiDazToC4DMain(gui.GeDialog):
         global guiDazToC4DMainLogo
         guiDazToC4DMainLogo = self.LogoButton
         print('**********************')
-        print((self.LogoButton))
+        print(self.LogoButton)
         print('**********************')
 
         # Logo Image #############################################################
@@ -7932,7 +7932,7 @@ class guiDazToC4DMain(gui.GeDialog):
 
         if id == 17525:
             slider_value = self.GetFloat(17525)
-            print((slider_value/100))
+            print(slider_value/100)
             DazToC4D().matSetSpec('Rough', slider_value)
             c4d.EventAdd()
 

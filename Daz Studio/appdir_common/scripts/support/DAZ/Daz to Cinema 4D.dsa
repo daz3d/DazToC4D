@@ -17,6 +17,8 @@
 	}
 	var s_sExportBaseName = "DazToC4D";
 	
+	/*********************************************************************/
+
 	function getXRot( sBoneLabel )
 	{
 		if( !s_oPrimarySkeleton || sBoneLabel.isEmpty() ){
@@ -34,6 +36,8 @@
 		return nValue;
 	};
 	
+	/*********************************************************************/
+
 	function setXRot( sBoneLabel, nValue )
 	{
 		if( !s_oPrimarySkeleton
@@ -51,7 +55,10 @@
 		var oControl = oBone.getXRotControl();
 		oControl.setValue( nValue );
 	};
-	function sel_morph(){
+
+	/*********************************************************************/
+	
+	function createMorphRules(){
         var oNode = Scene.getPrimarySelection();
         if( !oNode ){
             return;
@@ -104,9 +111,11 @@
             
             };
 
-	    return morphRule;
+	    return morphRule = morphRule.substring(0,morphRule.length - 2);
     };
-	
+
+	/*********************************************************************/
+		
 	function heelsFix( oSkeleton )
 	{
 		if( oSkeleton ){
@@ -209,7 +218,8 @@
 	// Source: http://docs.daz3d.com/doku.php/public/software/dazstudio/4/referenceguide/scripting/api_reference/samples/nodes/convert_figure_to_props/start
 	
 	// - Modified to remove display of messages presented to the user
-	
+	/*********************************************************************/
+
 	function convert2Prop( oSelectedNode )
 	{
 		// If the selected node is a bone
@@ -290,12 +300,13 @@
 	};
 	
 	// --- END convert_figure_to_props ----
-	
+	/*********************************************************************/
 	function doesHavingSkeleton()
 	{
 		return Scene.getNumSkeletons() > 0;
 	};
-	
+
+	/*********************************************************************/
 	function doesHavingHip()
 	{
 		var oNode;
@@ -312,7 +323,7 @@
 	
 	// --- START replaceInstance ----
 	// Adapted: https://www.daz3d.com/forums/discussion/comment/4940501/#Comment_4940501
-	
+	/*********************************************************************/
 	function doAction( sClassName  )
 	{
 		var oMgr = MainWindow.getActionMgr();
@@ -323,7 +334,8 @@
 		
 		oAction.trigger();
 	};
-	
+
+	/*********************************************************************/
 	function replaceInstance( oInstance, oNode )
 	{
 		var oParent = oInstance.getNodeParent();
@@ -376,7 +388,7 @@
 	};
 	
 	// --- END replaceInstance ----
-	
+	/*********************************************************************/
 	function replaceInstanceAll()
 	{
 		var oNode;
@@ -451,7 +463,7 @@
 	
 	// - Modified to support switching exporters
 	// - Other changes for this specific use case
-	
+	/*********************************************************************/
 	function exportScene( sClassName, sPath, sBaseName, sExt )
 	{
 		// Get the export manager
@@ -501,7 +513,7 @@
 				// The default action is to Bake
 				// So "FBMHeavy\nExport\nThin\nExport" would export all morphs that have FBMHeavy and all morphs that have Thin in the name
 				//Hard Code Fix added to Deal with Support for new face morphs
-				oSettings.setStringValue( "rules", sel_morph()+"facs\n1" );
+				oSettings.setStringValue( "rules", createMorphRules());
 				
 				// Format
 				// Format for format is "Year# -- Type",
@@ -597,8 +609,7 @@
 	// ----------------------------------------------------------
 	// SAVE maps to file... bump, specular, etc....
 	// ----------------------------------------------------------
-	
-	
+	/*********************************************************************/
 	function label2Variable( sLabel )
 	{
 		var sLabelLwr = sLabel.toLowerCase();
@@ -620,12 +631,14 @@
 		
 		return sResult;
 	};
-	
+
+	/*********************************************************************/
 	function fixFilename( sFilename )
 	{
 		return sFilename.replace( "&", "(_)" );
 	};
-	
+
+	/*********************************************************************/
 	function value2XMLString( oElement, sPropLabel )
 	{
 		try {
@@ -669,7 +682,8 @@
 		
 		return( '' );
 	};
-	
+
+	/*********************************************************************/
 	function savePropertiesToFile( sExporter, sExportPath, sExportBaseName, sExportExt )
 	{
 		var sFile = "%1/%2.xml".arg( sExportPath ).arg( sExportBaseName );
