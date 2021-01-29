@@ -1,3 +1,4 @@
+from __future__ import division
 import os, sys, hashlib, c4d
 from c4d import gui, documents
 from c4d import utils
@@ -7,6 +8,14 @@ from shutil import copyfile
 import webbrowser
 import json
 from xml.etree import ElementTree
+
+
+##*********************************************************************************************************************************
+##Converted to Python 3 to deal with changes in Cinema 4D R23
+##Manual Changes to the code:
+##Removed  c4d.DRAWFLAGS_NO_REDUCTION as it was removed from the Python SDK
+##Changes for Division from / to // to achieve an intetger instead of a float
+##*********************************************************************************************************************************
 try:
     import redshift
 except:
@@ -242,7 +251,8 @@ class convertMaterials:
                 mat[c4d.OCT_MATERIAL_TYPE]=2511 #Glossy
                 mat.InsertShader(bmpShader)
                 mat.Message(c4d.MSG_UPDATE)
-                c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+
+                c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
                 mat.Message( c4d.MSG_UPDATE )
                 mat.Update( True, True )
                 c4d.EventAdd()
@@ -571,7 +581,7 @@ class ObjectIterator :
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         if self.currentObject == None :
             raise StopIteration
 
@@ -601,7 +611,7 @@ class TagIterator:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
 
         tag = self.currentTag
         if tag == None:
@@ -625,7 +635,7 @@ class AllSceneToZero:
             mg = obj.GetMg()
             minPos = c4d.Vector(obj.GetPoint(0) * mg).y
             minId = None
-            for i in xrange(obj.GetPointCount()):
+            for i in range(obj.GetPointCount()):
                 bufferMin = c4d.Vector(obj.GetPoint(i) * mg).y
                 minPos = min(minPos, bufferMin)
                 if minPos == bufferMin:
@@ -682,7 +692,7 @@ class AllSceneToZero:
 
     def moveAllToZero(self, baseObjs, posY):
         c4d.EventAdd()
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
         c4d.EventAdd()
         doc = documents.GetActiveDocument()
         baseObjs = []
@@ -742,7 +752,7 @@ class AllSceneToZero:
             if errorDetected == False:
                 getLowestY = self.rasterizeObj(self.sceneLowestYobj())
                 self.moveAllToZero(baseObjs, getLowestY)
-                c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+                c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD| c4d.DRAWFLAGS_STATICBREAK)
                 c4d.EventAdd()
 
 
@@ -758,7 +768,7 @@ class autoAlignArms():
         obj.InsertTag(constraintTAG)
 
         c4d.EventAdd()
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
         return constraintTAG
 
     def newNullfromJoint(self, jointName, nullName):
@@ -794,7 +804,7 @@ class autoAlignArms():
             if side == 'r':
                 xValue = -100
             objTarget[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_X] += xValue
-            c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
             c4d.EventAdd()
             xtag.Remove()
             objSource.Remove()
@@ -991,17 +1001,17 @@ class forceTpose():
 
         slaveObj.InsertTag(constraintTAG)
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
         c4d.EventAdd()
 
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
         constraintTAG.Remove()
 
         addConstraint(jointToFix, slaveObj)
 
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
         slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = rotValue
         # slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION,c4d.VECTOR_Y] = 0
         # slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION,c4d.VECTOR_Z] = 0
@@ -1015,7 +1025,7 @@ class forceTpose():
 
         jointOposite = doc.SearchObject(oppositeJoint)
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
 
         rx = mainJoint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X]
         ry = mainJoint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y]
@@ -1228,7 +1238,7 @@ class dazToC4Dutils():
                                                         doc=doc)
 
                         if not sec: return
-                        print
+                        print()
                         sec
                         # sec[0].InsertAfter(op)
 
@@ -1300,22 +1310,22 @@ class dazToC4Dutils():
 
         slaveObj.InsertTag(constraintTAG)
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
         c4d.EventAdd()
         caca = slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X]
 
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
 
         addConstraint(jointToFix, slaveObj)
         constraintTAG.Remove()
 
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
 
         slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = -1.571
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
 
         caca = jointToFix.GetFirstTag()
         caca.Remove()
@@ -1351,7 +1361,7 @@ class dazToC4Dutils():
 
             c4d.EventAdd()
             c4d.DrawViews(
-                c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+                c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
 
             c4d.EventAdd()
 
@@ -1369,7 +1379,7 @@ class dazToC4Dutils():
 
             c4d.EventAdd()
             c4d.DrawViews(
-                c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+                c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
             c4d.EventAdd()
 
         doc = documents.GetActiveDocument()
@@ -1491,7 +1501,7 @@ class dazToC4Dutils():
 
             c4d.EventAdd()
             c4d.DrawViews(
-                c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+                c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
             constraintTAG.Remove()
 
         twistJoint = doc.SearchObject(dazName + 'ForearmTwist_ctrl')
@@ -1668,7 +1678,7 @@ class dazToC4Dutils():
 
         caca = targetObj.GetFirstTag()
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
         caca.Remove()
         targetMg = None
         try:
@@ -2073,7 +2083,7 @@ class alignFingersFull():
         if lastFinger == 'jMiddle':
             self.generateNormalFromObjs(jHand, jIndex1, jMiddle1)
 
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
 
         self.AlignBoneChain(modelName + 'jIndex1', 2, 3, 0, 2)
         self.AlignBoneChain(modelName + 'jMiddle1', 2, 3, 0, 2)
@@ -2480,7 +2490,7 @@ class ikmaxUtils():
                 tags = TagIterator(x)
                 for tag in tags:
                     tagType = tag.GetTypeName()
-                    print
+                    print()
                     tagType
                     tag.Remove()
             c4d.EventAdd()
@@ -3991,7 +4001,7 @@ class DazToC4D():
                                                         doc=doc)
 
                         if not sec: return
-                        print sec
+                        print(sec)
                         # sec[0].InsertAfter(op)
 
                 t = t.GetNext()
@@ -4526,11 +4536,11 @@ class DazToC4D():
             if 'Poses' in objName:
                 morphGroups.append(obj)
 
-        print len(morphGroups)
+        print(len(morphGroups))
         if len(morphGroups) > 0:
             groupNull = makeGroup()
             for x in morphGroups:
-                print x
+                print(x)
                 x.InsertUnder(groupNull)
             moveMorphTag(figureObj, groupNull)
 
@@ -4572,7 +4582,7 @@ class DazToC4D():
                                       'Genesis8FemaleEyelashes_'
                                       ]
 
-                morphsAmount = len(range(pmTag.GetMorphCount()))
+                morphsAmount = len(list(range(pmTag.GetMorphCount())))
                 for x in range(0, morphsAmount):
                     try:
                         pmTag.SetActiveMorphIndex(x)
@@ -4597,7 +4607,7 @@ class DazToC4D():
                 # pmTag = obj.GetTag(c4d.Tposemorph)  # Gets the pm tag
                 # pmTag.ExitEdit(doc, True)
 
-                morphsAmount = len(range(pmTag.GetMorphCount()))
+                morphsAmount = len(list(range(pmTag.GetMorphCount())))
                 for x in range(0, morphsAmount):
                     try:
                         pmTag.SetActiveMorphIndex(x)
@@ -4619,7 +4629,7 @@ class DazToC4D():
                         pass
                 c4d.EventAdd()
 
-            morphsAmount = len(range(pmTag.GetMorphCount()))
+            morphsAmount = len(list(range(pmTag.GetMorphCount())))
 
             for x in range(0, morphsAmount):
                 morphRename()
@@ -4666,7 +4676,7 @@ class DazToC4D():
             if objTags:
                 for tag in objTags:
                     if tag.GetType() == 1024237:
-                        print ob.GetName(), tag.GetName()
+                        print(ob.GetName(), tag.GetName())
                         mGroup = doc.SearchObject('Poses: ' + ob.GetName())
                         if mGroup:
                             mGroup.InsertTag(tag)
@@ -4951,7 +4961,7 @@ class DazToC4D():
                 # dazToC4Dutils().sceneToZero()
 
                 c4d.EventAdd()
-                c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+                c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
                 c4d.EventAdd()
 
                 AllSceneToZero().sceneToZero()
@@ -4984,7 +4994,7 @@ class DazToC4D():
                 img_lock = os.path.join(LogoFolder_PathIcons, 'm_lock.png')
                 img_lockON = os.path.join(LogoFolder_PathIcons, 'm_lockON.png')
 
-                print lockValue
+                print(lockValue)
                 if lockValue == True:
                     layer_data['locked'] = False
                     guiDazToC4DLayerLockButton.SetImage(img_lock, True)
@@ -5137,7 +5147,7 @@ class DazToC4D():
         c4d.StatusClear()
         c4d.EventAdd()
         c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
         c4d.DrawViews(c4d.EVMSG_CHANGEDSCRIPTMODE)
         c4d.EventAdd(c4d.EVENT_ANIMATE)
         c4d.StatusClear()
@@ -5163,7 +5173,7 @@ class DazToC4D():
         # c4d.StatusClear()
         # c4d.EventAdd()
         # c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
-        # c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        # c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
         # c4d.DrawViews()
         # c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
         # c4d.DrawViews(c4d.DRAWFLAGS_FORCEFULLREDRAW)
@@ -5652,7 +5662,7 @@ class DazToC4D():
             setRotAndMirror('rThigh', 0.0, 0.0, 0.0)
             # setRotAndMirror('rFoot', 0.23, 0.0, 0.0)
         c4d.EventAdd()
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
         c4d.EventAdd()
 
     def fixDaz8rot(self, master, mode='', jointToFix='', rotValue=0):
@@ -5716,13 +5726,13 @@ class DazToC4D():
 
         c4d.EventAdd()
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
         constraintTAG.Remove()
 
         addConstraint(jointToFix, slaveObj)
 
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
 
         rotZ = nullObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z]
         # dialogMsg = str(nullObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z])
@@ -5732,7 +5742,7 @@ class DazToC4D():
             slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y] = 0
             slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z] = rotValue
 
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
 
         caca = jointToFix.GetFirstTag()
         caca.Remove()
@@ -5959,7 +5969,7 @@ class DazToC4D():
 
         dazToC4Dutils().readExtraMapsFromFile() #Extra Maps from File...
 
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
         c4d.CallCommand(300001026, 300001026)  # Deselect All
         c4d.CallCommand(12168, 12168)  # Remove Unused Materials
         c4d.CallCommand(12113, 12113)  # Deselect All
@@ -5972,7 +5982,7 @@ class DazToC4D():
 
         c4d.EventAdd()
         c4d.CallCommand(12148)  # Frame Geometry
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
 
         c4d.CallCommand(300001026, 300001026)  # Deselect All
         c4d.CallCommand(12168, 12168)  # Remove Unused Materials
@@ -5999,7 +6009,7 @@ class DazToC4D():
         # DazToC4D().morphTagsToGroups()
 
         c4d.EventAdd()
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
         c4d.EventAdd()
         c4d.CallCommand(300001026, 300001026)  # Deselect All
         c4d.CallCommand(12168, 12168)  # Remove Unused Materials
@@ -6014,13 +6024,13 @@ class DazToC4D():
 
 
         c4d.EventAdd()
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
         c4d.EventAdd()
 
         self.buttonsChangeState(True)
 
         self.dialog = guiASKtoSave()
-        self.dialog.Open(dlgtype=c4d.DLG_TYPE_MODAL, xpos=screen['sx2']/2-210, ypos=screen['sy2']/2-100, defaultw=200, defaulth=150)
+        self.dialog.Open(dlgtype=c4d.DLG_TYPE_MODAL, xpos=screen['sx2']//2-210, ypos=screen['sy2']//2-100, defaultw=200, defaulth=150)
 
 
     def checkIfPosed(self):
@@ -6164,7 +6174,7 @@ class DazToC4D():
         #     DazToC4D().unhideProps()
         #
         #     c4d.EventAdd()
-        #     c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        #     c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
         #
         #     #DONE-AUTOIMPORT
         #
@@ -6174,7 +6184,7 @@ class DazToC4D():
 
         dazToC4Dutils().readExtraMapsFromFile() #Extra Maps from File...
 
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
         c4d.CallCommand(300001026, 300001026)  # Deselect All
         c4d.CallCommand(12168, 12168)  # Remove Unused Materials
         c4d.CallCommand(12113, 12113)  # Deselect All
@@ -6193,7 +6203,7 @@ class DazToC4D():
 
         c4d.EventAdd()
         c4d.CallCommand(12148)  # Frame Geometry
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD   | c4d.DRAWFLAGS_STATICBREAK)
 
         c4d.CallCommand(300001026, 300001026)  # Deselect All
         c4d.CallCommand(12168, 12168)  # Remove Unused Materials
@@ -6220,7 +6230,7 @@ class DazToC4D():
         DazToC4D().morphTagsToGroups()
         # morphsGroup.InsertTag(xpressoTag)
         c4d.EventAdd()
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD   | c4d.DRAWFLAGS_STATICBREAK)
         c4d.EventAdd()
         c4d.CallCommand(300001026, 300001026)  # Deselect All
         c4d.CallCommand(12168, 12168)  # Remove Unused Materials
@@ -6229,7 +6239,7 @@ class DazToC4D():
         DazToC4D().stdMatExtrafixes()
 
         c4d.EventAdd()
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD   | c4d.DRAWFLAGS_STATICBREAK)
         c4d.EventAdd()
         # if doc.SearchObject('hip'):
         #     AllSceneToZero().sceneToZero()
@@ -6253,7 +6263,7 @@ class DazToC4D():
                 if DazToC4D().checkIfPosedResetPose(False) == False:
                     DazToC4D().dazManualRotationFixTpose()
         #
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD   | c4d.DRAWFLAGS_STATICBREAK)
         #
         # obj = doc.SearchObject('hip')
         # if obj:
@@ -6281,7 +6291,7 @@ class DazToC4D():
             DazToC4D().unhideProps()
 
             c4d.EventAdd()
-            c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD   | c4d.DRAWFLAGS_STATICBREAK)
 
             #DONE-AUTOIMPORT
 
@@ -7503,7 +7513,7 @@ class guiLoading(gui.GeDialog):
         c4d.StatusClear()
         c4d.EventAdd()
         c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_NO_REDUCTION | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD   | c4d.DRAWFLAGS_STATICBREAK)
         c4d.DrawViews()
         # gui.MessageDialog('Popup')
         # guiDazToC4Dloading.Close()
@@ -7775,7 +7785,7 @@ class guiDazToC4DMain(gui.GeDialog):
             pass
 
     def CreateLayout(self):
-        self.SetTitle('DazToC4D v1.0 [b20200630]')
+        self.SetTitle('DazToC4D v1.1')
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
 
         # Logo Image #############################################################
@@ -8207,7 +8217,7 @@ class authDialogDazToC4D(c4d.gui.GeDialog):
             print('Activated')
             return True
         else:
-            print "Invalid Activation Code"
+            print("Invalid Activation Code")
             return False
 
         # -------------------------------------------------
