@@ -9,13 +9,13 @@ import webbrowser
 import json
 from xml.etree import ElementTree
 
-
-##*********************************************************************************************************************************
-##Converted to Python 3 to deal with changes in Cinema 4D R23
-##Manual Changes to the code:
-##Removed  c4d.DRAWFLAGS_NO_REDUCTION as it was removed from the Python SDK
-##Changes for Division from / to // to achieve an intetger instead of a float
-##*********************************************************************************************************************************
+"""
+Converted to Python 3 to deal with changes in Cinema 4D R23
+Manual Changes to the code:
+Removed  c4d.DRAWFLAGS_NO_REDUCTION as it was removed from the Python SDK
+Changes for Division from / to // to achieve an integer instead of a float
+Added Backwards Support for __next__ for Python 2 Versions
+"""
 try:
     import redshift
 except:
@@ -599,7 +599,8 @@ class ObjectIterator :
                 self.currentObject = self.objectStack.pop()
                 self.nextDepth = self.nextDepth - 1
         return obj
-
+    
+next = __next__                 #To Support Python 2.0
 
 class TagIterator:
 
@@ -620,7 +621,7 @@ class TagIterator:
         self.currentTag = tag.GetNext()
 
         return tag
-
+    next = __next__             #To Support Python 2.0
 
 class AllSceneToZero:
     doc = documents.GetActiveDocument()
@@ -1237,9 +1238,10 @@ class dazToC4Dutils():
                                                         mode=c4d.MODELINGCOMMANDMODE_POLYGONSELECTION,
                                                         doc=doc)
 
-                        if not sec: return
-                        print()
-                        sec
+                        if not sec:
+                            print(sec)
+                            return 
+                        
                         # sec[0].InsertAfter(op)
 
                 t = t.GetNext()
@@ -2490,8 +2492,7 @@ class ikmaxUtils():
                 tags = TagIterator(x)
                 for tag in tags:
                     tagType = tag.GetTypeName()
-                    print()
-                    tagType
+                    print(tagType)
                     tag.Remove()
             c4d.EventAdd()
 
@@ -4688,7 +4689,6 @@ class DazToC4D():
         obj = doc.GetFirstObject()
         scene = ObjectIterator(obj)
         objTags = TagIterator(obj)
-
         for ob in scene:
             objTags = TagIterator(ob)
             if objTags:
