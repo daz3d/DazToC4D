@@ -600,7 +600,7 @@ class ObjectIterator :
                 self.nextDepth = self.nextDepth - 1
         return obj
     
-next = __next__                 #To Support Python 2.0
+    next = __next__                 #To Support Python 2.0
 
 class TagIterator:
 
