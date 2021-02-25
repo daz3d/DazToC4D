@@ -1,7 +1,4 @@
 from __future__ import division
-from DazToC4D import *
-from Util import *
-from DtcMaterials import *
 import os
 import sys
 import hashlib
@@ -15,19 +12,15 @@ import webbrowser
 import json
 from xml.etree import ElementTree
 
-global guiDazToC4DLayerLockButton
-global guiDazToC4DMainConvert
-global guiDazToC4DMainLogo
-global guiDazToC4DMainAutoImp
-global guiDazToC4DMainIK
-global dazReduceSimilar
-global dazName
 
 folder = os.path.dirname(__file__)
 if folder not in sys.path:
     sys.path.insert(0, folder)
 
-
+from Util import DazToC4dUtils
+from Iterators import TagIterator, ObjectIterator
+from Globals import *
+from DazToC4D import *
 class EXTRADialog(c4d.gui.GeDialog):
     dialog = None
 
@@ -233,7 +226,7 @@ class EXTRADialog(c4d.gui.GeDialog):
 
         self.LinkBox = self.AddCustomGui(
             self.IDC_LINKBOX_1, c4d.CUSTOMGUI_LINKBOX, 'Character Mesh', c4d.BFH_SCALEFIT, 350, 0)
-        self.LinkBox.SetLink(dazToC4Dutils().getDazMesh())
+        self.LinkBox.SetLink(DazToC4dUtils().get_daz_mesh())
 
         meshObj = self.LinkBox.GetLink()
 
@@ -385,7 +378,7 @@ class EXTRADialog(c4d.gui.GeDialog):
 
         self.GroupEnd()
 
-        layer = ikmaxUtils().getLayer('IKM_Lock')
+        layer = IkMaxUtils().getLayer('IKM_Lock')
         if layer != None:
             try:
                 layer_data = layer.GetLayerData(doc)
@@ -435,15 +428,14 @@ class EXTRADialog(c4d.gui.GeDialog):
             IKMAXFastAttach.jointPelvis = self.jointPelvis
 
             # obj = self.LinkBox.GetLink()
-            # global dazName
-            # dazName = obj.GetName().replace('.Shape','') + '_'
-            # print(dazName)
+            # daz_name = obj.GetName().replace('.Shape','') + '_'
+            # print(daz_name)
 
         # GUIDES
         if DazToC4D().findIK() == 1:
 
             if id == self.BUTTON_RESET:
-                caca = ikmaxUtils().removeStuff()
+                caca = IkMaxUtils().removeStuff()
                 if caca is 1:
                     # Add the image to the button
                     self.imgSelect.SetImage(self.img_select, True)
@@ -464,7 +456,7 @@ class EXTRADialog(c4d.gui.GeDialog):
                         answer = gui.MessageDialog(
                             'Object rotations needs to be reseted. Do you want to proceed?', c4d.GEMB_YESNO)
                         if answer == 6:
-                            objFixed = ikmaxUtils().resetObj(obj)
+                            objFixed = IkMaxUtils().resetObj(obj)
                             self.LinkBox.SetLink(objFixed)
                             EXTRADialog.MASTERSIZE = objHeight = (
                                 objFixed.GetRad()[1] * objFixed[c4d.ID_BASEOBJECT_REL_SCALE, c4d.VECTOR_Y]) * 2
@@ -482,7 +474,7 @@ class EXTRADialog(c4d.gui.GeDialog):
             if id == self.BUTTON_REMOVE_RIG:
                 answer = gui.MessageDialog('Remove RIG?', c4d.GEMB_YESNO)
                 if answer == 6:
-                    ikmaxUtils().removeRIGandMirrorsandGuides()
+                    IkMaxUtils().removeRIGandMirrorsandGuides()
 
                     self.LogoButton9.SetImage(self.img_AutoIK_NO, True)
                     self.LogoButton14.SetImage(self.img_AutoSkin_NO, True)
@@ -498,15 +490,15 @@ class EXTRADialog(c4d.gui.GeDialog):
                     answer = gui.MessageDialog(
                         'Remove IK to make rig changes/mirror rig, etc.\nWhen happy generate Auto-IK again.\n\nRemove IK now and mirror RIG?', c4d.GEMB_YESNO)
                     if answer == 6:
-                        ikmaxUtils().removeIK()
+                        IkMaxUtils().removeIK()
                         print('Removing IK...')
 
                 if ikControls == None or answer == 6:
                     suffix = "___R"
                     objArm = doc.SearchObject(EXTRADialog.PREFFIX + 'jCollar')
                     objLeg = doc.SearchObject(EXTRADialog.PREFFIX + 'jUpLeg')
-                    ikmaxUtils().mirrorObjects(objArm, suffix)
-                    ikmaxUtils().mirrorObjects(objLeg, suffix)
+                    IkMaxUtils().mirrorObjects(objArm, suffix)
+                    IkMaxUtils().mirrorObjects(objLeg, suffix)
                 doc.FlushUndoBuffer()
 
             if id == self.BUTTON_IK_COL_RANDOM:
@@ -521,7 +513,7 @@ class EXTRADialog(c4d.gui.GeDialog):
             if id == self.BUTTON_RIG_SHOW:
                 doc = c4d.documents.GetActiveDocument()
 
-                # for x in ikmaxUtils().iterateObjChilds(self.jointPelvis):
+                # for x in IkMaxUtils().iterateObjChilds(self.jointPelvis):
                 #     displayValue = x[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR]
                 #     x[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR] = not x[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR]
                 # self.jointPelvis[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR] = not self.jointPelvis[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR]
@@ -531,7 +523,7 @@ class EXTRADialog(c4d.gui.GeDialog):
                     boneDisplay = 0
                 else:
                     boneDisplay = 2
-                for x in ikmaxUtils().iterateObjChilds(self.jointPelvis):
+                for x in IkMaxUtils().iterateObjChilds(self.jointPelvis):
                     x[c4d.ID_CA_JOINT_OBJECT_BONE_DISPLAY] = boneDisplay
                 self.jointPelvis[c4d.ID_CA_JOINT_OBJECT_BONE_DISPLAY] = boneDisplay
 
@@ -641,7 +633,7 @@ class EXTRADialog(c4d.gui.GeDialog):
             if id == self.BUTTON_MODEL_FREEZE:
                 DazToC4D().lockLayerOnOff()
                 # meshToBind = self.LinkBox.GetLink()
-                # lockLayer = ikmaxUtils().layerSettings(meshToBind)
+                # lockLayer = IkMaxUtils().layerSettings(meshToBind)
                 # if lockLayer == True:
                 #     self.LogoButton16.SetImage(self.img_lock, True)
                 # else:
@@ -651,13 +643,13 @@ class EXTRADialog(c4d.gui.GeDialog):
                 obj = self.LinkBox.GetLink()
                 # objName = obj.GetName().replace('.Shape','') + '_'
 
-                ikmaxUtils().setProtectionChildren(self.dazIkmControls, 0)
+                IkMaxUtils().setProtectionChildren(self.dazIkmControls, 0)
 
-                ikmaxUtils().resetPRS(self.dazIkmControls)
-                ikmaxUtils().resetPRS(self.jointPelvis)
-                # ikmaxUtils().resetPRS(objName + "Eyes-LookAt")
+                IkMaxUtils().resetPRS(self.dazIkmControls)
+                IkMaxUtils().resetPRS(self.jointPelvis)
+                # IkMaxUtils().resetPRS(objName + "Eyes-LookAt")
 
-                ikmaxUtils().setProtectionChildren(self.dazIkmControls, 1)
+                IkMaxUtils().setProtectionChildren(self.dazIkmControls, 1)
 
             if id == self.BUTTON_EXTRA_EYES:
                 doc = documents.GetActiveDocument()
@@ -675,7 +667,7 @@ class EXTRADialog(c4d.gui.GeDialog):
                     gui.MessageDialog(
                         'You need to select 2 eyes/objects o.O!', c4d.GEMB_OK)
                     allOk = 0
-                if ikmaxUtils().checkIfExist('jHead') != 1:
+                if IkMaxUtils().checkIfExist('jHead') != 1:
                     gui.MessageDialog(
                         'No rig detected, first you need to\ngenerate a rig for your Character', c4d.GEMB_OK)
                     allOk = 0
@@ -687,13 +679,13 @@ class EXTRADialog(c4d.gui.GeDialog):
                     headJoint = doc.SearchObject(EXTRADialog.PREFFIX + 'jHead')
                     joints = doc.SearchObject(EXTRADialog.PREFFIX + 'jPelvis')
 
-                    obj1 = ikmaxUtils().makeNull('lEye_ctrl', ojo1)
-                    obj2 = ikmaxUtils().makeNull('rEye_ctrl', ojo2)
+                    obj1 = IkMaxUtils().makeNull('lEye_ctrl', ojo1)
+                    obj2 = IkMaxUtils().makeNull('rEye_ctrl', ojo2)
 
                     objParent = ojo1.GetUp()
-                    eyesParentNull = ikmaxUtils().makeNull('EyesParent', headJoint)
-                    eyesGroup = ikmaxUtils().makeNull('EyesParent', headJoint)
-                    eyesGroup2 = ikmaxUtils().makeNull('EyesParent', headJoint)
+                    eyesParentNull = IkMaxUtils().makeNull('EyesParent', headJoint)
+                    eyesGroup = IkMaxUtils().makeNull('EyesParent', headJoint)
+                    eyesGroup2 = IkMaxUtils().makeNull('EyesParent', headJoint)
 
                     #obj1.SetName(EXTRADialog.PREFFIX + 'Eye1')
                     #obj2.SetName(EXTRADialog.PREFFIX + 'Eye2')
@@ -703,7 +695,7 @@ class EXTRADialog(c4d.gui.GeDialog):
                     eyesParentNull.SetName(EXTRADialog.PREFFIX + 'Eyes-LookAt')
                     eyesGroup.SetName(EXTRADialog.PREFFIX + 'EyesGroup')
 
-                    masterSize = EXTRADialog.MASTERSIZE  # ikmaxUtils().getObjHeight(characterMesh)
+                    masterSize = EXTRADialog.MASTERSIZE  # IkMaxUtils().getObjHeight(characterMesh)
 
                     obj1[c4d.ID_BASEOBJECT_REL_POSITION,
                          c4d.VECTOR_Z] -= masterSize / 4
@@ -747,8 +739,8 @@ class EXTRADialog(c4d.gui.GeDialog):
                     nullStyle(obj2)
                     nullStyleMaster(objMasterEyes)
 
-                    ikmGenerator().constraintObj(ojo1, obj1, 'AIM', 0)
-                    ikmGenerator().constraintObj(ojo2, obj2, 'AIM', 0)
+                    IkmGenerator().constraintObj(ojo1, obj1, 'AIM', 0)
+                    IkmGenerator().constraintObj(ojo2, obj2, 'AIM', 0)
 
                     makeChild(obj1, objMasterEyes)
                     makeChild(obj2, objMasterEyes)
@@ -757,8 +749,8 @@ class EXTRADialog(c4d.gui.GeDialog):
                     obj1.SetAbsRot(c4d.Vector(0))
                     obj2.SetAbsRot(c4d.Vector(0))
 
-                    #ikmGenerator().constraintObj(eyesGroup, headJoint, '', 0)
-                    ikmGenerator().constraintObj(eyesParentNull, headJoint, '', 0)
+                    #IkmGenerator().constraintObj(eyesGroup, headJoint, '', 0)
+                    IkmGenerator().constraintObj(eyesParentNull, headJoint, '', 0)
 
                     #makeChild(ojo1, eyesGroup)
                     #makeChild(ojo2, eyesGroup)
@@ -769,10 +761,10 @@ class EXTRADialog(c4d.gui.GeDialog):
                     # eyesGroup.InsertAfter(joints)
                     eyesParentNull.InsertAfter(joints)
 
-                    ikmaxUtils().freezeChilds(EXTRADialog.PREFFIX + "Eyes-LookAt")
-                    ikmaxUtils().freezeChilds(EXTRADialog.PREFFIX + "EyesLookAtGroup")
+                    IkMaxUtils().freezeChilds(EXTRADialog.PREFFIX + "Eyes-LookAt")
+                    IkMaxUtils().freezeChilds(EXTRADialog.PREFFIX + "EyesLookAtGroup")
 
-                    #ikmaxUtils().freezeChilds(EXTRADialog.PREFFIX + "EyesGroup")
+                    #IkMaxUtils().freezeChilds(EXTRADialog.PREFFIX + "EyesGroup")
 
                     c4d.EventAdd()
                     c4d.CallCommand(12288, 12288)  # Frame All
@@ -785,7 +777,7 @@ class EXTRADialog(c4d.gui.GeDialog):
                         'Select object(s) that you want to attach to joints')
                     return 0
                 else:
-                    # if ikmaxUtils().checkIfExist('jHead') != 1:
+                    # if IkMaxUtils().checkIfExist('jHead') != 1:
                     #     gui.MessageDialog('Generate a RIG first', c4d.GEMB_OK)
                     #     return 0
                     dialog = IKMAXFastAttach()
@@ -996,9 +988,7 @@ class guiPleaseWaitAUTO(gui.GeDialog):
         return True
 
 # Creates the Main Window
-
-
-class GuiDazToC4dMain(gui.GeDialog):
+class guiDazToC4dMain(gui.GeDialog):
     dialog = None
     extraDialog = None
 
@@ -1017,8 +1007,8 @@ class GuiDazToC4dMain(gui.GeDialog):
 
     dir, file = os.path.split(__file__)  # Gets the plugin's directory
     # Adds the res folder to the path
-    daz_to_c4d_folder = os.path.join(dir, 'res')
-
+    daz_to_c4d_folder = os.path.join(folder, 'res')
+    
     img_d2c4d_logo = os.path.join(daz_to_c4d_folder, 'd2c4d_logo.png')
     img_d2c4d_loading = os.path.join(daz_to_c4d_folder, 'd2c4d_loading.png')
 
@@ -1045,64 +1035,7 @@ class GuiDazToC4dMain(gui.GeDialog):
         except:
             pass
 
-    def apply_daz_ik(self):
-
-        doc = documents.GetActiveDocument()
-        dazToC4Dutils().ungroupDazGeo()
-        meshName = dazToC4Dutils().getDazMesh().GetName()
-        meshName = meshName.replace('.Shape', '')
-        dazName = meshName + '_'
-        dazToC4Dutils().guidesToDaz()  # Auto Generate Guides
-        dazToC4Dutils().cleanJointsDaz()  # Some adjustments to Daz Rig...
-        # Ikmax stuff...----------------------
-        ikmGenerator().makeRig()
-        suffix = "___R"
-        objArm = doc.SearchObject(dazName + 'jCollar')
-        objLeg = doc.SearchObject(dazName + 'jUpLeg')
-
-        ikmGenerator().makeIKcontrols()
-        ikmaxUtils().mirrorObjects(objArm, suffix)
-        ikmaxUtils().mirrorObjects(objLeg, suffix)
-        ikmGenerator().makeChildKeepPos(dazName + "Foot_Platform___R",
-                                        dazName + "Foot_PlatformBase___R")
-        ikmGenerator().makeChildKeepPos(
-            dazName + "Foot_PlatformBase___R", dazName + "IKM_Controls")
-
-        DazToC4D().dazEyesLookAtControls()
-
-        # ------------------------------------
-
-        dazToC4Dutils().cleanJointsDaz('Right')
-        dazToC4Dutils().constraintJointsToDaz()
-        dazToC4Dutils().constraintJointsToDaz('Right')
-        if doc.SearchObject(dazName + 'ForearmTwist_ctrl'):
-            dazToC4Dutils().twistBoneSetup()  # TwistBone Setup
-            obj = doc.SearchObject(dazName + "ForearmTwist_ctrl")
-            obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
-            obj = doc.SearchObject(dazName + "ForearmTwist_ctrl___R")
-            obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
-            ikmGenerator().constraintObj("lForearmTwist", dazName + "ForearmTwist_ctrl")
-            ikmGenerator().constraintObj("rForearmTwist", dazName + "ForearmTwist_ctrl___R")
-            dazToC4Dutils().fixConstraints()
-            dazToC4Dutils().zeroTwistRotationFix(
-                dazName + "ForearmTwist_ctrl", "lForearmTwist")
-            dazToC4Dutils().zeroTwistRotationFix(
-                dazName + "ForearmTwist_ctrl___R", "rForearmTwist")
-
-        ikmaxUtils().freezeChilds(dazName + "IKM_Controls")
-        ikmaxUtils().freezeChilds(dazName + "jPelvis")
-
-        # Foot controls lock position, allow rotations.
-        dazToC4Dutils().addProtection()
-        ikmaxUtils().hideGuides(1)
-        dazToC4Dutils().hideRig()
-        c4d.CallCommand(12113, 12113)  # Deselect All
-        guides = doc.SearchObject(dazName + '__IKM-Guides')
-        if guides:
-            guides.Remove()  # REMOVE GUIDES
-        c4d.EventAdd()
-
-    def button_bc(self, tooltipText="", presetLook=""):
+    def buttonBC(self, tooltipText="", presetLook=""):
         # Logo Image #############################################################
         bc = c4d.BaseContainer()  # Create a new container to store the button image
         bc.SetBool(c4d.BITMAPBUTTON_BUTTON, True)
@@ -1122,7 +1055,7 @@ class GuiDazToC4dMain(gui.GeDialog):
         return bc
         # Logo Image #############################################################
 
-    def create_layout(self):
+    def CreateLayout(self):
 
         self.SetTitle('DazToC4D v1.1')
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
@@ -1136,7 +1069,7 @@ class GuiDazToC4dMain(gui.GeDialog):
         # Add the image to the button
         self.logo_button.SetImage(self.img_d2c4d_logo, False)
 
-        guiDazToC4DMainLogo = self.logo_button
+        guiDazToC4dMainLogo = self.logo_button
         print('**********************')
         print(self.logo_button)
         print('**********************')
@@ -1165,7 +1098,7 @@ class GuiDazToC4dMain(gui.GeDialog):
         # Add the image to the button
         self.LogoButton6.SetImage(self.img_btn_auto_import, True)
 
-        guiDazToC4DMainAutoImp = self.LogoButton6
+        guiDazToC4dMainAutoImp = self.LogoButton6
 
         self.AddSeparatorV(0, c4d.BFV_SCALEFIT)  # Separator V
 
@@ -1174,7 +1107,7 @@ class GuiDazToC4dMain(gui.GeDialog):
         # Add the image to the button
         self.LogoButton6.SetImage(self.img_btn_auto_ik, True)
 
-        guiDazToC4DMainIK = self.LogoButton6
+        guiDazToC4dMainIK = self.LogoButton6
 
         self.GroupEnd()  # END ///////////////////////////////////////////////
         self.GroupEnd()  # END ///////////////////////////////////////////////
@@ -1195,8 +1128,8 @@ class GuiDazToC4dMain(gui.GeDialog):
         #
         # self.LogoButton6 = self.AddCustomGui(self.BUTTON_AUTO_IK, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
         # self.LogoButton6.SetImage(self.img_btnAutoIK, True)  # Add the image to the button
-        # global guiDazToC4DMainIK
-        # guiDazToC4DMainIK = self.LogoButton6
+        # global guiDazToC4dMainIK
+        # guiDazToC4dMainIK = self.LogoButton6
         #
         # self.GroupEnd()  # END ///////////////////////////////////////////////
         self.GroupEnd()  # END ///////////////////////////////////////////////
@@ -1229,7 +1162,7 @@ class GuiDazToC4dMain(gui.GeDialog):
         # Add the image to the button
         self.LogoButton6.SetImage(self.img_btn_convert_materials, True)
 
-        guiDazToC4DMainConvert = self.LogoButton6
+        guiDazToC4dMainConvert = self.LogoButton6
         self.AddSeparatorV(0, c4d.BFV_SCALEFIT)  # Separator V
         self.AddComboBox(2001, c4d.BFH_SCALEFIT, 100, 15, False)
         self.AddChild(2001, 0, ' - Select -')
@@ -1350,10 +1283,6 @@ class GuiDazToC4dMain(gui.GeDialog):
             self.extraDialog.Open(dlgtype=c4d.DLG_TYPE_ASYNC,
                                   xpos=-1, ypos=-1, defaultw=200, defaulth=150)
 
-            '''
-
-            '''
-
         if id == self.BUTTON_CONVERT_MATERIALS:
             # CONVERT MATERIAL
             doc = c4d.documents.GetActiveDocument()
@@ -1370,18 +1299,18 @@ class GuiDazToC4dMain(gui.GeDialog):
                         '::: WARNING :::\n\nNo Undo for this.\nSave your scene first, in case you want to revert changes.\n\nProceed and Convert Materials now?', c4d.GEMB_YESNO)
                     if answer is 6:
                         if comboRender == 1:
-                            convertMaterials().convertTo('Vray')
+                            ConvertToVray()
                             c4d.CallCommand(1026375)  # Reload Python Plugins
 
                         if comboRender == 2:
-                            convertToRedshift()
+                            ConvertToRedshift()
                             DazToC4D().hideEyePolys()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             # Deselect All
                             c4d.CallCommand(100004767, 100004767)
 
                         if comboRender == 3:
-                            DazToC4D().convertToOctane()
+                            ConvertToOctane()
                             DazToC4D().hideEyePolys()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             # Deselect All
@@ -1436,7 +1365,7 @@ class authDialogDazToC4D(c4d.gui.GeDialog):
         self.LogoButton = self.AddCustomGui(
             self.MY_BITMAP_BUTTON, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, bc)
         # Add the image to the button
-        self.LogoButton.SetImage(guiDazToC4DMain().img_d2c4dLogo, False)
+        self.LogoButton.SetImage(guiDazToC4dMain().img_d2c4dLogo, False)
         # Logo Image #############################################################
 
         self.GroupBorderNoTitle(c4d.BORDER_NONE)

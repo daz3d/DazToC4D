@@ -1,5 +1,8 @@
 from __future__ import division
-import os, sys, hashlib, c4d
+import os
+import sys
+import hashlib
+import c4d
 from c4d import gui, documents
 from c4d import utils
 from c4d import plugins
@@ -9,16 +12,17 @@ import webbrowser
 import json
 from xml.etree import ElementTree
 
-folder = os.path.dirname( __file__ )
-if folder not in sys.path: sys.path.insert( 0, folder )
+folder = os.path.dirname(__file__)
+if folder not in sys.path:
+    sys.path.insert(0, folder)
 
-from DtcMaterials import *
-from DtcGui import *
-from DazToC4D import *
+from Globals import *
 
-class dazToC4Dutils():
+class DazToC4dUtils():
 
-    def findTextInFile(self, matName, propertyName):
+    mesh_name = daz_name
+
+    def find_text_in_file(self, matName, propertyName):
         dazExtraMapsFile = r'C:\\TEMP3D\\DazToC4D.xml'
         dazExtraMapsFileMac = '/users/Shared/temp3d/DazToC4D.xml'
 
@@ -43,22 +47,22 @@ class dazToC4Dutils():
 
         if texturePath == '':
             return None
-        
+
         if texturePath:
             texturePath = os.path.abspath(texturePath)  # OS Path Fix...
 
         return texturePath
 
-    def readExtraMapsFromFile(self):
+    def read_extra_maps_from_file(self):
         doc = c4d.documents.GetActiveDocument()
         docMaterials = doc.GetMaterials()
         for mat in docMaterials:
             matName = mat.GetName()
-            extraMapBump = self.findTextInFile(matName, 'bump')
-            extraMapBump2 = self.findTextInFile(matName, 'bump2')
+            extraMapBump = self.find_text_in_file(matName, 'bump')
+            extraMapBump2 = self.find_text_in_file(matName, 'bump2')
             if extraMapBump == None and extraMapBump2 != None:
                 extraMapBump = extraMapBump2
-            extraMapNormal = self.findTextInFile(matName, 'Normal_Map_Map')
+            extraMapNormal = self.find_text_in_file(matName, 'Normal_Map_Map')
             if extraMapNormal != None and extraMapBump == None:
                 extraMapBump = extraMapNormal
             if extraMapBump != None:
@@ -68,8 +72,7 @@ class dazToC4Dutils():
                 mat[c4d.MATERIAL_BUMP_SHADER] = shda
                 mat.InsertShader(shda)
 
-
-            extraMapNormal = self.findTextInFile(matName, 'Normal_Map_Map')
+            extraMapNormal = self.find_text_in_file(matName, 'Normal_Map_Map')
             if extraMapNormal != None:
                 mat[c4d.MATERIAL_USE_NORMAL] = True
                 shda = c4d.BaseList2D(c4d.Xbitmap)
@@ -77,9 +80,10 @@ class dazToC4Dutils():
                 mat[c4d.MATERIAL_NORMAL_SHADER] = shda
                 mat.InsertShader(shda)
 
-            extraMapSpec = self.findTextInFile(matName, 'Glossy_Layered_Weight_Map')
-            extraMapSpec2 = self.findTextInFile(matName, 'spec')
-            extraMapGlossy = self.findTextInFile(matName, 'Metallicity_Map')
+            extraMapSpec = self.find_text_in_file(
+                matName, 'Glossy_Layered_Weight_Map')
+            extraMapSpec2 = self.find_text_in_file(matName, 'spec')
+            extraMapGlossy = self.find_text_in_file(matName, 'Metallicity_Map')
             if extraMapSpec2 != None and extraMapSpec == None:
                 extraMapSpec = extraMapSpec2
             if extraMapGlossy != None and extraMapSpec == None:
@@ -97,7 +101,8 @@ class dazToC4Dutils():
                 except:
                     pass
 
-            extraMapGlossyRough = self.findTextInFile(matName, 'Glossy_Roughness_Map')
+            extraMapGlossyRough = self.find_text_in_file(
+                matName, 'Glossy_Roughness_Map')
             if extraMapGlossyRough != None:
                 mat[c4d.MATERIAL_USE_REFLECTION] = True
                 shda = c4d.BaseList2D(c4d.Xbitmap)
@@ -110,7 +115,7 @@ class dazToC4Dutils():
                 except:
                     pass
 
-    def zeroTwistRotationFix(self, twistName, jointName):
+    def zero_twist_rotation_fix(self, twistName, jointName):
         doc = c4d.documents.GetActiveDocument()
 
         objTarget = doc.SearchObject(twistName)
@@ -137,7 +142,7 @@ class dazToC4Dutils():
         objTarget[c4d.ID_BASEOBJECT_ROTATION_ORDER] = 6
         c4d.EventAdd()
 
-    def protectTwist(self):
+    def protect_twist(self):
         doc = c4d.documents.GetActiveDocument()
 
         def addProtTag(obj):
@@ -152,16 +157,18 @@ class dazToC4Dutils():
             obj.InsertTag(xtag)
             c4d.EventAdd()
 
-        nullForeArm = doc.SearchObject(dazName + 'ForearmTwist_ctrl')
-        nullForeArmR = doc.SearchObject(dazName + 'ForearmTwist_ctrl___R')
+        nullForeArm = doc.SearchObject(daz_name + 'ForearmTwist_ctrl')
+        nullForeArmR = doc.SearchObject(daz_name + 'ForearmTwist_ctrl___R')
         addProtTag(nullForeArm)
         addProtTag(nullForeArmR)
 
-    def fixMoisure(self):
+    def fix_moisure(self):
         def removeMoisureTag(obj):
             # validate object and selectiontag
-            if not obj: return
-            if not obj.IsInstanceOf(c4d.Opolygon): return
+            if not obj:
+                return
+            if not obj.IsInstanceOf(c4d.Opolygon):
+                return
             tags = obj.GetTags()
 
             # deselect current polygonselection and store a backup to reselect
@@ -189,8 +196,8 @@ class dazToC4Dutils():
 
                         if not sec:
                             print(sec)
-                            return 
-                        
+                            return
+
                         # sec[0].InsertAfter(op)
 
                 t = t.GetNext()
@@ -204,7 +211,7 @@ class dazToC4Dutils():
             if obj.GetType() == 5100:
                 removeMoisureTag(obj)
 
-    def fixDazFootRot(self, master, mode='', jointToFix='', rotValue=0):
+    def fix_daz_foot_rot(self, master, mode='', jointToFix='', rotValue=0):
         doc = documents.GetActiveDocument()
 
         nullObj = c4d.BaseObject(c4d.Onull)  # Create new cube
@@ -235,9 +242,12 @@ class dazToC4Dutils():
                 constraintTAG[10001] = masterObj
 
                 PriorityDataInitial = c4d.PriorityData()
-                PriorityDataInitial.SetPriorityValue(c4d.PRIORITYVALUE_MODE, c4d.CYCLE_EXPRESSION)
-                PriorityDataInitial.SetPriorityValue(c4d.PRIORITYVALUE_PRIORITY, 0)
-                PriorityDataInitial.SetPriorityValue(c4d.PRIORITYVALUE_CAMERADEPENDENT, 0)
+                PriorityDataInitial.SetPriorityValue(
+                    c4d.PRIORITYVALUE_MODE, c4d.CYCLE_EXPRESSION)
+                PriorityDataInitial.SetPriorityValue(
+                    c4d.PRIORITYVALUE_PRIORITY, 0)
+                PriorityDataInitial.SetPriorityValue(
+                    c4d.PRIORITYVALUE_CAMERADEPENDENT, 0)
                 constraintTAG[c4d.EXPRESSION_PRIORITY] = PriorityDataInitial
             slaveObj.InsertTag(constraintTAG)
 
@@ -261,12 +271,12 @@ class dazToC4Dutils():
 
         slaveObj.InsertTag(constraintTAG)
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
         c4d.EventAdd()
         caca = slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X]
 
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
 
         addConstraint(jointToFix, slaveObj)
         constraintTAG.Remove()
@@ -282,12 +292,12 @@ class dazToC4Dutils():
         caca.Remove()
         slaveObj.Remove()
 
-    def dazFootRotfix(self):
+    def daz_foot_rot_fix(self):
         doc = documents.GetActiveDocument()
 
         mainJoint = doc.SearchObject('lFoot')
         goalJoint = doc.SearchObject('lToe')
-        self.fixDazFootRot(goalJoint, 'AIM', mainJoint)
+        self.fix_daz_foot_rot(goalJoint, 'AIM', mainJoint)
 
         jointOposite = doc.SearchObject('rFoot')
         rx = mainJoint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X]
@@ -298,7 +308,7 @@ class dazToC4Dutils():
         jointOposite[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y] = 0
         jointOposite[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z] = 0
 
-    def ikGoalsZeroRot(self):
+    def ik_goals_zero_rot(self):
         def ikZeroRot(jointObj):
             tag = jointObj.GetFirstTag()
             goalObj = tag[10001]
@@ -330,24 +340,24 @@ class dazToC4Dutils():
 
             c4d.EventAdd()
             c4d.DrawViews(
-                c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
+                c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
             c4d.EventAdd()
 
         doc = documents.GetActiveDocument()
 
-        jointObj = doc.SearchObject(dazName + 'jHand')
+        jointObj = doc.SearchObject(daz_name + 'jHand')
         ikZeroRot(jointObj)
 
-        jointObj = doc.SearchObject(dazName + 'jHand___R')
+        jointObj = doc.SearchObject(daz_name + 'jHand___R')
         ikZeroRot(jointObj)
 
-        jointObj = doc.SearchObject(dazName + 'jUpLeg.Pole___R')
+        jointObj = doc.SearchObject(daz_name + 'jUpLeg.Pole___R')
         jointObj[c4d.ID_BASEOBJECT_FROZEN_ROTATION, c4d.VECTOR_X] = 0
-        jointObj = doc.SearchObject(dazName + 'jArm.Pole___R')
+        jointObj = doc.SearchObject(daz_name + 'jArm.Pole___R')
         jointObj[c4d.ID_BASEOBJECT_FROZEN_ROTATION, c4d.VECTOR_X] = 0
         c4d.EventAdd()
 
-    def getDazMesh(self):
+    def get_daz_mesh(self):
         doc = documents.GetActiveDocument()
         obj = doc.SearchObject('hip')
         if obj:
@@ -356,25 +366,25 @@ class dazToC4Dutils():
             return dazMeshObj
         return None
 
-    def initialDisplaySettings(self):
+    def initial_display_settings(self):
         doc = documents.GetActiveDocument()
-        dazName = self.getDazMesh()
-        if dazName:
-            dazName = dazName.GetName().replace('.Shape', '')
-            dazName = dazName + '_'
+        daz_name = self.get_daz_mesh()
+        if daz_name:
+            daz_name = daz_name.GetName().replace('.Shape', '')
+            daz_name = daz_name + '_'
 
             def hideJoint(obj, value):
                 obj[c4d.ID_CA_JOINT_OBJECT_BONE_DISPLAY] = value
                 obj[c4d.ID_CA_JOINT_OBJECT_JOINT_DISPLAY] = value
 
             def hideJoints(jName, value):
-                jointParent = doc.SearchObject(dazName + jName)
+                jointParent = doc.SearchObject(daz_name + jName)
                 if jointParent:
                     listObjs = ObjectIterator(jointParent)
                     for obj in listObjs:
                         hideJoint(obj, value)
 
-            objPelvis = doc.SearchObject(dazName + 'jPelvis')
+            objPelvis = doc.SearchObject(daz_name + 'jPelvis')
             hideJoint(objPelvis, 0)
             hideJoints('jSpine', 0)
             hideJoints('jUpLeg', 0)
@@ -385,23 +395,23 @@ class dazToC4Dutils():
 
             c4d.EventAdd()
 
-    def jointsDisplayInitialSettings(self):
+    def joint_display_initial_settings(self):
 
         [c4d.ID_CA_JOINT_OBJECT_JOINT_DISPLAY] = 0
-        self.getDazMesh()
+        self.get_daz_mesh()
 
         boneDisplay = self.jointPelvis[c4d.ID_CA_JOINT_OBJECT_BONE_DISPLAY]
         if boneDisplay != 0:
             boneDisplay = 0
         else:
             boneDisplay = 2
-        for x in ikmaxUtils().iterateObjChilds(self.jointPelvis):
+        for x in IkMaxUtils().iterateObjChilds(self.jointPelvis):
             x[c4d.ID_CA_JOINT_OBJECT_BONE_DISPLAY] = boneDisplay
         self.jointPelvis[c4d.ID_CA_JOINT_OBJECT_BONE_DISPLAY] = boneDisplay
 
         c4d.EventAdd()
 
-    def changeSkinType(self):
+    def change_skin_type(self):
         doc = documents.GetActiveDocument()
         obj = doc.GetFirstObject()
 
@@ -416,7 +426,7 @@ class dazToC4Dutils():
 
         c4d.EventAdd()
 
-    def twistBoneSetup(self):
+    def twist_bone_setup(self):
         doc = documents.GetActiveDocument()
 
         def aimObj(slave, master, mode="", searchObj=1):
@@ -445,7 +455,6 @@ class dazToC4Dutils():
                 constraintTAG[20004] = 0  # Axis X-
                 constraintTAG[20001] = masterObj
 
-
             slaveObj.InsertTag(constraintTAG)
 
             # constraintTAG.Remove()
@@ -455,14 +464,14 @@ class dazToC4Dutils():
                 c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
             constraintTAG.Remove()
 
-        twistJoint = doc.SearchObject(dazName + 'ForearmTwist_ctrl')
+        twistJoint = doc.SearchObject(daz_name + 'ForearmTwist_ctrl')
         handJoint = doc.SearchObject('lHand')
         aimObj(twistJoint, handJoint, 'AIM', 0)
-        twistJoint = doc.SearchObject(dazName + 'ForearmTwist_ctrl___R')
+        twistJoint = doc.SearchObject(daz_name + 'ForearmTwist_ctrl___R')
         handJoint = doc.SearchObject('rHand')
         aimObj(twistJoint, handJoint, 'AIM', 0)
 
-    def fixConstraints(self):
+    def fix_constraints(self):
         def fixConstraint(jointName):
             doc = documents.GetActiveDocument()
             obj = doc.SearchObject(jointName)
@@ -474,11 +483,11 @@ class dazToC4Dutils():
         fixConstraint('lForearmTwist')
         fixConstraint('rForearmTwist')
 
-    def hideRig(self):
+    def hide_rig(self):
         doc = documents.GetActiveDocument()
         obj = doc.SearchObject('hip')
         dazRig = obj.GetUp()
-        guideNulls = ikmaxUtils().iterateObjChilds(dazRig)
+        guideNulls = IkMaxUtils().iterateObjChilds(dazRig)
         for obj in guideNulls:
             obj()[c4d.ID_BASEOBJECT_VISIBILITY_RENDER] = 1
             obj()[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR] = 1
@@ -487,7 +496,7 @@ class dazToC4Dutils():
 
         c4d.EventAdd()
 
-    def addProtection(self):
+    def add_protection(self):
 
         def protectObj(objName, lock='Position'):
             doc = documents.GetActiveDocument()
@@ -506,12 +515,12 @@ class dazToC4Dutils():
             obj.InsertTag(protectionTAG)
             c4d.EventAdd()
 
-        protectObj(dazName + 'Toe_Rot')
-        protectObj(dazName + 'Toe_Rot___R')
-        protectObj(dazName + 'Foot_Roll')
-        protectObj(dazName + 'Foot_Roll___R')
+        protectObj(daz_name + 'Toe_Rot')
+        protectObj(daz_name + 'Toe_Rot___R')
+        protectObj(daz_name + 'Foot_Roll')
+        protectObj(daz_name + 'Foot_Roll___R')
 
-    def ungroupDazGeo(self):
+    def ungroup_daz_geo(self):
         doc = documents.GetActiveDocument()
         obj = doc.SearchObject('hip')
         children = obj.GetUp().GetChildren()
@@ -527,7 +536,7 @@ class dazToC4Dutils():
         c4d.CallCommand(12113, 12113)  # Deselect All
         c4d.EventAdd()
 
-    def addHeadEndBone(self):
+    def add_head_end_bone(self):
         doc = documents.GetActiveDocument()
         # meshName = dazName + '_'
         jointHeadEnd = doc.SearchObject('head_end')
@@ -548,7 +557,7 @@ class dazToC4Dutils():
             newJoint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Y] = headHeight
             c4d.EventAdd()
 
-    def removeConstraintTags(self, obj):
+    def remove_constraint_tags(self, obj):
 
         doc = c4d.documents.GetActiveDocument()
         # obj = doc.SearchObject('pelvis')
@@ -561,11 +570,11 @@ class dazToC4Dutils():
             pass
         c4d.EventAdd()
 
-    def addConstraint(self, slave, master, mode='Parent'):
+    def add_constraint(self, slave, master, mode='Parent'):
         doc = documents.GetActiveDocument()
         slaveObj = doc.SearchObject(slave)
         masterObj = doc.SearchObject(master)
-        self.removeConstraintTags(slaveObj)
+        self.remove_constraint_tags(slaveObj)
         # removeConstraintTags(masterObj)
 
         if mode == "Parent":
@@ -582,9 +591,11 @@ class dazToC4Dutils():
             # constraintTAG[30009, 1002] = c4d.Vector(nullSlave.GetRelRot()[0], nullSlave.GetRelRot()[1], nullSlave.GetRelRot()[2])
 
             PriorityDataInitial = c4d.PriorityData()
-            PriorityDataInitial.SetPriorityValue(c4d.PRIORITYVALUE_MODE, c4d.CYCLE_EXPRESSION)
+            PriorityDataInitial.SetPriorityValue(
+                c4d.PRIORITYVALUE_MODE, c4d.CYCLE_EXPRESSION)
             PriorityDataInitial.SetPriorityValue(c4d.PRIORITYVALUE_PRIORITY, 0)
-            PriorityDataInitial.SetPriorityValue(c4d.PRIORITYVALUE_CAMERADEPENDENT, 0)
+            PriorityDataInitial.SetPriorityValue(
+                c4d.PRIORITYVALUE_CAMERADEPENDENT, 0)
             constraintTAG[c4d.EXPRESSION_PRIORITY] = PriorityDataInitial
         try:
             slaveObj.InsertTag(constraintTAG)
@@ -600,9 +611,8 @@ class dazToC4Dutils():
         child.InsertUnder(parent)
         child.SetMg(mg)
 
-    def extend3Dline(self, nameA, nameB, actObjName, offset=1):
+    def extend_3d_line(self, nameA, nameB, actObjName, offset=1):
         doc = documents.GetActiveDocument()
-        meshName = dazName
         actObj = doc.SearchObject(meshName + actObjName)
         # Aobj = doc.SearchObject('A') #Direction line Start
         # Bobj = doc.SearchObject('B') #Direction line End
@@ -629,14 +639,15 @@ class dazToC4Dutils():
 
         caca = targetObj.GetFirstTag()
         c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
         caca.Remove()
         targetMg = None
         try:
             targetObjExtend.SetMg(Bobj.GetMg())
             objDistance = targetObjExtend[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z]
             targetObj.SetAbsPos(Bobj.GetAbsPos())
-            targetObjExtend[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z] = objDistance * offset
+            targetObjExtend[c4d.ID_BASEOBJECT_REL_POSITION,
+                            c4d.VECTOR_Z] = objDistance * offset
             targetObjExtend[c4d.NULLOBJECT_DISPLAY] = 9
 
             targetMg = targetObjExtend.GetMg()
@@ -644,15 +655,14 @@ class dazToC4Dutils():
         except:
             print('skip extend')
 
-
         targetObj.Remove()
 
         c4d.EventAdd()
         return targetMg
 
-    def moveToObj(self, source, target):
+    def move_to_obj(self, source, target):
         doc = documents.GetActiveDocument()
-        parentGuidesName = dazName + '__IKM-Guides'
+        parentGuidesName = daz_name + '__IKM-Guides'
 
         if doc.SearchObject(parentGuidesName) == None:
             newNull = c4d.BaseObject(c4d.Onull)
@@ -679,99 +689,97 @@ class dazToC4Dutils():
 
         c4d.EventAdd()
 
-    def guidesToDaz(self):
+    def guides_to_daz(self):
         doc = documents.GetActiveDocument()
-        meshName = dazName
-
-        self.addHeadEndBone()
+        self.add_head_end_bone()
 
         if doc.SearchObject('lCollar'):
-            self.moveToObj(meshName + 'Collar', 'lCollar')
-            self.moveToObj(meshName + 'Collar___R', 'rCollar')
+            self.move_to_obj(meshName + 'Collar', 'lCollar')
+            self.move_to_obj(meshName + 'Collar___R', 'rCollar')
         else:
-            self.moveToObj(meshName + 'Collar', 'chest')
-            self.moveToObj(meshName + 'Collar___R', 'chest')
+            self.move_to_obj(meshName + 'Collar', 'chest')
+            self.move_to_obj(meshName + 'Collar___R', 'chest')
 
         if doc.SearchObject('abdomenUpper'):
-            self.moveToObj(meshName + 'AbdomenUpper', 'abdomenUpper')
-            self.moveToObj(meshName + 'ChestUpper', 'chestUpper')
+            self.move_to_obj(meshName + 'AbdomenUpper', 'abdomenUpper')
+            self.move_to_obj(meshName + 'ChestUpper', 'chestUpper')
 
         if doc.SearchObject('lShldr'):
-            self.moveToObj(meshName + 'Shoulder', 'lShldr')
-            self.moveToObj(meshName + 'Elbow', 'lForeArm')
+            self.move_to_obj(meshName + 'Shoulder', 'lShldr')
+            self.move_to_obj(meshName + 'Elbow', 'lForeArm')
 
         if doc.SearchObject('lShldrBend'):
-            self.moveToObj(meshName + 'Shoulder', 'lShldrBend')
-            self.moveToObj(meshName + 'Elbow', 'lForearmBend')
+            self.move_to_obj(meshName + 'Shoulder', 'lShldrBend')
+            self.move_to_obj(meshName + 'Elbow', 'lForearmBend')
 
-        self.moveToObj(meshName + 'Hand', 'lHand')
-        self.moveToObj(meshName + 'Index1', 'lIndex1')
-        self.moveToObj(meshName + 'Index2', 'lIndex2')
+        self.move_to_obj(meshName + 'Hand', 'lHand')
+        self.move_to_obj(meshName + 'Index1', 'lIndex1')
+        self.move_to_obj(meshName + 'Index2', 'lIndex2')
         if doc.SearchObject('lIndex3'):
-            self.moveToObj(meshName + 'Index3', 'lIndex3')
-            self.moveToObj(meshName + 'Index_end', 'lIndex3')
-        self.moveToObj(meshName + 'Middle1', 'lMid1')
-        self.moveToObj(meshName + 'Middle2', 'lMid2')
+            self.move_to_obj(meshName + 'Index3', 'lIndex3')
+            self.move_to_obj(meshName + 'Index_end', 'lIndex3')
+        self.move_to_obj(meshName + 'Middle1', 'lMid1')
+        self.move_to_obj(meshName + 'Middle2', 'lMid2')
         if doc.SearchObject('lMid3'):
-            self.moveToObj(meshName + 'Middle3', 'lMid3')
-            self.moveToObj(meshName + 'Middle_end', 'lMid3')
-        self.moveToObj(meshName + 'Ring1', 'lRing1')
-        self.moveToObj(meshName + 'Ring2', 'lRing2')
+            self.move_to_obj(meshName + 'Middle3', 'lMid3')
+            self.move_to_obj(meshName + 'Middle_end', 'lMid3')
+        self.move_to_obj(meshName + 'Ring1', 'lRing1')
+        self.move_to_obj(meshName + 'Ring2', 'lRing2')
         if doc.SearchObject('lRing3'):
-            self.moveToObj(meshName + 'Ring3', 'lRing3')
-            self.moveToObj(meshName + 'Ring_end', 'lRing3')
-        self.moveToObj(meshName + 'Pinky1', 'lPinky1')
-        self.moveToObj(meshName + 'Pinky2', 'lPinky2')
+            self.move_to_obj(meshName + 'Ring3', 'lRing3')
+            self.move_to_obj(meshName + 'Ring_end', 'lRing3')
+        self.move_to_obj(meshName + 'Pinky1', 'lPinky1')
+        self.move_to_obj(meshName + 'Pinky2', 'lPinky2')
         if doc.SearchObject('lPinky3'):
-            self.moveToObj(meshName + 'Pinky3', 'lPinky3')
-            self.moveToObj(meshName + 'Pinky_end', 'lPinky3')
-        self.moveToObj(meshName + 'Thumb1', 'lThumb1')
-        self.moveToObj(meshName + 'Thumb2', 'lThumb2')
+            self.move_to_obj(meshName + 'Pinky3', 'lPinky3')
+            self.move_to_obj(meshName + 'Pinky_end', 'lPinky3')
+        self.move_to_obj(meshName + 'Thumb1', 'lThumb1')
+        self.move_to_obj(meshName + 'Thumb2', 'lThumb2')
         if doc.SearchObject('lThumb3'):
-            self.moveToObj(meshName + 'Thumb3', 'lThumb3')
-            self.moveToObj(meshName + 'Thumb_end', 'lThumb3')
+            self.move_to_obj(meshName + 'Thumb3', 'lThumb3')
+            self.move_to_obj(meshName + 'Thumb_end', 'lThumb3')
 
         if doc.SearchObject('lThighBend'):
-            self.moveToObj(meshName + 'LegUpper', 'lThighBend')
+            self.move_to_obj(meshName + 'LegUpper', 'lThighBend')
 
         if doc.SearchObject('lThigh'):
-            self.moveToObj(meshName + 'LegUpper', 'lThigh')
+            self.move_to_obj(meshName + 'LegUpper', 'lThigh')
 
-        self.moveToObj(meshName + 'Knee', 'lShin')
-        self.moveToObj(meshName + 'Foot', 'lFoot')
-        self.moveToObj(meshName + 'Toes', 'lToe')
+        self.move_to_obj(meshName + 'Knee', 'lShin')
+        self.move_to_obj(meshName + 'Foot', 'lFoot')
+        self.move_to_obj(meshName + 'Toes', 'lToe')
 
         if doc.SearchObject('lSmallToe2_2'):
-            self.moveToObj(meshName + 'Toes_end', 'lSmallToe2_2')
+            self.move_to_obj(meshName + 'Toes_end', 'lSmallToe2_2')
         else:
             if doc.SearchObject('lSmallToe2'):
-                self.moveToObj(meshName + 'Toes_end', 'lSmallToe2')
+                self.move_to_obj(meshName + 'Toes_end', 'lSmallToe2')
 
-        self.moveToObj(meshName + 'Pelvis', 'hip')
+        self.move_to_obj(meshName + 'Pelvis', 'hip')
 
         if doc.SearchObject('abdomenLower'):
-            self.moveToObj(meshName + 'Spine_Start', 'abdomenLower')
-            self.moveToObj(meshName + 'Chest_Start', 'chestLower')
-            self.moveToObj(meshName + 'Neck_Start', 'neckLower')
-            self.moveToObj(meshName + 'Neck_End', 'head')
+            self.move_to_obj(meshName + 'Spine_Start', 'abdomenLower')
+            self.move_to_obj(meshName + 'Chest_Start', 'chestLower')
+            self.move_to_obj(meshName + 'Neck_Start', 'neckLower')
+            self.move_to_obj(meshName + 'Neck_End', 'head')
 
         if doc.SearchObject('abdomen'):
-            self.moveToObj(meshName + 'Spine_Start', 'abdomen')
-            self.moveToObj(meshName + 'Chest_Start', 'chest')
-            self.moveToObj(meshName + 'Neck_Start', 'neck')
-            self.moveToObj(meshName + 'Neck_End', 'head')
+            self.move_to_obj(meshName + 'Spine_Start', 'abdomen')
+            self.move_to_obj(meshName + 'Chest_Start', 'chest')
+            self.move_to_obj(meshName + 'Neck_Start', 'neck')
+            self.move_to_obj(meshName + 'Neck_End', 'head')
 
-        self.moveToObj(meshName + 'Head_End', 'head_end')  # TEMPPP
+        self.move_to_obj(meshName + 'Head_End', 'head_end')  # TEMPPP
 
         # actObj = doc.SearchObject('Object_Index_end')
 
-        self.extend3Dline('Index2', 'Index3', 'Index_end')
-        self.extend3Dline('Middle2', 'Middle3', 'Middle_end')
-        self.extend3Dline('Ring2', 'Ring3', 'Ring_end')
-        self.extend3Dline('Pinky2', 'Pinky3', 'Pinky_end')
-        self.extend3Dline('Thumb2', 'Thumb3', 'Thumb_end')
+        self.extend_3d_line('Index2', 'Index3', 'Index_end')
+        self.extend_3d_line('Middle2', 'Middle3', 'Middle_end')
+        self.extend_3d_line('Ring2', 'Ring3', 'Ring_end')
+        self.extend_3d_line('Pinky2', 'Pinky3', 'Pinky_end')
+        self.extend_3d_line('Thumb2', 'Thumb3', 'Thumb_end')
 
-    def cleanJointsDaz(self, side='Left'):
+    def clean_joints_daz(self, side='Left'):
         doc = documents.GetActiveDocument()
         prefix = 'l'
         suffix = ''
@@ -793,65 +801,68 @@ class dazToC4Dutils():
             self.parentTo(prefix + 'BigToe', prefix + 'Toe')
         c4d.EventAdd()
 
-    def constraintJointsToDaz(self, side='Left'):
+    def constraint_joints_to_daz(self, side='Left'):
         doc = documents.GetActiveDocument()
 
-        meshName = dazName
         prefix = 'l'
         suffix = ''
         if side == 'Right':
             prefix = 'r'
             suffix = '___R'
         # Constraints
-        self.addConstraint(prefix + 'Collar', meshName + 'jCollar' + suffix)
+        self.add_constraint(prefix + 'Collar', meshName + 'jCollar' + suffix)
 
         if doc.SearchObject(prefix + 'ShldrBend'):
-            self.addConstraint(prefix + 'ShldrBend', meshName + 'jArm' + suffix)
-            self.addConstraint(prefix + 'ForearmBend', meshName + 'jForeArm' + suffix)
+            self.add_constraint(prefix + 'ShldrBend',
+                                meshName + 'jArm' + suffix)
+            self.add_constraint(prefix + 'ForearmBend',
+                                meshName + 'jForeArm' + suffix)
         if doc.SearchObject(prefix + 'Shldr'):
-            self.addConstraint(prefix + 'Shldr', meshName + 'jArm' + suffix)
-            self.addConstraint(prefix + 'ForeArm', meshName + 'jForeArm' + suffix)
+            self.add_constraint(prefix + 'Shldr', meshName + 'jArm' + suffix)
+            self.add_constraint(prefix + 'ForeArm',
+                                meshName + 'jForeArm' + suffix)
 
-        self.addConstraint(prefix + 'Hand', meshName + 'jHand' + suffix)
-        self.addConstraint('hip', meshName + 'jPelvis')
+        self.add_constraint(prefix + 'Hand', meshName + 'jHand' + suffix)
+        self.add_constraint('hip', meshName + 'jPelvis')
         if doc.SearchObject('pelvis'):
-            self.addConstraint('pelvis', meshName + 'jPelvis')
+            self.add_constraint('pelvis', meshName + 'jPelvis')
         if doc.SearchObject('abdomenLower'):
-            self.addConstraint('abdomenLower', meshName + 'jSpine')
-            self.addConstraint('abdomenUpper', meshName + 'jAbdomenUpper')
-            self.addConstraint('chestLower', meshName + 'jChest')
-            self.addConstraint('chestUpper', meshName + 'jChestUpper')
-            self.addConstraint('neckLower', meshName + 'jNeck')
+            self.add_constraint('abdomenLower', meshName + 'jSpine')
+            self.add_constraint('abdomenUpper', meshName + 'jAbdomenUpper')
+            self.add_constraint('chestLower', meshName + 'jChest')
+            self.add_constraint('chestUpper', meshName + 'jChestUpper')
+            self.add_constraint('neckLower', meshName + 'jNeck')
         if doc.SearchObject('abdomen'):
-            self.addConstraint('abdomen', meshName + 'jSpine')
+            self.add_constraint('abdomen', meshName + 'jSpine')
             # self.addConstraint('abdomenUpper', meshName + 'jAbdomenUpper')
-            self.addConstraint('chest', meshName + 'jChest')
+            self.add_constraint('chest', meshName + 'jChest')
             # self.addConstraint('chestUpper', meshName + 'jChestUpper')
-            self.addConstraint('neck', meshName + 'jNeck')
+            self.add_constraint('neck', meshName + 'jNeck')
 
-        self.addConstraint('head', meshName + 'jHead')
+        self.add_constraint('head', meshName + 'jHead')
 
         if doc.SearchObject(prefix + 'ThighBend'):
-            self.addConstraint(prefix + 'ThighBend', meshName + 'jUpLeg' + suffix)
+            self.add_constraint(prefix + 'ThighBend',
+                                meshName + 'jUpLeg' + suffix)
         if doc.SearchObject(prefix + 'Thigh'):
-            self.addConstraint(prefix + 'Thigh', meshName + 'jUpLeg' + suffix)
+            self.add_constraint(prefix + 'Thigh', meshName + 'jUpLeg' + suffix)
 
-        self.addConstraint(prefix + 'Shin', meshName + 'jLeg' + suffix)
-        self.addConstraint(prefix + 'Foot', meshName + 'jFoot' + suffix)
-        self.addConstraint(prefix + 'Toe', meshName + 'jToes' + suffix)
-        self.addConstraint(prefix + 'Index1', meshName + 'jIndex1' + suffix)
-        self.addConstraint(prefix + 'Index2', meshName + 'jIndex2' + suffix)
-        self.addConstraint(prefix + 'Index3', meshName + 'jIndex3' + suffix)
-        self.addConstraint(prefix + 'Mid1', meshName + 'jMiddle1' + suffix)
-        self.addConstraint(prefix + 'Mid2', meshName + 'jMiddle2' + suffix)
-        self.addConstraint(prefix + 'Mid3', meshName + 'jMiddle3' + suffix)
-        self.addConstraint(prefix + 'Ring1', meshName + 'jRing1' + suffix)
-        self.addConstraint(prefix + 'Ring2', meshName + 'jRing2' + suffix)
-        self.addConstraint(prefix + 'Ring3', meshName + 'jRing3' + suffix)
-        self.addConstraint(prefix + 'Pinky1', meshName + 'jPink1' + suffix)
-        self.addConstraint(prefix + 'Pinky2', meshName + 'jPink2' + suffix)
-        self.addConstraint(prefix + 'Pinky3', meshName + 'jPink3' + suffix)
+        self.add_constraint(prefix + 'Shin', meshName + 'jLeg' + suffix)
+        self.add_constraint(prefix + 'Foot', meshName + 'jFoot' + suffix)
+        self.add_constraint(prefix + 'Toe', meshName + 'jToes' + suffix)
+        self.add_constraint(prefix + 'Index1', meshName + 'jIndex1' + suffix)
+        self.add_constraint(prefix + 'Index2', meshName + 'jIndex2' + suffix)
+        self.add_constraint(prefix + 'Index3', meshName + 'jIndex3' + suffix)
+        self.add_constraint(prefix + 'Mid1', meshName + 'jMiddle1' + suffix)
+        self.add_constraint(prefix + 'Mid2', meshName + 'jMiddle2' + suffix)
+        self.add_constraint(prefix + 'Mid3', meshName + 'jMiddle3' + suffix)
+        self.add_constraint(prefix + 'Ring1', meshName + 'jRing1' + suffix)
+        self.add_constraint(prefix + 'Ring2', meshName + 'jRing2' + suffix)
+        self.add_constraint(prefix + 'Ring3', meshName + 'jRing3' + suffix)
+        self.add_constraint(prefix + 'Pinky1', meshName + 'jPink1' + suffix)
+        self.add_constraint(prefix + 'Pinky2', meshName + 'jPink2' + suffix)
+        self.add_constraint(prefix + 'Pinky3', meshName + 'jPink3' + suffix)
 
-        self.addConstraint(prefix + 'Thumb1', meshName + 'jThumb1' + suffix)
-        self.addConstraint(prefix + 'Thumb2', meshName + 'jThumb2' + suffix)
-        self.addConstraint(prefix + 'Thumb3', meshName + 'jThumb3' + suffix)
+        self.add_constraint(prefix + 'Thumb1', meshName + 'jThumb1' + suffix)
+        self.add_constraint(prefix + 'Thumb2', meshName + 'jThumb2' + suffix)
+        self.add_constraint(prefix + 'Thumb3', meshName + 'jThumb3' + suffix)
