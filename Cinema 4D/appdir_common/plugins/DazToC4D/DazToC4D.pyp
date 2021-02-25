@@ -390,7 +390,7 @@ class convertToRedshift:
                     'Feet', 'Nipples', 'Forearms', 'Hips', 'Neck', 'Shoulders', 'Hands', 'Head', 'Nostrils']
         matName = mat.GetName()
         matDiffuseColor = mat[c4d.MATERIAL_COLOR_COLOR]
-
+        
         INPORT = 0
 
         def getRSnode(mat):
@@ -467,7 +467,8 @@ class convertToRedshift:
                     # Bump Node:
                     NodeBump = gvNodeMaster.CreateNode(nodeRoot, 1036227, None, 200, 150)  # Always use this to create any nodeee!!!
                     NodeBump[c4d.GV_REDSHIFT_SHADER_META_CLASSNAME] = 'BumpMap'  # This defines the node!!!
-                    NodeBump[c4d.REDSHIFT_SHADER_BUMPMAP_SCALE] = 0.05
+                    NodeBump[c4d.REDSHIFT_SHADER_BUMPMAP_INPUTTYPE] = 1
+                    NodeBump[c4d.REDSHIFT_SHADER_BUMPMAP_SCALE] = 0.5
                     # Texture Node:
                     NodeTexture = gvNodeMaster.CreateNode(nodeRoot, 1036227, None, 80, 150)  # Always use this to create any nodeee!!!
                     NodeTexture[c4d.GV_REDSHIFT_SHADER_META_CLASSNAME] = 'TextureSampler'  # This defines the node!!!
