@@ -9,6 +9,16 @@
 	var s_aSkeletons = Scene.getSkeletonList();
 	var s_oPrimarySkeleton = s_aSkeletons.length > 0 ? s_aSkeletons[0] : undefined;
 	
+	var s_sMorphRules = "";
+	var s_aMorphExported = [];
+	
+	var s_oMorphs = {};
+	var s_nLenName = 0;
+	var s_nMaxName = 19;
+	var s_nMaxAll = 63;
+	var s_s3Spaces = "   ";
+	var s_sAlf = "1234567890abcdefghijklmnopqrstuvwxyz";
+
 	var s_sExporter = "DzFbxExporter";//"DzDAZCOLLADAExporter"
 	var s_sExportExt = "fbx";//"dae"
 	var s_sExportPath = "C:/TEMP3D";
@@ -18,7 +28,7 @@
 	var s_sExportBaseName = "DazToC4D";
 	
 	/*********************************************************************/
-
+	// Number : ...
 	function getXRot( sBoneLabel )
 	{
 		if( !s_oPrimarySkeleton || sBoneLabel.isEmpty() ){
@@ -37,7 +47,7 @@
 	};
 	
 	/*********************************************************************/
-
+	// void : ...
 	function setXRot( sBoneLabel, nValue )
 	{
 		if( !s_oPrimarySkeleton
@@ -57,65 +67,94 @@
 	};
 
 	/*********************************************************************/
-	
-	function createMorphRules(){
-        var oNode = Scene.getPrimarySelection();
-        if( !oNode ){
-            return;
-        }
-        if( oNode.inherits( "DzBone" ) ){
+	// void : ...
+	// Temporarily Gets Morphs of Only Primary Selection
+	// TO DO : Implement Similiar to Daz to Blender
+	function buildMorphList()
+	{
+		var oNode = Scene.getPrimarySelection();
+
+		if( oNode.inherits( "DzFigure" ) ){
             oNode = oNode.getSkeleton();
-        }
-        if( oNode.inherits( "DzSkeleton" ) ){
-            oNode = oNode.findBone( "head" );
-        }
-        if( !oNode ){
-            return;
-        }
-        var oProperty;
-        var	oPropGroup;
-        var	oPropTree;
-        var oPropOwner;
-        var oTgtProperty;
-        var	oTgtPropGroup;
-        var	oTgtPropTree;
-        var oTgtPropOwner;
-        var aProperties = oNode.getPropertyList();
-        var morphRule;
-        var morphName;
-        var morphList=[];
-        var morphRule = "";
-        for( var i = 0, n = aProperties.length; i < n; i += 1 ){
-            oProperty = aProperties[ i ];        
-            if( !oProperty.getPath().startsWith( "/Pose Controls" ) ){
-                continue;
-            }
+			var aProperties = getElementProperties( oNode, true, true );
+        }    
+		else{
+			var aProperties = getElementProperties( oNode, true, true );
+		}
+		var nAlfIdx = 0;
+		var aTops = [ "Morphs", "Hidden", "Pose" ];
+		
+		var oProp;
+		var oOwner;
+		var oTop;
+		var sPath;
+		var sHead;
+		var sLabel;
+		var sTmp;
+		
+		for( var i = 0; i < aProperties.length; i += 1 ){
+			oProp = aProperties[i];
+			oOwner = oProp.getOwner();
+			sPath = oProp.getPath();
+			sHead = "";
 
-            if( oProperty.isAlias() ){
-                oTgtProperty = oProperty.getAliasTarget();
-                oTgtPropGroup = oTgtProperty.getGroup();
-                oTgtPropTree = oTgtPropGroup.getTree();
-                oTgtPropOwner = oTgtPropTree.getOwner();
-                morphName =oTgtProperty.name;
-                morphList[i]=morphName;
-                //oTgtPropOwner.name + "." +
-                continue;
-            }
-        }
-        //Remove any nulls or undefined in the array
-        morphList = morphList.filter(Boolean);
-
-	    for( var i = 0, n = morphList.length; i < n; i += 1 ){
-
-            morphRule = morphRule + morphList[i] + "\n1\n";
-            
-            };
-
-	    return morphRule = morphRule.substring(0,morphRule.length - 2);
-    };
+			for( var j = 0; j < aTops.length; j += 1 ){
+				oTop = aTops[j];
+				if( sPath.indexOf( "/" + oTop ) == 0 ){
+					sHead = "<" + oTop + ">";
+					break;
+				}
+			}
+			
+			if( sHead.isEmpty() ){
+				continue;
+			}
+				
+			sLabel = oProp.getLabel();
+			if( ( sLabel.length + 2 + s_nMaxName ) > s_nMaxAll ){
+				sLabel = sLabel.slice( 0, s_nMaxAll - s_nMaxName - 2 - 2 );
+				sLabel = sLabel + "_" + s_sAlf.substr( nAlfIdx, 1 );
+				oOwner.name = sLabel;
+				nAlfIdx += 1;
+				nAlfIdx = nAlfIdx % 36;
+			}
+			
+			sName = oProp.getName()
+			s_oMorphs[sLabel] = {
+								"sMorphHead": sHead, 
+								"sMorphName" : sName, 
+								"sMorphPath" : sPath
+								};
+		}
+	};
 
 	/*********************************************************************/
+	// Temporarily Gets Morphs of Only Primary Selection
+	// String : ...
+	function getMinimalMorphRules()
+	{
+		var sResult; 
+
+		for( sMorphLabel in s_oMorphs ){
+			var sMorphPath = s_oMorphs[sMorphLabel]['sMorphPath']
+			var sMorphName = s_oMorphs[sMorphLabel]['sMorphName']
+			if( sMorphPath.indexOf( '/Head' ) > 0 ){
+				if( sMorphPath.endsWith( 'Expressions' ) ){
+					sResult += sMorphName + "\n1\n";
+					s_aMorphExported.push( sMorphName );
+				}
+				if( sMorphPath.indexOf( '/Expressions' ) < 0 ){
+					sResult += sMorphName + "\n1\n";
+					s_aMorphExported.push( sMorphName );
+				}
+			}
+		}
 		
+		return sResult;
+	};
+
+	/*********************************************************************/
+	// void : ...
 	function heelsFix( oSkeleton )
 	{
 		if( oSkeleton ){
@@ -202,6 +241,84 @@
 		
 		//print( "-----" );
 	};
+	// --- START node_properties ----
+	/**********************************************************************
+	
+		The following is derived from a work published as part of the
+		Daz Script Documentation. This portion of the script, and/or any
+		portion thereof, may only be used in accordance with the
+		following license:
+	
+		Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+		- http://creativecommons.org/licenses/by/3.0
+	
+	**********************************************************************/
+	// Source: http://docs.daz3d.com/doku.php/public/software/dazstudio/4/referenceguide/scripting/api_reference/samples/properties/node_properties/start
+ 	
+ 	// - Extraccted functions
+ 	
+	/*********************************************************************/
+	// Array<DzProperty> : A function for getting a list of the properties in a group
+	function getGroupProperties( oGroup, bTraverse, bRecurse )
+	{
+		// Declare an array to hold properties
+		var aProperties = [];
+		
+		// If a group is not passed in
+		if( !oGroup ){
+			// We are done, return an empty array
+			return aProperties;
+		}
+		
+		// Get the number of proeprties in the group
+		var nProperties = oGroup.getNumProperties();
+		// Pre-size the properties array
+		aProperties = new Array( nProperties );
+		// Iterate over the properties, setting each element in the array
+		for( var i = 0; i < nProperties; i += 1 ){
+			// Assign the property to the position in the array
+			aProperties[ i ] = oGroup.getProperty( i );
+		}
+		
+		// If we are recursing
+		if( bRecurse ){
+			// Concatenate the properties array from child groups
+			aProperties = aProperties.concat(
+				getGroupProperties( oGroup.getFirstChild(), true, bRecurse ) );
+		}
+		
+		// If we are traversing
+		if( bTraverse ){
+			// Concatenate the properties array from sibling groups
+			aProperties = aProperties.concat(
+				getGroupProperties( oGroup.getNextSibling(), bTraverse, bRecurse ) );
+		}
+ 		
+		// Return the array of properties
+		return aProperties;
+	};
+	
+	/*********************************************************************/
+	// Array<DzProperty> : A function for getting the list properties for an element
+	function getElementProperties( oElement, bTraverse, bRecurse )
+	{
+		// Get the property group tree for the element
+		var oPropertyGroupTree = oElement.getPropertyGroups();
+		
+		// If the application version is 4.9.4.101 or newer and we want all properties
+		if( App.version64 >= 0x0004000900040065 && bTraverse && bRecurse ){
+			// Return the properties for the element
+			return oPropertyGroupTree.getAllProperties();
+		}
+		
+		// Get the first group in the tree
+		var oPropertyGroup = oPropertyGroupTree.getFirstChild();
+		// Return the properties for the element
+		return getGroupProperties( oPropertyGroup, bTraverse, bRecurse );
+	};
+	
+// --- END node_properties ----
+	
 	
 	// --- START convert_figure_to_props ----
 	/**********************************************************************
@@ -301,12 +418,14 @@
 	
 	// --- END convert_figure_to_props ----
 	/*********************************************************************/
+	// Number : ...
 	function doesHavingSkeleton()
 	{
 		return Scene.getNumSkeletons() > 0;
 	};
 
 	/*********************************************************************/
+	// Boolean : ...
 	function doesHavingHip()
 	{
 		var oNode;
@@ -513,7 +632,7 @@
 				// The default action is to Bake
 				// So "FBMHeavy\nExport\nThin\nExport" would export all morphs that have FBMHeavy and all morphs that have Thin in the name
 				//Hard Code Fix added to Deal with Support for new face morphs
-				oSettings.setStringValue( "rules", createMorphRules());
+				oSettings.setStringValue( "rules", s_sMorphRules);
 				
 				// Format
 				// Format for format is "Year# -- Type",
@@ -610,6 +729,7 @@
 	// SAVE maps to file... bump, specular, etc....
 	// ----------------------------------------------------------
 	/*********************************************************************/
+	// String : ...
 	function label2Variable( sLabel )
 	{
 		var sLabelLwr = sLabel.toLowerCase();
@@ -633,12 +753,14 @@
 	};
 
 	/*********************************************************************/
+	// String : ...
 	function fixFilename( sFilename )
 	{
 		return sFilename.replace( "&", "(_)" );
 	};
 
 	/*********************************************************************/
+	// String : ...
 	function value2XMLString( oElement, sPropLabel )
 	{
 		try {
@@ -706,6 +828,9 @@
 		var listMat = new Array();
 		// Iterate over each node
 		var ii = 0;
+		// Temporaily Runs grab Minimal Morphs
+		buildMorphList();
+		s_sMorphRules = getMinimalMorphRules();
 		for( var i = 0; i < numI; i += 1 ){
 			// Get the current node
 			oNode = Scene.getNode( i );
