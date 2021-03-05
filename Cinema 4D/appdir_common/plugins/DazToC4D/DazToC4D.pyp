@@ -360,14 +360,48 @@ class convertMaterials:
 
 
 class convertToRedshift:
-    try:
-        import redshift
-    except:
-        print('No Redshift found')
 
-    NewMatList = []
+    def __init__(self):
+        try:
+            import redshift
+        except:
+            print('No Redshift found')
 
-    def ApplyMaterials(self):
+        self.bump_input_type = 1 # Tangent-Space Normals
+        self.NewMatList = [] 
+
+    def execute(self):
+        # Execute main()
+        doc = c4d.documents.GetActiveDocument()
+
+        # Process for all materials of scene
+        docMaterials = doc.GetMaterials()
+        if DazToC4D().checkStdMats() == True:
+            return
+
+        for mat in docMaterials:
+            matName = mat.GetName()
+            if mat.GetType() == 5703:
+                self.makeRSmat(mat)
+
+        self.applyMaterials()
+
+        c4d.EventAdd()
+        bc = c4d.BaseContainer()
+        c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
+        #c4d.CallCommand(1026375)  # Reload Python Plugins
+
+
+    def getBumpType(self,index):
+        if index == 0:
+            self.bump_input_type = 1
+        elif index == 1:
+            self.bump_input_type = 0
+        elif index == 2:
+            self.bump_input_type = 2
+
+
+    def applyMaterials(self):
         doc = c4d.documents.GetActiveDocument()
         obj = doc.GetFirstObject()
         while obj:
@@ -384,9 +418,10 @@ class convertToRedshift:
 
         c4d.EventAdd()
 
+
     def makeRSmat(self, mat):
         doc = c4d.documents.GetActiveDocument()
-        skinMats = ['Legs', 'Torso', 'Arms', 'Face', 'Fingernails', 'Toenails', 'Lips', 'EyeSocket', 'Ears',
+        skinMats = ['Legs', 'Torso', 'Body', 'Arms', 'Face', 'Fingernails', 'Toenails', 'Lips', 'EyeSocket', 'Ears',
                     'Feet', 'Nipples', 'Forearms', 'Hips', 'Neck', 'Shoulders', 'Hands', 'Head', 'Nostrils']
         matName = mat.GetName()
         matDiffuseColor = mat[c4d.MATERIAL_COLOR_COLOR]
@@ -467,7 +502,7 @@ class convertToRedshift:
                     # Bump Node:
                     NodeBump = gvNodeMaster.CreateNode(nodeRoot, 1036227, None, 200, 150)  # Always use this to create any nodeee!!!
                     NodeBump[c4d.GV_REDSHIFT_SHADER_META_CLASSNAME] = 'BumpMap'  # This defines the node!!!
-                    NodeBump[c4d.REDSHIFT_SHADER_BUMPMAP_INPUTTYPE] = 1
+                    NodeBump[c4d.REDSHIFT_SHADER_BUMPMAP_INPUTTYPE] = self.bump_input_type
                     NodeBump[c4d.REDSHIFT_SHADER_BUMPMAP_SCALE] = 0.5
                     # Texture Node:
                     NodeTexture = gvNodeMaster.CreateNode(nodeRoot, 1036227, None, 80, 150)  # Always use this to create any nodeee!!!
@@ -548,28 +583,7 @@ class convertToRedshift:
 
     print('Convert to Redshift')
 
-    def __init__(self):
-        # Execute main()
-        doc = c4d.documents.GetActiveDocument()
-
-        # Process for all materials of scene
-        docMaterials = doc.GetMaterials()
-        if DazToC4D().checkStdMats() == True:
-            return
-
-
-        for mat in docMaterials:
-            matName = mat.GetName()
-            if mat.GetType() == 5703:
-                self.makeRSmat(mat)
-
-        self.ApplyMaterials()
-
-        c4d.EventAdd()
-        bc = c4d.BaseContainer()
-        c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
-        #c4d.CallCommand(1026375)  # Reload Python Plugins
-
+    
 
 class ObjectIterator :
     def __init__(self, baseObject):
@@ -5525,7 +5539,6 @@ class DazToC4D():
             caca = caca.GetNext()
             fTag = None
             if caca.GetFirstTag():
-
                 if self.tagsIterator(caca):
                     for x in self.tagsIterator(caca):
                         if 'Pose Morph' in x.GetName():
@@ -6986,7 +6999,6 @@ class EXTRADialog(c4d.gui.GeDialog):
             self.SetBool(208, False)
 
         self.AddCheckbox(209,c4d.BFH_LEFT, 0, 0, "Keep facial morphs only")
-
         # self.AddCheckbox(209, c4d.BFH_LEFT, 0, 0, "Lock all geometry after Auto-IK")
         # self.SetBool(209, True)
 
@@ -7056,7 +7068,6 @@ class EXTRADialog(c4d.gui.GeDialog):
 
         # self.LogoButton19 = self.AddCustomGui(self.BUTTON_EXTRA_CLOTH, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("<b>Quick-Cloth</b><br>Bind joints to object<br>based on presets", "Preset0"))
         # self.LogoButton19.SetImage(self.img_extraFWarp, True)  # Add the image to the button
-
         self.GroupEnd()
 
         self.GroupEnd() #-------------------------------------Main Group
@@ -7786,7 +7797,7 @@ class guiDazToC4DMain(gui.GeDialog):
             pass
 
     def CreateLayout(self):
-        self.SetTitle('DazToC4D v1.1')
+        self.SetTitle('DazToC4D v1.1.2')
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
 
         # Logo Image #############################################################
@@ -7905,6 +7916,15 @@ class guiDazToC4DMain(gui.GeDialog):
 
         self.GroupEnd()  # END ///////////////////////////////////////////////
 
+        self.GroupBegin(10001, c4d.BFH_CENTER, 2, title="Redshift Settings: ")
+        self.GroupBorder(c4d.BORDER_THIN_OUT)
+        self.GroupBorderSpace(20, 5, 20, 5)
+        self.AddStaticText(99, c4d.BFH_CENTER, 0, 0, name='Choose Bump Type:')
+        self.AddComboBox(2002,c4d.BFH_SCALEFIT, 0, 0, False)
+        self.AddChild(2002, 0, 'Tangent-Space Normal')
+        self.AddChild(2002, 1, 'Bump/Height Field')
+        self.AddChild(2002, 2, 'Object-Space Normal')
+        self.GroupEnd()
 
         self.GroupEnd() # MATERIALS END ///////////////////////////////////////////////
 
@@ -7914,6 +7934,7 @@ class guiDazToC4DMain(gui.GeDialog):
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
 
         self.GroupBegin(10000, c4d.BFH_CENTER, 2, title='Global Skin Parameters:')  # BEGIN ----------------------
+        self.GroupBegin(10001, c4d.BFH_CENTER, 2, title="Redshift Settings: ")
         self.AddStaticText(99, c4d.BFH_SCALEFIT, 0, 0, name='Copyright(c) 2020. All Rights Reserved.')
 
         self.LogoButtonHelp = self.AddCustomGui(self.BUTTON_HELP, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("Help", "Preset0"))
@@ -7935,7 +7956,7 @@ class guiDazToC4DMain(gui.GeDialog):
             slider_value = self.GetFloat(17525)
             print(slider_value/100)
             DazToC4D().matSetSpec('Rough', slider_value)
-            c4d.EventAdd()
+            c4d.EventAdd()  
 
         if id == self.BUTTON_MANUAL_IMPORT:
             # gui.MessageDialog('Not in beta', c4d.GEMB_OK)
@@ -8001,7 +8022,7 @@ class guiDazToC4DMain(gui.GeDialog):
             #CONVERT MATERIAL
             doc = c4d.documents.GetActiveDocument()
             comboRender = self.GetInt32(2001)
-
+            redshiftBumpType = self.GetInt32(2002)
             if comboRender == 0:
                 gui.MessageDialog('Please select renderer from the list')
 
@@ -8016,7 +8037,9 @@ class guiDazToC4DMain(gui.GeDialog):
                             c4d.CallCommand(1026375)  # Reload Python Plugins
 
                         if comboRender == 2:
-                            convertToRedshift()
+                            convert_to_redshift = convertToRedshift()
+                            convert_to_redshift.getBumpType(redshiftBumpType)
+                            convert_to_redshift.execute()
                             DazToC4D().hideEyePolys()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             c4d.CallCommand(100004767, 100004767)  # Deselect All

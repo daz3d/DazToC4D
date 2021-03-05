@@ -152,7 +152,9 @@
 		
 		return sResult;
 	};
-
+	buildMorphList();
+	// Temporaily Runs grab Minimal Morphs
+	s_sMorphRules = getMinimalMorphRules()+'Anything\n0';
 	/*********************************************************************/
 	// void : ...
 	function heelsFix( oSkeleton )
@@ -828,9 +830,7 @@
 		var listMat = new Array();
 		// Iterate over each node
 		var ii = 0;
-		// Temporaily Runs grab Minimal Morphs
-		buildMorphList();
-		s_sMorphRules = getMinimalMorphRules();
+		
 		for( var i = 0; i < numI; i += 1 ){
 			// Get the current node
 			oNode = Scene.getNode( i );
