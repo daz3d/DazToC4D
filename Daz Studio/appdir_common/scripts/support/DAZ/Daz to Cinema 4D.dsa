@@ -21,228 +21,10 @@
 
 	var s_sExporter = "DzFbxExporter";//"DzDAZCOLLADAExporter"
 	var s_sExportExt = "fbx";//"dae"
-	var s_sExportPath = "C:/TEMP3D";
-	if( App.platform() == DzApp.MacOSX ){
-		s_sExportPath = "/users/Shared/temp3d";
-	}
-	var s_sExportBaseName = "DazToC4D";
+	var s_sRootPath = "";
+	var s_sExports = "DazToC4D";
 	
-	/*********************************************************************/
-	// Number : ...
-	function getXRot( sBoneLabel )
-	{
-		if( !s_oPrimarySkeleton || sBoneLabel.isEmpty() ){
-			return undefined;
-		}
-		
-		var oBone = s_oPrimarySkeleton.findBoneByLabel( sBoneLabel );
-		if( !oBone ){
-			return undefined;
-		}
-		
-		var oControl = oBone.getXRotControl();
-		var nValue = oControl.getValue();
-		//print( ":: get x :: " + sBoneLabel + " :: " + nValue );
-		return nValue;
-	};
-	
-	/*********************************************************************/
-	// void : ...
-	function setXRot( sBoneLabel, nValue )
-	{
-		if( !s_oPrimarySkeleton
-			|| sBoneLabel.isEmpty()
-			|| nValue == undefined ){
-			return;
-		}
-		
-		//print( ":: set x :: " + sBoneLabel + " :: " + nValue );
-		var oBone = s_oPrimarySkeleton.findBoneByLabel( sBoneLabel );
-		if( !oBone ){
-			return;
-		}
-		
-		var oControl = oBone.getXRotControl();
-		oControl.setValue( nValue );
-	};
 
-	/*********************************************************************/
-	// void : ...
-	// Temporarily Gets Morphs of Only Primary Selection
-	// TO DO : Implement Similiar to Daz to Blender
-	function buildMorphList()
-	{
-		var oNode = Scene.getPrimarySelection();
-
-		if( oNode.inherits( "DzFigure" ) ){
-            oNode = oNode.getSkeleton();
-			var aProperties = getElementProperties( oNode, true, true );
-        }    
-		else{
-			var aProperties = getElementProperties( oNode, true, true );
-		}
-		var nAlfIdx = 0;
-		var aTops = [ "Morphs", "Hidden", "Pose" ];
-		
-		var oProp;
-		var oOwner;
-		var oTop;
-		var sPath;
-		var sHead;
-		var sLabel;
-		var sTmp;
-		
-		for( var i = 0; i < aProperties.length; i += 1 ){
-			oProp = aProperties[i];
-			oOwner = oProp.getOwner();
-			sPath = oProp.getPath();
-			sHead = "";
-
-			for( var j = 0; j < aTops.length; j += 1 ){
-				oTop = aTops[j];
-				if( sPath.indexOf( "/" + oTop ) == 0 ){
-					sHead = "<" + oTop + ">";
-					break;
-				}
-			}
-			
-			if( sHead.isEmpty() ){
-				continue;
-			}
-				
-			sLabel = oProp.getLabel();
-			if( ( sLabel.length + 2 + s_nMaxName ) > s_nMaxAll ){
-				sLabel = sLabel.slice( 0, s_nMaxAll - s_nMaxName - 2 - 2 );
-				sLabel = sLabel + "_" + s_sAlf.substr( nAlfIdx, 1 );
-				oOwner.name = sLabel;
-				nAlfIdx += 1;
-				nAlfIdx = nAlfIdx % 36;
-			}
-			
-			sName = oProp.getName()
-			s_oMorphs[sLabel] = {
-								"sMorphHead": sHead, 
-								"sMorphName" : sName, 
-								"sMorphPath" : sPath
-								};
-		}
-	};
-
-	/*********************************************************************/
-	// Temporarily Gets Morphs of Only Primary Selection
-	// String : ...
-	function getMinimalMorphRules()
-	{
-		var sResult; 
-
-		for( sMorphLabel in s_oMorphs ){
-			var sMorphPath = s_oMorphs[sMorphLabel]['sMorphPath']
-			var sMorphName = s_oMorphs[sMorphLabel]['sMorphName']
-			if( sMorphPath.indexOf( '/Head' ) > 0 ){
-				if( sMorphPath.endsWith( 'Expressions' ) ){
-					sResult += sMorphName + "\n1\n";
-					s_aMorphExported.push( sMorphName );
-				}
-				if( sMorphPath.indexOf( '/Expressions' ) < 0 ){
-					sResult += sMorphName + "\n1\n";
-					s_aMorphExported.push( sMorphName );
-				}
-			}
-		}
-		
-		return sResult;
-	};
-	buildMorphList();
-	// Temporaily Runs grab Minimal Morphs
-	s_sMorphRules = getMinimalMorphRules()+'Anything\n0';
-	/*********************************************************************/
-	// void : ...
-	function heelsFix( oSkeleton )
-	{
-		if( oSkeleton ){
-			return;
-		}
-		
-		//Left
-		try { var xRotLeftMetatarsals = getXRot( "Left Metatarsals" ); } catch( error ){}
-		try { var xRotLeftHeel = getXRot( "Left Heel" ); } catch( error ){}
-		try { var xRotLeftFoot = getXRot( "Left Foot" ); } catch( error ){}
-		try { var xRotLeftToes = getXRot( "Left Toes" ); } catch( error ){}
-		try { var xRotLeftBigToe = getXRot( "Left Big Toe" ); } catch( error ){}
-		try { var xRotLeftBigToe2 = getXRot( "Left Big Toe_2" ); } catch( error ){}
-		try { var xRotLeftSmallToe1 = getXRot( "Left Small Toe 1" ); } catch( error ){}
-		try { var xRotLeftSmallToe12 = getXRot( "Left Small Toe 1_2" ); } catch( error ){}
-		try { var xRotLeftSmallToe2 = getXRot( "Left Small Toe 2" ); } catch( error ){}
-		try { var xRotLeftSmallToe22 = getXRot( "Left Small Toe 2_2" ); } catch( error ){}
-		try { var xRotLeftSmallToe3 = getXRot( "Left Small Toe 3" ); } catch( error ){}
-		try { var xRotLeftSmallToe32 = getXRot( "Left Small Toe 3_2" ); } catch( error ){}
-		try { var xRotLeftSmallToe4 = getXRot( "Left Small Toe 4" ); } catch( error ){}
-		try { var xRotLeftSmallToe42 = getXRot( "Left Small Toe 4_2" ); } catch( error ){}
-		
-		//Right
-		try { var xRotRightMetatarsals = getXRot( "Right Metatarsals" ); } catch( error ){}
-		try { var xRotRightHeel = getXRot( "Right Heel" ); } catch( error ){}
-		try { var xRotRightFoot = getXRot( "Right Foot" ); } catch( error ){}
-		try { var xRotRightToes = getXRot( "Right Toes" ); } catch( error ){}
-		try { var xRotRightBigToe = getXRot( "Right Big Toe" ); } catch( error ){}
-		try { var xRotRightBigToe2 = getXRot( "Right Big Toe_2" ); } catch( error ){}
-		try { var xRotRightSmallToe1 = getXRot( "Right Small Toe 1" ); } catch( error ){}
-		try { var xRotRightSmallToe12 = getXRot( "Right Small Toe 1_2" ); } catch( error ){}
-		try { var xRotRightSmallToe2 = getXRot( "Right Small Toe 2" ); } catch( error ){}
-		try { var xRotRightSmallToe22 = getXRot( "Right Small Toe 2_2" ); } catch( error ){}
-		try { var xRotRightSmallToe3 = getXRot( "Right Small Toe 3" ); } catch( error ){}
-		try { var xRotRightSmallToe32 = getXRot( "Right Small Toe 3_2" ); } catch( error ){}
-		try { var xRotRightSmallToe4 = getXRot( "Right Small Toe 4" ); } catch( error ){}
-		try { var xRotRightSmallToe42 = getXRot( "Right Small Toe 4_2" ); } catch( error ){}
-		
-		Scene.selectAllNodes( false );
-		
-		oSkeleton.select( true );
-		
-		var oMgr = MainWindow.getActionMgr();
-		var oAction = oMgr.findAction( "DzRestoreFigurePoseAction" );
-		if( oAction ){
-			oAction.trigger();
-		}
-		
-		var nZero = 0;
-		
-		//Left
-		//print( "-----------------------------------------" );
-		try { setXRot( "Left Metatarsals", xRotLeftMetatarsals ); } catch( error ){}
-		try { setXRot( "Left Heel", nZero ); } catch( error ){}
-		//try { setXRot( "Left Foot", xRotLeftFoot ); } catch( error ){}
-		try { setXRot( "Left Toes", xRotLeftToes ); } catch( error ){}
-		try { setXRot( "Left Big Toe", xRotLeftBigToe ); } catch( error ){}
-		try { setXRot( "Left Big Toe_2", xRotLeftBigToe2 ); } catch( error ){}
-		try { setXRot( "Left Small Toe 1", xRotLeftSmallToe1 ); } catch( error ){}
-		try { setXRot( "Left Small Toe 1_2", xRotLeftSmallToe12 ); } catch( error ){}
-		try { setXRot( "Left Small Toe 2", xRotLeftSmallToe2 ); } catch( error ){}
-		try { setXRot( "Left Small Toe 2_2", xRotLeftSmallToe22 ); } catch( error ){}
-		try { setXRot( "Left Small Toe 3", xRotLeftSmallToe3 ); } catch( error ){}
-		try { setXRot( "Left Small Toe 3_2", xRotLeftSmallToe32 ); } catch( error ){}
-		try { setXRot( "Left Small Toe 4", xRotLeftSmallToe4 ); } catch( error ){}
-		try { setXRot( "Left Small Toe 4_2", xRotLeftSmallToe42 ); } catch( error ){}
-		
-		//Right
-		//print( "-----------------------------------------" );
-		try { setXRot( "Right Metatarsals", xRotRightMetatarsals ); } catch( error ){}
-		try { setXRot( "Right Heel", nZero ); } catch( error ){}
-		//try { setXRot( "Right Foot", xRotRightFoot ); } catch( error ){}
-		try { setXRot( "Right Toes", xRotRightToes ); } catch( error ){}
-		try { setXRot( "Right Big Toe", xRotRightBigToe ); } catch( error ){}
-		try { setXRot( "Right Big Toe_2", xRotRightBigToe2 ); } catch( error ){}
-		try { setXRot( "Right Small Toe 1", xRotRightSmallToe1 ); } catch( error ){}
-		try { setXRot( "Right Small Toe 1_2", xRotRightSmallToe12 ); } catch( error ){}
-		try { setXRot( "Right Small Toe 2", xRotRightSmallToe2 ); } catch( error ){}
-		try { setXRot( "Right Small Toe 2_2", xRotRightSmallToe22 ); } catch( error ){}
-		try { setXRot( "Right Small Toe 3", xRotRightSmallToe3 ); } catch( error ){}
-		try { setXRot( "Right Small Toe 3_2", xRotRightSmallToe32 ); } catch( error ){}
-		try { setXRot( "Right Small Toe 4", xRotRightSmallToe4 ); } catch( error ){}
-		try { setXRot( "Right Small Toe 4_2", xRotRightSmallToe42 ); } catch( error ){}
-		
-		//print( "-----" );
-	};
 	// --- START node_properties ----
 	/**********************************************************************
 	
@@ -420,31 +202,11 @@
 	
 	// --- END convert_figure_to_props ----
 	/*********************************************************************/
-	// Number : ...
-	function doesHavingSkeleton()
-	{
-		return Scene.getNumSkeletons() > 0;
-	};
 
-	/*********************************************************************/
-	// Boolean : ...
-	function doesHavingHip()
-	{
-		var oNode;
-		for( var i = 0, n = Scene.getNumNodes(); i < n; i += 1 ){
-			// Get the current node
-			oNode = Scene.getNode( i );
-			if( oNode.getName().toLowerCase() == "hip" ){
-				return true;
-			}
-		}
-		
-		return false;
-	};
-	
 	// --- START replaceInstance ----
 	// Adapted: https://www.daz3d.com/forums/discussion/comment/4940501/#Comment_4940501
 	/*********************************************************************/
+
 	function doAction( sClassName  )
 	{
 		var oMgr = MainWindow.getActionMgr();
@@ -545,29 +307,6 @@
 		}
 	};
 	
-	replaceInstanceAll();
-	
-	
-	if( doesHavingSkeleton() ){
-		if( !doesHavingHip() ){
-			var aConvert = Scene.getSkeletonList();
-			var nConvert = aConvert.length;
-			if( nConvert > 0 ){
-				var nResult = MessageBox.question(
-					qsTr( "Some objects needs to be converted to props. Convert?\nThis operation is NOT undoable! (save first if needed)" ),
-					s_sToolName, qsTr( "&Yes" ), qsTr( "&No" ) );
-				if( nResult == 0 ){
-					for( var i = 0; i < nConvert; i += 1 ){
-						//debug( aConvert[i].getName() );
-						try {
-							convert2Prop( aConvert[i] )
-						} catch( error ){}
-					}
-				}
-			}
-		}
-	}
-	
 	// --- START export_fbx_silent ----
 	/**********************************************************************
 
@@ -585,6 +324,7 @@
 	// - Modified to support switching exporters
 	// - Other changes for this specific use case
 	/*********************************************************************/
+
 	function exportScene( sClassName, sPath, sBaseName, sExt )
 	{
 		// Get the export manager
@@ -716,21 +456,508 @@
 	};
 	
 	// --- END export_fbx_silent ----
-	
-	
-	//for( var i = 0, n = s_aSkeletons.length; i < n; i += 1 ){
-	//	heelsFix( s_aSkeletons[i] );
-	//}
-	
-	exportScene( s_sExporter, s_sExportPath, s_sExportBaseName, s_sExportExt );
-	
-	
-	// ----------------------------------------------------------
-	// ----------------------------------------------------------
-	// ----------------------------------------------------------
-	// SAVE maps to file... bump, specular, etc....
-	// ----------------------------------------------------------
 	/*********************************************************************/
+
+	// Number : ...
+	function getXRot( sBoneLabel )
+	{
+		if( !s_oPrimarySkeleton || sBoneLabel.isEmpty() ){
+			return undefined;
+		}
+		
+		var oBone = s_oPrimarySkeleton.findBoneByLabel( sBoneLabel );
+		if( !oBone ){
+			return undefined;
+		}
+		
+		var oControl = oBone.getXRotControl();
+		var nValue = oControl.getValue();
+		//print( ":: get x :: " + sBoneLabel + " :: " + nValue );
+		return nValue;
+	};
+	
+	/*********************************************************************/
+	// void : ...
+	function setXRot( sBoneLabel, nValue )
+	{
+		if( !s_oPrimarySkeleton
+			|| sBoneLabel.isEmpty()
+			|| nValue == undefined ){
+			return;
+		}
+		
+		//print( ":: set x :: " + sBoneLabel + " :: " + nValue );
+		var oBone = s_oPrimarySkeleton.findBoneByLabel( sBoneLabel );
+		if( !oBone ){
+			return;
+		}
+		
+		var oControl = oBone.getXRotControl();
+		oControl.setValue( nValue );
+	};
+
+	/*********************************************************************/
+	// void : ...
+	// Note: destructive - modifies the scene contents
+	// TODO: Redo Morph export need to give users a choice
+	function buildMorphList( oNode )
+	{
+		if( oNode.inherits( "DzFigure" ) ){
+            oNode = oNode.getSkeleton();
+			var aProperties = getElementProperties( oNode, true, true );
+        }    
+		else{
+			var aProperties = getElementProperties( oNode, true, true );
+		}
+		var nAlfIdx = 0;
+		var aTops = [ "Morphs", "Hidden", "Pose" ];
+		
+		var oProp;
+		var oOwner;
+		var oTop;
+		var sPath;
+		var sHead;
+		var sLabel;
+		var sTmp;
+		
+		for( var i = 0; i < aProperties.length; i += 1 ){
+			oProp = aProperties[i];
+			oOwner = oProp.getOwner();
+			sPath = oProp.getPath();
+			sHead = "";
+
+			for( var j = 0; j < aTops.length; j += 1 ){
+				oTop = aTops[j];
+				if( sPath.indexOf( "/" + oTop ) == 0 ){
+					sHead = "<" + oTop + ">";
+					break;
+				}
+			}
+			
+			if( sHead.isEmpty() ){
+				continue;
+			}
+			
+			sLabel = oProp.getLabel();
+			if( ( sLabel.length + 2 + s_nMaxName ) > s_nMaxAll ){
+				sLabel = sLabel.slice( 0, s_nMaxAll - s_nMaxName - 2 - 2 );
+				sLabel = sLabel + "_" + s_sAlf.substr( nAlfIdx, 1 );
+				nAlfIdx += 1;
+				nAlfIdx = nAlfIdx % 36;
+			}
+			
+			sName = oProp.getName()
+			// To deal with Hidden Morphs
+			if (sHead.indexOf("Hidden") > 0){
+				sName = sLabel
+			};
+			s_oMorphs[sLabel] = {
+									"sMorphHead": sHead,
+									"sMorphName" : sName,
+									"sMorphPath" : sPath
+								};
+			
+		}
+	};
+
+	/*********************************************************************/
+	// Array<String> : ...
+	// TODO: Only export base Morphs 
+	function getMinimalMorphRules()
+	{
+		var sResult; 
+
+		for( sMorphLabel in s_oMorphs ){
+			var sMorphPath = s_oMorphs[sMorphLabel]['sMorphPath']
+			var sMorphName = s_oMorphs[sMorphLabel]['sMorphName']
+			var sMorphHead = s_oMorphs[sMorphLabel]['sMorphHead']
+			
+
+			if( sMorphPath.indexOf( '/Head' ) > 0 ){
+				if( sMorphPath.endsWith( 'Expressions' ) ){
+					sResult += sMorphName + "\n1\n";
+					s_aMorphExported.push( [sMorphName ,sMorphLabel] );
+				}
+				if( sMorphPath.indexOf( '/Expressions' ) < 0 ){
+					sResult += sMorphName + "\n1\n";
+					s_aMorphExported.push( [sMorphName ,sMorphLabel] );
+				}
+			}
+			if ( sMorphPath.indexOf( 'Corrective' ) > 0 ){
+					sResult += sMorphName + "\n1\n";
+					s_aMorphExported.push( [sMorphName ,sMorphLabel] );
+				}
+		}
+		
+		return sResult;
+	};
+	
+	/*********************************************************************/
+	// Array<String> : ...
+	// TODO: Add better customization for Presets
+	function getMorphPresets( sPreset )
+	{
+		var sResult 
+
+		for( sMorphLabel in s_oMorphs ){
+			var sMorphPath = s_oMorphs[sMorphLabel]['sMorphPath']
+			var sMorphName = s_oMorphs[sMorphLabel]['sMorphName']
+			var sMorphHead = s_oMorphs[sMorphLabel]['sMorphHead']
+			if ( sPreset == "All Body Morphs" ){
+				if ( sMorphPath.indexOf( '/Arms' ) > 0
+					|| sMorphPath.indexOf( '/Hip' ) > 0
+					|| sMorphPath.indexOf( '/Torso' ) > 0
+					|| sMorphPath.indexOf( '/Neck' ) > 0
+					|| sMorphPath.indexOf( '/Legs' ) > 0
+					|| sMorphPath.indexOf( '/Hands' ) > 0
+					|| sMorphPath.indexOf( '/Feet' ) > 0 ){
+					sResult += sMorphName + "\n1\n";
+					s_aMorphExported.push( [sMorphName ,sMorphLabel] );
+				}		
+			}
+			if ( sPreset == "All Joint Corrective Morphs" ){
+				if ( sMorphPath.indexOf( 'Corrective' ) > 0 ){
+					sResult += sMorphName + "\n1\n";
+					s_aMorphExported.push( [sMorphName ,sMorphLabel] );
+				}
+			}
+				
+			else{
+				if ( sMorphPath.indexOf( '/Head' ) > 0 ){
+					if ( sPreset == "Face Controls" ){
+						if(!( sMorphPath.indexOf( 'Expressions' ) > 0 
+							|| sMorphPath.indexOf( 'Visemes' ) > 0 ) ){
+							sResult += sMorphName + "\n1\n";
+							s_aMorphExported.push( [sMorphName ,sMorphLabel] );
+						}
+					}
+					if ( sPreset == "Expressions" ){
+						if( sMorphPath.indexOf( 'Expressions' ) > 0 ){
+							sResult += sMorphName + "\n1\n";
+							s_aMorphExported.push( [sMorphName ,sMorphLabel] );
+						}
+					}
+					if ( sPreset == "Visemes" ){
+						if	( sMorphPath.indexOf( 'Visemes' ) > 0 ){
+							sResult += sMorphName + "\n1\n";
+							s_aMorphExported.push( [sMorphName ,sMorphLabel] );
+						}
+					}		
+				}
+			}
+		}
+		
+		return sResult;
+	};
+
+	/*********************************************************************/
+	
+	// Boolean : ...
+	// TODO: Replace a listbox for a more functional option, Allow user to Choose From Their Expressions
+	function promptMorphRules( oNode )
+	{	
+		
+		var wDlg = new DzBasicDialog();
+		wDlg.caption = s_sToolName + ": Morph Names";
+	
+		var sKey = wDlg.caption.replace( / /g, "" ) + "Dlg";
+		
+		if( oNode ){
+			wDlg.caption += " - " + oNode.getLabel();
+		}
+		
+		var oDlgWgt = wDlg.getWidget();
+		oDlgWgt.objectName = sKey;
+		
+		//addBanner( wDlg, App.getResourcesPath() + "/images/bridges/" + s_sToolName + ".png" );
+		
+		var wMinimalMorphsCbx = new DzCheckBox( wDlg );
+		wMinimalMorphsCbx.text = qsTr( "Include All Default Head and Joint Corrective Morphs" );
+		wMinimalMorphsCbx.checked = true;
+		wDlg.addWidget( wMinimalMorphsCbx );
+		
+		var wLbl = new DzLabel( wDlg );
+		wDlg.addWidget( wLbl );
+		
+		var wMorphNamesLbl = new DzLabel( wDlg );
+		wMorphNamesLbl.text = qsTr( "Morph Names: (line separated)\n[empty = OK, partial words = OK, 3+ letters required]" );
+		wDlg.addWidget( wMorphNamesLbl );
+		
+		var wMorphNamesTEdit = new DzTextEdit( wDlg );
+		wMorphNamesTEdit.text = "";
+		wDlg.addWidget( wMorphNamesTEdit );
+		
+		wLbl = new DzLabel( wDlg );
+		wDlg.addWidget( wLbl );
+		
+		var wValidMorphNamesLbl = new DzLabel( wDlg );
+		wValidMorphNamesLbl.text = qsTr( "Valid Morph Names and Presets:\n[double-click to copy above]" );
+		wDlg.addWidget( wValidMorphNamesLbl );
+
+		var aMorphList = []
+		var wValidMorphNamesLBox = new DzListBox( wDlg );
+		var sMorphHead;
+		var sMorphPath;
+
+		for(var s_aMorphLabel in s_oMorphs) {
+			sMorphHead = s_oMorphs[s_aMorphLabel]["sMorphHead"];
+			sMorphPath = s_oMorphs[s_aMorphLabel]["sMorphPath"];
+			if( sMorphHead != "Hidden" ){
+				var sMorphHeaders = sMorphPath.split("/") 
+				aMorphList.push( 
+									sMorphHeaders[sMorphHeaders.length - 2] + " "
+									+ sMorphHeaders[sMorphHeaders.length - 1] + " :"
+									+ s_s3Spaces + s_aMorphLabel
+								);
+			}
+		}
+
+		// Organize the Visible Morphs
+		aMorphList.sort()
+
+		for( var sMorphLabel in s_oMorphs ){
+			sMorphHead = s_oMorphs[sMorphLabel]["sMorphHead"];
+			if( sMorphHead == "Hidden" ){
+				aMorphList.push( sMorphHead + ":" + s_s3Spaces + sMorphLabel );
+			}
+		}
+
+		// Add a few temporary presets for ease of use.	
+		wValidMorphNamesLBox.insertItem( "Presets:" + s_s3Spaces +"Face Controls" );
+		wValidMorphNamesLBox.insertItem( "Presets:" + s_s3Spaces +"Expressions" );
+		wValidMorphNamesLBox.insertItem( "Presets:" + s_s3Spaces +"Visemes" );	
+		wValidMorphNamesLBox.insertItem( "Presets:" + s_s3Spaces +"All Body Morphs" );
+		wValidMorphNamesLBox.insertItem( "Presets:" + s_s3Spaces +"All Joint Corrective Morphs" );
+		
+		for( var i = 0; i < aMorphList.length; i += 1 ){
+			wValidMorphNamesLBox.insertItem( aMorphList[i] );
+		}
+		wDlg.addWidget( wValidMorphNamesLBox );
+		
+		function addValidMorphName(){
+			var sCurText = wValidMorphNamesLBox.currentText;
+			sCurText = sCurText.split( ":" + s_s3Spaces )[1];
+			wMorphNamesTEdit.append( sCurText );
+		};
+		wValidMorphNamesLBox.doubleClicked.connect( wValidMorphNamesLBox, addValidMorphName );
+		
+		var sizeHint = oDlgWgt.minimumSizeHint;
+		var nHeight = sizeHint.height;
+		var nWidth = sizeHint.width < 300 ? 300 : sizeHint.width;
+		wDlg.setFixedSize( nWidth, sizeHint.height * 2 );
+		
+		if( !wDlg.exec() ){
+			return false;
+		}
+		
+		if( wMinimalMorphsCbx.checked ){
+			s_sMorphRules = getMinimalMorphRules();
+		}
+		
+		createMorphRules( wMorphNamesTEdit.text.split( "\n" ) );
+	
+		return true;
+	};
+
+	/*********************************************************************/
+	// Take List of Morph Labels and Convert to Format for FBX Exporter
+	// void : ...
+	// TODO: Allow Partial Names to Export Morphs, Refactor Code to Grab Morph Info Cleaner
+	function createMorphRules( aMorphLabels )
+	{	
+		var sMorphName;
+		var sMorphLabel;
+		
+		// To do find a better way to stop if nothing is chosen
+		if ( aMorphLabels !==undefined ){
+			for( var i = 0; i < aMorphLabels.length; i += 1 ){	
+				sMorphLabel = aMorphLabels[i];
+				
+				if ( s_oMorphs[sMorphLabel] !== undefined ){
+
+					if (s_oMorphs[sMorphLabel]["sMorphHead"] == 'Pose' ){
+					sMorphName = s_oMorphs[sMorphLabel]["sMorphName"];
+					}
+					else{
+						//Hidden Morphs do not have labels
+						sMorphName = sMorphLabel;
+					}
+					s_aMorphExported.push( [sMorphName ,sMorphLabel] );
+				}
+				else{
+					s_sMorphRules += getMorphPresets( sMorphLabel );
+					}
+				s_sMorphRules += sMorphName + "\n1\n";
+				
+			}
+		}
+		s_sMorphRules += "Anything\n0";
+
+		return true;
+	};
+
+	/*********************************************************************/
+
+	// void : ...
+	function heelsFix( oSkeleton )
+	{
+		if( oSkeleton ){
+			return;
+		}
+		
+		//Left
+		try { var xRotLeftMetatarsals = getXRot( "Left Metatarsals" ); } catch( error ){}
+		try { var xRotLeftHeel = getXRot( "Left Heel" ); } catch( error ){}
+		try { var xRotLeftFoot = getXRot( "Left Foot" ); } catch( error ){}
+		try { var xRotLeftToes = getXRot( "Left Toes" ); } catch( error ){}
+		try { var xRotLeftBigToe = getXRot( "Left Big Toe" ); } catch( error ){}
+		try { var xRotLeftBigToe2 = getXRot( "Left Big Toe_2" ); } catch( error ){}
+		try { var xRotLeftSmallToe1 = getXRot( "Left Small Toe 1" ); } catch( error ){}
+		try { var xRotLeftSmallToe12 = getXRot( "Left Small Toe 1_2" ); } catch( error ){}
+		try { var xRotLeftSmallToe2 = getXRot( "Left Small Toe 2" ); } catch( error ){}
+		try { var xRotLeftSmallToe22 = getXRot( "Left Small Toe 2_2" ); } catch( error ){}
+		try { var xRotLeftSmallToe3 = getXRot( "Left Small Toe 3" ); } catch( error ){}
+		try { var xRotLeftSmallToe32 = getXRot( "Left Small Toe 3_2" ); } catch( error ){}
+		try { var xRotLeftSmallToe4 = getXRot( "Left Small Toe 4" ); } catch( error ){}
+		try { var xRotLeftSmallToe42 = getXRot( "Left Small Toe 4_2" ); } catch( error ){}
+		
+		//Right
+		try { var xRotRightMetatarsals = getXRot( "Right Metatarsals" ); } catch( error ){}
+		try { var xRotRightHeel = getXRot( "Right Heel" ); } catch( error ){}
+		try { var xRotRightFoot = getXRot( "Right Foot" ); } catch( error ){}
+		try { var xRotRightToes = getXRot( "Right Toes" ); } catch( error ){}
+		try { var xRotRightBigToe = getXRot( "Right Big Toe" ); } catch( error ){}
+		try { var xRotRightBigToe2 = getXRot( "Right Big Toe_2" ); } catch( error ){}
+		try { var xRotRightSmallToe1 = getXRot( "Right Small Toe 1" ); } catch( error ){}
+		try { var xRotRightSmallToe12 = getXRot( "Right Small Toe 1_2" ); } catch( error ){}
+		try { var xRotRightSmallToe2 = getXRot( "Right Small Toe 2" ); } catch( error ){}
+		try { var xRotRightSmallToe22 = getXRot( "Right Small Toe 2_2" ); } catch( error ){}
+		try { var xRotRightSmallToe3 = getXRot( "Right Small Toe 3" ); } catch( error ){}
+		try { var xRotRightSmallToe32 = getXRot( "Right Small Toe 3_2" ); } catch( error ){}
+		try { var xRotRightSmallToe4 = getXRot( "Right Small Toe 4" ); } catch( error ){}
+		try { var xRotRightSmallToe42 = getXRot( "Right Small Toe 4_2" ); } catch( error ){}
+		
+		Scene.selectAllNodes( false );
+		
+		oSkeleton.select( true );
+		
+		var oMgr = MainWindow.getActionMgr();
+		var oAction = oMgr.findAction( "DzRestoreFigurePoseAction" );
+		if( oAction ){
+			oAction.trigger();
+		}
+		
+		var nZero = 0;
+		
+		//Left
+		//print( "-----------------------------------------" );
+		try { setXRot( "Left Metatarsals", xRotLeftMetatarsals ); } catch( error ){}
+		try { setXRot( "Left Heel", nZero ); } catch( error ){}
+		//try { setXRot( "Left Foot", xRotLeftFoot ); } catch( error ){}
+		try { setXRot( "Left Toes", xRotLeftToes ); } catch( error ){}
+		try { setXRot( "Left Big Toe", xRotLeftBigToe ); } catch( error ){}
+		try { setXRot( "Left Big Toe_2", xRotLeftBigToe2 ); } catch( error ){}
+		try { setXRot( "Left Small Toe 1", xRotLeftSmallToe1 ); } catch( error ){}
+		try { setXRot( "Left Small Toe 1_2", xRotLeftSmallToe12 ); } catch( error ){}
+		try { setXRot( "Left Small Toe 2", xRotLeftSmallToe2 ); } catch( error ){}
+		try { setXRot( "Left Small Toe 2_2", xRotLeftSmallToe22 ); } catch( error ){}
+		try { setXRot( "Left Small Toe 3", xRotLeftSmallToe3 ); } catch( error ){}
+		try { setXRot( "Left Small Toe 3_2", xRotLeftSmallToe32 ); } catch( error ){}
+		try { setXRot( "Left Small Toe 4", xRotLeftSmallToe4 ); } catch( error ){}
+		try { setXRot( "Left Small Toe 4_2", xRotLeftSmallToe42 ); } catch( error ){}
+		
+		//Right
+		//print( "-----------------------------------------" );
+		try { setXRot( "Right Metatarsals", xRotRightMetatarsals ); } catch( error ){}
+		try { setXRot( "Right Heel", nZero ); } catch( error ){}
+		//try { setXRot( "Right Foot", xRotRightFoot ); } catch( error ){}
+		try { setXRot( "Right Toes", xRotRightToes ); } catch( error ){}
+		try { setXRot( "Right Big Toe", xRotRightBigToe ); } catch( error ){}
+		try { setXRot( "Right Big Toe_2", xRotRightBigToe2 ); } catch( error ){}
+		try { setXRot( "Right Small Toe 1", xRotRightSmallToe1 ); } catch( error ){}
+		try { setXRot( "Right Small Toe 1_2", xRotRightSmallToe12 ); } catch( error ){}
+		try { setXRot( "Right Small Toe 2", xRotRightSmallToe2 ); } catch( error ){}
+		try { setXRot( "Right Small Toe 2_2", xRotRightSmallToe22 ); } catch( error ){}
+		try { setXRot( "Right Small Toe 3", xRotRightSmallToe3 ); } catch( error ){}
+		try { setXRot( "Right Small Toe 3_2", xRotRightSmallToe32 ); } catch( error ){}
+		try { setXRot( "Right Small Toe 4", xRotRightSmallToe4 ); } catch( error ){}
+		try { setXRot( "Right Small Toe 4_2", xRotRightSmallToe42 ); } catch( error ){}
+		
+		//print( "-----" );
+	};
+	
+	// Number : ...
+	function doesHavingSkeleton()
+	{
+		return Scene.getNumSkeletons() > 0;
+	};
+
+	/*********************************************************************/
+	// Boolean : ...
+	function doesHavingHip()
+	{
+		var oNode;
+		for( var i = 0, n = Scene.getNumNodes(); i < n; i += 1 ){
+			// Get the current node
+			oNode = Scene.getNode( i );
+			if( oNode.getName().toLowerCase() == "hip" ){
+				return true;
+			}
+		}
+		
+		return false;
+	};
+	
+	
+	// void : ...
+	// Delete previous export
+	// Edited to Match Cinema 4D Current Export
+	// TODO : refactor - efficiency
+	function prepareForExport()
+	{
+		
+		var oDir = new DzDir( "" );
+		var sPath = oDir.homePath() + "/"
+		s_sRootPath = sPath;
+		
+		var aFiles;
+		var sDelPath;
+		var oDelDir =  new DzDir( "" );
+		
+		var aSubs = [ "Documents", s_sExports];
+		for( var i = 0; i < aSubs.length; i += 1 ){
+			sPath = s_sRootPath + aSubs[i] + "/";
+			oDir.setPath( sPath );
+			if( !oDir.exists() ){
+				oDir.mkdir( sPath );
+			}
+			
+			if( i < 2 ){
+				s_sRootPath = sPath;
+			} else {
+				oDir.setPath( sPath );
+				
+				aFiles = oDir.getFilesFromDir( [], true );
+				for( var j = 0; j < aFiles.length; j += 1 ){
+					oDir.remove( aFiles[j] );
+				}
+				
+				for( var j = 0; j < 100; j += 1 ){
+					sDelPath = sPath + "/" + aSubs[i] + j;
+					oDelDir.setPath( sDelPath );
+					if( oDelDir.exists() ){
+						oDir.rmdir( sDelPath );
+					} else {
+						break;
+					}
+				}
+			}
+		}
+	};
+
+	/*********************************************************************/
+	// SAVE maps to file... bump, specular, etc....
+	// TODO: Replace with DTU
 	// String : ...
 	function label2Variable( sLabel )
 	{
@@ -884,7 +1111,179 @@
 		oConfigFile.writeLine( '</materials>' );
 		oConfigFile.close();
 	};
-	
-	savePropertiesToFile( s_sExporter, s_sExportPath, s_sExportBaseName, s_sExportExt );
-	
+
+	/*********************************************************************/	
+	// void : ...
+	// Note: Configure DTU File
+	// TO DO: Grab Subdivision info and Morphs Exporting
+	function writeConfiguration( oNode, sFilename )
+	{
+		var sDtufilename = sFilename + ".dtu";
+		var oDtufile = new DzFile( sDtufilename );
+		var oDtuJson = {};
+		var aChildren = oNode.getNodeChildren( true );
+		var nChildren = aChildren.length;
+		
+		oDtuJson["Asset Name"] = oNode.getLabel();
+		oDtuJson["Materials"] = [];
+		aFigureMats = writeMaterials( oNode );
+		oDtuJson["Materials"].push( aFigureMats );
+		oDtuJson['Morphs'] = s_aMorphExported;
+		if (nChildren > 0){
+			for ( var i = 0; i < nChildren; i++ ){
+				var oChild = aChildren[ i ]; 
+				aChildMats = writeMaterials( oChild );
+				if ( aChildMats != false ){
+					oDtuJson["Materials"].push( aChildMats );
+				}		
+			}
+		};
+		
+		function combineMaterials( key, value ){
+			var aNewMaterials = [];
+			if( key == "Materials" ){
+				for (var i=0; i < value.length; i++ ){
+					var aNodeMats = value[i];
+					for (var k=0; k < aNodeMats.length; k++ ){
+						var aMat = aNodeMats[k];
+						aNewMaterials.push( aMat );
+					}
+				}
+				return aNewMaterials;
+			}
+			else{
+				return value;
+			}
+		};
+
+		oDtufile.open( DzFile.WriteOnly );
+		oDtufile.write( JSON.stringify( oDtuJson, combineMaterials, 4 ) );
+		oDtufile.close();
+	};
+
+	/*********************************************************************/	
+	// Array : ...
+	// Note: Cycle through all the Materials on a Node and return an array
+	function writeMaterials( oNode )
+	{	
+		var oObj = oNode.getObject();
+		if( oObj != null ){
+			var oShape = oObj.getCurrentShape();
+			var aMaterials = [];
+			if( oShape ){
+				for( var k = 0; k < oShape.getNumMaterials(); k++ ){
+					var oMaterialInfo = {};
+					var aProperties = [];
+					var oMat = oShape.getMaterial( k );
+					if( oMat ){	
+						oMaterialInfo["Asset Name"] = oNode.name;
+						oMaterialInfo["Asset Label"] = oNode.getLabel();
+						oMaterialInfo["Material Name"] = oMat.getName();
+						oMaterialInfo["Material Type"] = oMat.getMaterialName();
+						
+						// Get presentation and set material info
+						var oPresentation = oNode.getPresentation();
+						if( oPresentation != undefined ){
+							var sPresentationType = oPresentation.type
+							oMaterialInfo["Value"]  = sPresentationType;
+						}
+						else{
+							oMaterialInfo["Value"]  = "Unknown";
+						}
+
+						// Load all the porperties info
+						for( var i = 0; i < oMat.getNumProperties(); i++ ){
+							var oProperty = oMat.getProperty( i );
+							var oPropertyInfo = {};
+							
+							oPropertyInfo["Name"] = oProperty.getName();
+							
+							var bImageProperty = oProperty.inherits( "DzImageProperty" );
+							var bColorProperty = oProperty.inherits( "DzColorProperty" );
+							var bNumericProperty = oProperty.inherits( "DzNumericProperty" );
+
+							if( bImageProperty ){
+								var sTextureName = "";
+								if(oProperty.getValue()){
+									sTextureName = oProperty.getValue().getFilename();	
+								}
+								oPropertyInfo["Value"] = oMat.getDiffuseColor().name;
+								oPropertyInfo["Data Type"] = "Texture";
+								oPropertyInfo["Texture"] = sTextureName;
+							}
+							else if( bColorProperty ){
+								var sName = oProperty.getName();
+								var sTextureName ="";
+								if ( oProperty.getMapValue() ){
+									sTextureName = oProperty.getMapValue().getFilename();
+								}
+								oPropertyInfo["Value"] = oProperty.getColorValue().name;
+								oPropertyInfo["Data Type"] = "Color";
+								oPropertyInfo["Texture"] = sTextureName;
+							}
+							else if( bNumericProperty ){
+								var sName = oProperty.getName();
+								var sTextureName = "";
+								if ( oProperty.getMapValue() ){
+									sTextureName = oProperty.getMapValue().getFilename();
+								}
+								oPropertyInfo["Value"] = oProperty.getValue();
+								oPropertyInfo["Data Type"] = "Double";
+								oPropertyInfo["Texture"] = sTextureName;
+							}
+							aProperties.push( oPropertyInfo );
+						}
+						oMaterialInfo["Properties"] = aProperties;
+						
+						aMaterials.push( oMaterialInfo );
+					}
+				}						
+			}
+			return aMaterials
+		}
+		else{
+			return false
+		}
+	};
+
+	/*********************************************************************/
+	// void : ...
+	function main()
+	{	
+		prepareForExport();
+		var sFileBasename;
+		// Write data
+		sFileBasename = String( "%1/%2" ).arg( s_sRootPath ).arg( s_sExports );
+		var oNode = Scene.getPrimarySelection();
+		replaceInstanceAll();
+		buildMorphList( oNode );
+		if( !promptMorphRules( oNode ) ){
+			continue;
+		}
+		if( doesHavingSkeleton() ){
+			if( !doesHavingHip() ){
+				var aConvert = Scene.getSkeletonList();
+				var nConvert = aConvert.length;
+				if( nConvert > 0 ){
+					var nResult = MessageBox.question(
+						qsTr( "Some objects needs to be converted to props. Convert?\nThis operation is NOT undoable! (save first if needed)" ),
+						s_sToolName, qsTr( "&Yes" ), qsTr( "&No" ) );
+					if( nResult == 0 ){
+						for( var i = 0; i < nConvert; i += 1 ){
+							//debug( aConvert[i].getName() );
+							try {
+								convert2Prop( aConvert[i] )
+							} catch( error ){}
+						}
+					}
+				}
+			}
+		}
+		exportScene( s_sExporter, s_sRootPath, s_sExports, s_sExportExt );
+		savePropertiesToFile( s_sExporter, s_sRootPath, s_sExports, s_sExportExt );
+		writeConfiguration( oNode, sFileBasename );
+	};
+
+	/*********************************************************************/
+	main();
 })();

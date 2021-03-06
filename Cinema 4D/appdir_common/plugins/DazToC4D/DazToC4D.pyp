@@ -21,6 +21,11 @@ try:
 except:
     print('Redshift not found')
 
+
+
+HOME_DIR = os.path.expanduser("~")
+ROOT_DIR = os.path.join(HOME_DIR, "Documents", "DazToC4D")
+print(ROOT_DIR)
 PLUGIN_ID=1052690
 
 IDS_AUTH = 40000
@@ -1083,12 +1088,9 @@ class forceTpose():
 
 class dazToC4Dutils():
     def findTextInFile(self, matName, propertyName):
-        dazExtraMapsFile = r'C:\\TEMP3D\\DazToC4D.xml'
-        dazExtraMapsFileMac = '/users/Shared/temp3d/DazToC4D.xml'
-
-        if os.path.exists(dazExtraMapsFileMac):
-            dazExtraMapsFile = dazExtraMapsFileMac
-
+        
+        dazExtraMapsFile = os.path.join(ROOT_DIR,"DazToC4D.xml")
+        
         if os.path.exists(dazExtraMapsFile) == False:
             print('...')
             return
@@ -4584,9 +4586,7 @@ class DazToC4D():
 
     def morphsFixRemoveAndRename(self):
         def morphsRemoveAndRename(obj):
-            pmTag = obj.GetTag(c4d.Tposemorph)  # Gets the pm tag
-            pmTag.ExitEdit(doc, True)
-
+            
             def morphRemove():
                 listMorphsToRemove = ['RIG',
                                       'HDLv2',
@@ -4597,7 +4597,7 @@ class DazToC4D():
                                       'Genesis8Female_',
                                       'Genesis8FemaleEyelashes_'
                                       ]
-
+                    
                 morphsAmount = len(list(range(pmTag.GetMorphCount())))
                 for x in range(0, morphsAmount):
                     try:
@@ -4645,12 +4645,15 @@ class DazToC4D():
                         pass
                 c4d.EventAdd()
 
+            pmTag = obj.GetTag(c4d.Tposemorph)  # Gets the pm tag
+            pmTag.ExitEdit(doc, True)
             morphsAmount = len(list(range(pmTag.GetMorphCount())))
-
+                
             for x in range(0, morphsAmount):
                 morphRename()
             for x in range(0, morphsAmount):
                 morphRemove()  # REMOVE
+                
         doc = documents.GetActiveDocument()
         obj = doc.GetFirstObject()
         scene = ObjectIterator(obj)
@@ -5561,12 +5564,8 @@ class DazToC4D():
         folder_DazToC4D_xtra = os.path.join(folder_DazToC4D_res, 'xtra')  # Adds the res folder to the path
         file_G3_IrisFixMap = os.path.join(folder_DazToC4D_xtra, 'G3_Iris_Alpha.psd')
 
-        destination_G3_IrisFixMap = r'C:\TEMP3D\G3_Iris_Alpha.psd'
-        destination_G3_IrisFixMapMac = '/users/Shared/temp3d/G3_Iris_Alpha.psd'
-
-        if os.path.exists(destination_G3_IrisFixMapMac): #If detects map in Mac, use the Mac one...
-            destination_G3_IrisFixMap = destination_G3_IrisFixMapMac
-
+        destination_G3_IrisFixMap = os.path.join(ROOT_DIR, "G3_Iris_Alpha.psd")
+     
         try:
             copyfile(file_G3_IrisFixMap, destination_G3_IrisFixMap)
         except:
@@ -5954,14 +5953,9 @@ class DazToC4D():
         self.buttonsChangeState(False)
 
         doc = documents.GetActiveDocument()
-        filePath = ''
-        filePathPC = 'C:\TEMP3D\DazToC4D.fbx'
-        filePathMac = '/users/Shared/temp3d/DazToC4D.fbx'
-
-        if os.path.exists(filePathMac):
-            filePath = filePathMac
-        else:
-            filePath = filePathPC
+    
+        filePath = os.path.join(ROOT_DIR, "DazToC4D.fbx") 
+      
 
         if os.path.exists(filePath) == False:
             gui.MessageDialog(
@@ -6135,15 +6129,8 @@ class DazToC4D():
         # guiDazToC4DMainIK.SetImage(guiDazToC4DMain().img_btnAutoIKOff, False)  # Add the image to the button
 
         doc = documents.GetActiveDocument()
-        filePath = ''
-        filePathPC = 'C:\TEMP3D\DazToC4D.fbx'
-        filePathMac = '/users/Shared/temp3d/DazToC4D.fbx'
-
-        if os.path.exists(filePathMac):
-            filePath = filePathMac
-        else:
-            filePath = filePathPC
-
+        filePath = os.path.join(ROOT_DIR, "DazToC4D.fbx")
+        
         if os.path.exists(filePath) == False:
             gui.MessageDialog(
                 'Be sure to export first from DAZ Studio',
