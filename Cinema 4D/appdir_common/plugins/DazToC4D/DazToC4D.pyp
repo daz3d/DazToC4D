@@ -24,7 +24,9 @@ except:
 
 
 HOME_DIR = os.path.expanduser("~")
-ROOT_DIR = os.path.join(HOME_DIR, "Documents", "DazToC4D")
+ROOT_DIR = os.path.join(HOME_DIR, "Documents", "DAZ 3D", "Bridges", "Daz To C4D")
+EXPORT_DIR = os.path.join(ROOT_DIR, "Exports")
+
 print(ROOT_DIR)
 PLUGIN_ID=1052690
 
