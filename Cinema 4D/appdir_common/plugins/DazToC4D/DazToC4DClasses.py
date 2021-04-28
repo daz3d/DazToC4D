@@ -28,7 +28,7 @@ ROOT_DIR = os.path.join(HOME_DIR, "Documents", "DAZ 3D", "Bridges", "Daz To C4D"
 EXPORT_DIR = os.path.join(ROOT_DIR, "Exports")
 
 print(ROOT_DIR)
-PLUGIN_ID=1052690
+
 
 IDS_AUTH = 40000
 IDS_AUTH_DIALOG = 40001
@@ -684,7 +684,7 @@ class AllSceneToZero:
                     lowestY = realPos - boundBox[1]
                     sceneYvalues.append(lowestY)
                     dictYvalues[lowestY] = obj
-        # gui.MessageDialog(len(sceneYvalues))
+
         sceneLowestObj = 0
         if len(sceneYvalues) > 0:
             sceneLowestY = min(sceneYvalues)
@@ -703,9 +703,7 @@ class AllSceneToZero:
         for obj in scene:
             if obj.GetUp() == None:
                 baseObjs.append(obj)
-                # mg = obj.GetMg()
-                # obj.InsertUnder(newNull)
-                # obj.SetMg(mg)
+
         newNull = c4d.BaseObject(c4d.Onull)  # Create new cube
         doc.InsertObject(newNull)
         newNull[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Y] = posY
@@ -747,9 +745,7 @@ class AllSceneToZero:
                     if objMesh:
                         if objMesh.GetType() == 5100:
                             baseObjs.append(objMesh)
-                    #gui.MessageDialog(objMesh)
-                    #errorDetected = True
-        # gui.MessageDialog(baseObjs)
+
         if len(baseObjs) >0:
             if errorDetected == False:
                 getLowestY = self.rasterizeObj(self.sceneLowestYobj())
@@ -925,7 +921,6 @@ class connectEyeLashesMorphXpresso:
 
 
 def getJointFromSkin(obj, jointName):
-    # obj = doc.SearchObject(objSkinName)
     objTags =  TagIterator(obj)
     for t in objTags:
         if 'Weight' in t.GetName():
@@ -935,7 +930,6 @@ def getJointFromSkin(obj, jointName):
     return None
 
 def getJointFromConstraint(jointName):
-    # obj = doc.SearchObject('hip')
     objTags =  TagIterator(jointName)
     for t in objTags:
         if 'Constraint' in t.GetName():
@@ -971,7 +965,6 @@ class forceTpose():
 
                 constraintTAG[c4d.EXPRESSION_ENABLE] = True
                 constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_PSR_MAINTAIN] = True
-                # constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_PARENT_FROZEN] = False
                 constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_PSR] = True
                 constraintTAG[10005] = True
                 constraintTAG[10007] = True
@@ -1015,8 +1008,6 @@ class forceTpose():
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
         slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = rotValue
-        # slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION,c4d.VECTOR_Y] = 0
-        # slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION,c4d.VECTOR_Z] = 0
 
     def dazRotationsFix(self, jointToFix, jointToAim, oppositeJoint, rotValue=0, allToZero=False):
         doc = documents.GetActiveDocument()
@@ -1052,15 +1043,6 @@ class forceTpose():
             self.dazRotationsFix('lShldr', 'lForeArm', 'rShldr', 1.571)
         if doc.SearchObject('lForeArm'):
             self.dazRotationsFix('lForeArm', 'lHand', 'rForeArm', 1.571)
-
-        # # Genesis3
-        # if doc.SearchObject('lForearmBend'):
-        #     self.dazRotationsFix('lForearmBend', 'lHand', 'rForearmBend', 1.571, True)
-        # if doc.SearchObject('lShldrBend'):
-        #     self.dazRotationsFix('lShldrBend', 'lForearmBend', 'rShldrBend', 1.571)
-        #
-        # if doc.SearchObject('lHand'):
-        #     self.dazRotationsFix('lHand', 'lMid1', 'rHand', 1.571)
 
         # All Genesis..Maybe...
         if doc.SearchObject('lFoot'):
@@ -1240,8 +1222,6 @@ class dazToC4Dutils():
                             print(sec)
                             return 
                         
-                        # sec[0].InsertAfter(op)
-
                 t = t.GetNext()
 
             c4d.EventAdd()
@@ -1458,8 +1438,6 @@ class dazToC4Dutils():
         baseObjs = []
 
         for obj in scene:
-            # print obj.GetName(), obj.GetType()
-
             if obj.GetType() == 1019363:
                 obj[c4d.ID_CA_SKIN_OBJECT_TYPE] = 1
 
@@ -1496,8 +1474,6 @@ class dazToC4Dutils():
 
 
             slaveObj.InsertTag(constraintTAG)
-
-            # constraintTAG.Remove()
 
             c4d.EventAdd()
             c4d.DrawViews(
@@ -1578,7 +1554,6 @@ class dazToC4Dutils():
 
     def addHeadEndBone(self):
         doc = documents.GetActiveDocument()
-        # meshName = dazName + '_'
         jointHeadEnd = doc.SearchObject('head_end')
         if jointHeadEnd == None:
             jointCollar = doc.SearchObject('lCollar')
@@ -1600,7 +1575,6 @@ class dazToC4Dutils():
     def removeConstraintTags(self, obj):
 
         doc = c4d.documents.GetActiveDocument()
-        # obj = doc.SearchObject('pelvis')
         tags = TagIterator(obj)
         try:
             for t in tags:
@@ -1615,20 +1589,16 @@ class dazToC4Dutils():
         slaveObj = doc.SearchObject(slave)
         masterObj = doc.SearchObject(master)
         self.removeConstraintTags(slaveObj)
-        # removeConstraintTags(masterObj)
 
         if mode == "Parent":
             constraintTAG = c4d.BaseTag(1019364)
 
             constraintTAG[c4d.EXPRESSION_ENABLE] = True
             constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_PSR_MAINTAIN] = True
-            # constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_PARENT_FROZEN] = False
             constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_PSR] = True
             constraintTAG[10005] = True
             constraintTAG[10007] = True
             constraintTAG[10001] = masterObj
-            # constraintTAG[30009, 1000] = c4d.Vector(nullSlave.GetRelPos()[0], nullSlave.GetRelPos()[1], nullSlave.GetRelPos()[2])
-            # constraintTAG[30009, 1002] = c4d.Vector(nullSlave.GetRelRot()[0], nullSlave.GetRelRot()[1], nullSlave.GetRelRot()[2])
 
             PriorityDataInitial = c4d.PriorityData()
             PriorityDataInitial.SetPriorityValue(c4d.PRIORITYVALUE_MODE, c4d.CYCLE_EXPRESSION)
@@ -1653,8 +1623,6 @@ class dazToC4Dutils():
         doc = documents.GetActiveDocument()
         meshName = dazName
         actObj = doc.SearchObject(meshName + actObjName)
-        # Aobj = doc.SearchObject('A') #Direction line Start
-        # Bobj = doc.SearchObject('B') #Direction line End
         Aobj = doc.SearchObject(meshName + nameA)  # Direction line Start
         Bobj = doc.SearchObject(meshName + nameB)  # Direction line End
 
@@ -1717,7 +1685,6 @@ class dazToC4Dutils():
         newNull[c4d.NULLOBJECT_RADIUS] = 1
         newNull[c4d.NULLOBJECT_ORIENTATION] = 1
 
-        # sourceObj = doc.SearchObject(source)
         sourceObj = newNull
         targetObj = doc.SearchObject(target)
         sourceObj.SetMg(targetObj.GetMg())
@@ -1812,8 +1779,6 @@ class dazToC4Dutils():
 
         self.moveToObj(meshName + 'Head_End', 'head_end')  # TEMPPP
 
-        # actObj = doc.SearchObject('Object_Index_end')
-
         self.extend3Dline('Index2', 'Index3', 'Index_end')
         self.extend3Dline('Middle2', 'Middle3', 'Middle_end')
         self.extend3Dline('Ring2', 'Ring3', 'Ring_end')
@@ -1827,9 +1792,6 @@ class dazToC4Dutils():
         if side == 'Right':
             prefix = 'r'
             suffix = '___R'
-        # self.parentTo('lShin','lThighBend')
-        # self.parentTo('lHand','lForearmBend')
-        # self.parentTo('lForearmBend','lShldrBend')
         if doc.SearchObject(prefix + 'SmallToe4'):
             self.parentTo(prefix + 'SmallToe4', prefix + 'Toe')
         if doc.SearchObject(prefix + 'SmallToe3'):
@@ -1966,13 +1928,7 @@ class alignFingersFull():
         constraintTAG[50004, 2] = 3  # Mode: Fix Axis
         constraintTAG[50004, 4] = 4  # As: Normal
         constraintTAG[50001] = normalPolyObj
-        # PriorityDataInitial = c4d.PriorityData()
-        # PriorityDataInitial.SetPriorityValue(c4d.PRIORITYVALUE_MODE, c4d.CYCLE_GENERATORS)
-        # PriorityDataInitial.SetPriorityValue(c4d.PRIORITYVALUE_PRIORITY, 0)
-        # PriorityDataInitial.SetPriorityValue(c4d.PRIORITYVALUE_CAMERADEPENDENT, 0)
-        # constraintTAG[c4d.EXPRESSION_PRIORITY] = PriorityDataInitial
         obj.InsertTag(constraintTAG)
-        # constraintTAG[50004, 9] = 0 #Distance: 0
         c4d.EventAdd()
 
     def generateNormalFromObjs(self, target1, target2, target3):
@@ -2268,13 +2224,6 @@ class ikmaxUtils():
         tool = c4d.plugins.FindPlugin(doc.GetAction(), c4d.PLUGINTYPE_TOOL)
         tool[c4d.MDATA_SELECTLIVE_VISIBLE] = False
         c4d.EventAdd()
-        # try:
-        #     tool = c4d.plugins.FindPlugin(doc.GetAction(), c4d.PLUGINTYPE_TOOL)
-        #     if tool is not None:
-        #         tool[c4d.MDATA_SELECTLIVE_VISIBLE] = False
-        #         c4d.EventAdd()
-        # except:
-        #     print('ikm skip live selection')
 
     def makeNull(self, nullName, target):
         doc = c4d.documents.GetActiveDocument()
@@ -2341,12 +2290,11 @@ class ikmaxUtils():
                 # Transfer coords info to freeze info
                 x.SetFrozenPos(x.GetAbsPos())
                 x.SetFrozenRot(x.GetAbsRot())
-                # x.SetFrozenScale(x.GetRelRot())
 
                 # Zero coords...
                 x.SetRelPos(c4d.Vector(0, 0, 0))
                 x.SetRelRot(c4d.Vector(0, 0, 0))
-                # x.SetRelScale(c4d.Vector(1, 1, 1))
+
         except:
             pass
 
@@ -2549,16 +2497,6 @@ class ikmaxUtils():
         jMiddle1 = doc.SearchObject(dazName + 'jMiddle1' + sidename)
         jRing1 = doc.SearchObject(dazName + 'jRing1' + sidename)
         jPink1 = doc.SearchObject(dazName + 'jPink1' + sidename)
-        #
-        # jIndex2  = doc.SearchObject(dazName + 'jIndex2' + sidename)
-        # jMiddle2 = doc.SearchObject(dazName + 'jMiddle2' + sidename)
-        # jRing2   = doc.SearchObject(dazName + 'jRing2' + sidename)
-        # jPink2   = doc.SearchObject(dazName + 'jPink2' + sidename)
-        #
-        # jIndex3  = doc.SearchObject(dazName + 'jIndex3' + sidename)
-        # jMiddle3 = doc.SearchObject(dazName + 'jMiddle3' + sidename)
-        # jRing3   = doc.SearchObject(dazName + 'jRing3' + sidename)
-        # jPink3   = doc.SearchObject(dazName + 'jPink3' + sidename)
 
         fingersList = ['jIndex2', 'jIndex3',
                        'jMiddle2', 'jMiddle3',
@@ -2573,10 +2511,7 @@ class ikmaxUtils():
             if obj.GetRelRot()[2] < 0.09 and obj.GetRelRot()[1] > -0.09:
                 obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z] = 0
 
-        # print(jIndex1)
-        # print(jMiddle1)
-        # print(jRing1)
-        # print(jPink1)
+
         ikmGenerator().AlignBoneChain(dazName + 'jIndex1' + sidename, 2, 1, 0, 1)
         ikmGenerator().AlignBoneChain(dazName + 'jMiddle1' + sidename, 2, 1, 0, 1)
         ikmGenerator().AlignBoneChain(dazName + 'jRing1' + sidename, 2, 1, 0, 1)
@@ -2595,10 +2530,7 @@ class ikmaxUtils():
             joint[c4d.ID_CA_JOINT_OBJECT_BONE_AXIS] = 0
             doc.SetActiveObject(joint, c4d.SELECTION_NEW)
             c4d.CallCommand(1019883)  # Align
-            if zeroRot == True:
-                pass
-                # joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
-                # joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y] = 0
+
 
         alignJoint('jIndex1', '', True)
         alignJoint('jIndex2', '', True)
@@ -2713,7 +2645,6 @@ class ikmGenerator():
             bStart = doc.SearchObject(startPoint)
             bEnd = doc.SearchObject(endPoint)
             b1 = doc.SearchObject(pointToAlign)
-            # b2 = doc.SearchObject(fingerName + "3")
 
             bEndPosX = bEnd.GetAbsPos()[0]
             bEndPosY = bEnd.GetAbsPos()[1]
@@ -2723,9 +2654,7 @@ class ikmGenerator():
             b1PosY = b1.GetAbsPos()[1]
             b1PosZ = b1.GetAbsPos()[2]
 
-            # b2PosX = b2.GetAbsPos()[0]
-            # b2PosY = b2.GetAbsPos()[1]
-            # b2PosZ = b2.GetAbsPos()[2]
+
 
             bStartPosX = bStart.GetAbsPos()[0]
             bStartPosY = bStart.GetAbsPos()[1]
@@ -2743,10 +2672,8 @@ class ikmGenerator():
                 # Align Horizontal ---------
 
                 b1PosAlignY = bEndPosY - ((bEndPosX - b1PosX) * (bEndPosY - bStartPosY)) / (bEndPosX - bStartPosX)
-                # b2PosAlignY = bEndPosY - ((bEndPosX - b2PosX)*(bEndPosY - bStartPosY))/(bEndPosX - bStartPosX)
-
                 b1.SetAbsPos(c4d.Vector(b1PosX, b1PosAlignY, b1PosZ))
-                # b2.SetAbsPos(c4d.Vector(b2PosX, b2PosAlignY ,b2PosZ))
+
 
             if aligMethod == "V":
                 # Align Vertical ----------
@@ -2883,11 +2810,6 @@ class ikmGenerator():
         doc.SetActiveObject(doc.SearchObject(jointName + "1" + sideName))
         c4d.CallCommand(1019883)  # Align
         c4d.EventAdd()
-
-        # protectJoints(jointName+"2", "preset1")
-        # protectJoints(jointName+"3", "preset1")
-        # protectJoints(jointName+"4", "preset1")
-
         self.fixAlignRotChilds(dazName + jointName + "2" + sideName)
         self.fixAlignRotChilds(dazName + jointName + "3" + sideName)
         self.fixAlignRotChilds(dazName + jointName + "4" + sideName)
@@ -3050,13 +2972,6 @@ class ikmGenerator():
         self.axisOrder("jPink3" + sideName)
         self.axisOrder("jPink4" + sideName)
 
-    # ------------------------------------------------**********************************
-    # ------------------------------------------------**********************************
-    # ------------------------------------------------**********************************
-    # ------------------------------------------------**********************************
-    # ------------------------------------------------**********************************
-    # ------------------------------------------------**********************************
-
     # Fingers Make JOINTS --- START ----------------------------------------------------
 
     # Fingers Make JOINTS --- END ----------------------------------------------------
@@ -3204,11 +3119,6 @@ class ikmGenerator():
 
         IKTag = c4d.BaseTag(1019561)  # IK Tag
 
-        #IK GOAL ZERO ROTATION
-        # nullGoal[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
-        # nullGoal[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y] = 0
-        # nullGoal[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z] = 0
-
         ikJoint.InsertTag(IKTag)
         IKTag[c4d.ID_CA_IK_TAG_TIP] = ikJointTarget
         IKTag[c4d.ID_CA_IK_TAG_TARGET] = nullGoal
@@ -3298,8 +3208,7 @@ class ikmGenerator():
             except:
                 pass
         slaveObj.InsertTag(constraintTAG)
-        # if mode == "PARENT":
-        #     slaveObj.SetMg(mg)
+
 
         c4d.EventAdd()
 
@@ -3356,15 +3265,6 @@ class ikmGenerator():
         objNull.InsertUnder(ikmGuides)
         objNull.SetMg(dazCollar.GetMg())
 
-        # shoulderX = shoulder.GetRelPos()[0]
-        # shoulderY = shoulder.GetRelPos()[1]
-        # shoulderZ = shoulder.GetRelPos()[2]
-        # neckX = neck.GetRelPos()[0]
-        # neckY = neck.GetRelPos()[1]
-        # neckZ = neck.GetRelPos()[2]
-        #
-        # objNull.SetRelPos(c4d.Vector(((shoulderX - neckX) / 3), shoulderY, neckZ))
-
         c4d.EventAdd()
 
     def mirrorNulls(self, nullName, addToName, parentName):
@@ -3395,17 +3295,10 @@ class ikmGenerator():
         doc = documents.GetActiveDocument()
 
         # --- ARM  ---------------------------------------------
-        # ARM - Guides - Align
-        # self.alignOnePoint("H", dazName + "Shoulder" + sideName, dazName + "Hand" + sideName, dazName + "Elbow" + sideName)
-        # c4d.EventAdd()
-        # ARM - Bones - Create
-
-        # self.makeJoint("jCollar" + sideName, "jChest", "Collar" + sideName)
         self.makeJoint("jCollar" + sideName, "jChestUpper", "Collar" + sideName)
         dazJoint = doc.SearchObject("lCollar")
         joint = doc.SearchObject(dazName + "jCollar" + sideName)
-        # gui.MessageDialog(dazName + "jCollar" + sideName)
-        # gui.MessageDialog(joint)
+
         try:
             joint.SetMg(dazJoint.GetMg())
         except:
@@ -3492,7 +3385,6 @@ class ikmGenerator():
         self.AlignBoneChain(dazName + 'jUpLeg' + sideName, 2)
         self.AlignBoneChain(dazName + 'jFoot' + sideName, 1, 0, 0, 1)
 
-        # ikmaxUtils().finalFingersAlignamentPass()
 
     def mirrorGuides(self):
         parentMirrorName = dazName + "_IKM-Guides"
@@ -3565,17 +3457,8 @@ class ikmGenerator():
             ikmGenerator().removeObj(dazName + g + sideNameR)
         ikmGenerator().removeObj(dazName + 'Collar' + sideNameR)
 
-        # c4d.CallCommand(100004748) # Unfold All
         sideName = "___R"
         # --- CENTER BONES -------------------------------------
-
-        # ------- ikmax rig:
-        # self.makeJoint("jPelvis", "", "Pelvis")
-        # self.makeJoint("jSpine", "jPelvis", "Spine_Start")
-        # self.makeJoint("jChest", "jSpine", "Chest_Start")
-        # self.makeJoint("jNeck", "jChest", "Neck_Start")
-        # self.makeJoint("jHead", "jNeck", "Neck_End")
-        # self.makeJoint("jHeadEnd", "jHead", "Head_End")
 
         # if 4 spines...
         self.makeJoint("jPelvis", "", "Pelvis")
@@ -3651,10 +3534,6 @@ class ikmGenerator():
         #Extra Controls
         self.makeNull(dazName + "Collar_ctrl", dazName + "jCollar", "collar")
         self.constraintObj(dazName + "jCollar", dazName + "Collar_ctrl")
-
-        # self.makeNull(dazName + "Collar_ctrl___R", dazName + "jCollar___R", "collar")
-        # self.constraintObj(dazName + "jCollar___R", dazName + "Collar_ctrl___R")
-        #------------
 
         self.makeIKtag("jArm" + sideName, "jHand" + sideName, "IK_Hand" + sideName, "jArm.Pole" + sideName, "Shoulder" + sideName)
 
@@ -3972,8 +3851,7 @@ class DazToC4D():
 
         # validate object and selectiontag
         doc = documents.GetActiveDocument()
-        # if not op:return
-        # if not op.IsInstanceOf(c4d.Opolygon):return
+
         def hidePolysFromObj(op):
             tags = op.GetTags()
 
@@ -4001,7 +3879,6 @@ class DazToC4D():
 
                         if not sec: return
                         print(sec)
-                        # sec[0].InsertAfter(op)
 
                 t = t.GetNext()
 
@@ -4601,9 +4478,6 @@ class DazToC4D():
                 c4d.EventAdd()
 
             def morphRename():
-                # pmTag = obj.GetTag(c4d.Tposemorph)  # Gets the pm tag
-                # pmTag.ExitEdit(doc, True)
-
                 morphsAmount = len(list(range(pmTag.GetMorphCount())))
                 for x in range(0, morphsAmount):
                     try:
@@ -5158,25 +5032,16 @@ class DazToC4D():
             except:
                 print("DazToC4D: LayoutChanged skip...")
 
-            # guiDazToC4DMainImp.SetImage(guiDazToC4DMain().img_btnManualImportOff, False)  # Add the image to the button
             guiDazToC4DMainAutoImp.SetImage(guiDazToC4DMain().img_btnAutoImportOff, False)  # Add the image to the button
             guiDazToC4DMainConvert.SetImage(guiDazToC4DMain().img_btnConvertMaterialsOff, False)  # Add the image to the button
             guiDazToC4DMainIK.SetImage(guiDazToC4DMain().img_btnAutoIKOff, False)  # Add the image to the button
-            # guiDazToC4DMain().LayoutChanged(9353535)
+
         if btnState == True:
             guiDazToC4DMainLogo.SetImage(guiDazToC4DMain().img_d2c4dLogo, False)  # Add the image to the button
-            # guiDazToC4DMainImp.SetImage(guiDazToC4DMain().img_btnManualImport, False)  # Add the image to the button
             guiDazToC4DMainAutoImp.SetImage(guiDazToC4DMain().img_btnAutoImport, False)  # Add the image to the button
             guiDazToC4DMainConvert.SetImage(guiDazToC4DMain().img_btnConvertMaterials, False)  # Add the image to the button
             guiDazToC4DMainIK.SetImage(guiDazToC4DMain().img_btnAutoIK, False)  # Add the image to the button
-        # c4d.StatusClear()
-        # c4d.EventAdd()
-        # c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
-        # c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
-        # c4d.DrawViews()
-        # c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
-        # c4d.DrawViews(c4d.DRAWFLAGS_FORCEFULLREDRAW)
-        # doc = documents.GetActiveDocument()
+
         bc = c4d.BaseContainer()
         c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
 
@@ -5311,18 +5176,10 @@ class DazToC4D():
                                 for x in dontRemoveList:
                                     if objName in x:
                                         removeit = False
-                                        # gui.MessageDialog('DONT Remove: ' + objName, c4d.GEMB_OK)
 
                                 if removeit == True:
-                                    # gui.MessageDialog('Remove: ' + objName, c4d.GEMB_OK)
-
-                                    # self.replaceMat(obj, mat)
-                                    # obj.Remove()
                                     c4d.EventAdd()
-                                # if objName not in dontRemoveList:
-                                #     self.replaceMat(obj, mat)
-                                #     obj.Remove()
-                                #     c4d.EventAdd()
+                         
                                 skipMatList.append(obj.GetName())
             except:
                 print('Skip reduce Mat...')
@@ -5433,7 +5290,6 @@ class DazToC4D():
                 obj.InsertTag(tagProtec)
                 c4d.EventAdd()
 
-        # dazName = 'Genesis2Male_'  # TEMMPAAAAAAAAAAAAAAAAAAAA
         # LEFT
         protectTag(dazName + 'jMiddle2', 'finger')
         protectTag(dazName + 'jMiddle3', 'finger')
@@ -5467,8 +5323,6 @@ class DazToC4D():
         protectTag(dazName + 'Neck_ctrl', 'position')
         protectTag(dazName + 'Head_ctrl', 'position')
 
-        # protectTag(dazName + 'ForearmTwist_ctrl', 'twist')
-        # protectTag(dazName + 'ForearmTwist_ctrl___R', 'twist')
 
     def dazMorphsFix(self):
         doc = documents.GetActiveDocument()
@@ -5487,12 +5341,6 @@ class DazToC4D():
         def morphsRename(obj):
             pmTag = obj.GetTag(c4d.Tposemorph)  # Gets the pm tag
             pmTag.ExitEdit(doc, True)
-
-            # 4000 is the ID# for the sub container in the pm tag
-            # The poses saved inside that container have ID#'s 1101,1201,1301,etc...
-
-            # first =  pmTag[4000,1101]= .5         #Sets the value of Pose.0 to 50%
-            # second = pmTag[4000,1201]= .5         #Sets the value of Pose.1 to 50%
 
             for x in range(pmTag.GetMorphCount()):
                 try:
@@ -5526,7 +5374,6 @@ class DazToC4D():
                 if self.tagsIterator(caca):
                     for x in self.tagsIterator(caca):
                         if 'Pose Morph' in x.GetName():
-                            # detectRIGmorph(caca)
                             morphsRename(caca)
 
     def unhideProps(self):
@@ -5551,10 +5398,6 @@ class DazToC4D():
             copyfile(file_G3_IrisFixMap, destination_G3_IrisFixMap)
         except:
             print('Iris Map transfer...Skipped.')
-
-        #For Mac Missing...
-
-        # gui.MessageDialog(file_G3_IrisFixMap, c4d.GEMB_OK)
 
         doc = c4d.documents.GetActiveDocument()
         docMaterials = doc.GetMaterials()
@@ -5609,36 +5452,17 @@ class DazToC4D():
             if doc.SearchObject('lShin'):
                 if doc.SearchObject('abdomen2'):
                     dazType = 'Genesis2'
-        # dazType = 'Genesis2'
-        #gui.MessageDialog(dazType, c4d.GEMB_OK)
+   
         if dazType == 'Genesis8':
             # GENESIS 8 --------------------------------------------
             # Genesis 8 LEFT Side:
             autoAlignArms()
-            # setRotAndMirror('lShldrBend', 0.014, 0.034, -0.807)
-            # setRotAndMirror('lForearmBend', 0.175, 0.175, 0.0)
-            # setRotAndMirror('lHand', -0.142, -0.117, -0.086)
-
-            # Genesis 8 RIGHT Side:
-            # setRotAndMirror('rShldrBend', -0.014, 0.034, 0.807)
-            # setRotAndMirror('rForearmBend', -0.175, 0.175, 0.0)
-            # setRotAndMirror('rHand', 0.142, -0.117, 0.086)
 
 
         if dazType == 'Genesis3':
             self.fixGenEyes() # Apply IRIS alpha fix
             # GENESIS 3 -ZOMBIE WORKS TOO -------------------------------------------
             autoAlignArms()
-            # Genesis 3 LEFT Side:
-            # setRotAndMirror('lShldrBend', 0.031, 0.0, 0.018)
-            # setRotAndMirror('lForearmBend', 0.22, 0.003, 0.014)
-            # setRotAndMirror('lHand', -0.165, 0.0, 0.0)
-
-            # Genesis 3 RIGHT Side:
-            # setRotAndMirror('rShldrBend', -0.031, 0.0, -0.018)
-            # setRotAndMirror('rForearmBend', -0.22, 0.003, -0.014)
-            # setRotAndMirror('rHand', 0.165, 0.0, 0.0)
-
 
         if dazType == 'Genesis2':
             # GENESIS 2 --------------------------------------------
@@ -5684,7 +5508,6 @@ class DazToC4D():
 
                 constraintTAG[c4d.EXPRESSION_ENABLE] = True
                 constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_PSR_MAINTAIN] = True
-                # constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_PARENT_FROZEN] = False
                 constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_PSR] = True
                 constraintTAG[10005] = True
                 constraintTAG[10007] = True
@@ -5716,7 +5539,6 @@ class DazToC4D():
             constraintTAG[20001] = masterObj
 
         slaveObj.InsertTag(constraintTAG)
-        # constraintTAG.Remove()
 
         c4d.EventAdd()
         c4d.DrawViews(
@@ -5729,8 +5551,6 @@ class DazToC4D():
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
 
         rotZ = nullObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z]
-        # dialogMsg = str(nullObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z])
-        # gui.MessageDialog(dialogMsg, c4d.GEMB_OK)
         if rotZ > 0.8:
             slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
             slaveObj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y] = 0
@@ -5759,16 +5579,6 @@ class DazToC4D():
             jointOposite[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y] = ry
             jointOposite[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z] = rz * -1
 
-        # mainJoint = doc.SearchObject('lThighBend')
-        # goalJoint = doc.SearchObject('lFoot')
-        # rotValue = 1.571
-        # fixDaz8rot(goalJoint, 'AIM', mainJoint, rotValue)
-
-        # mainJoint = doc.SearchObject('rThighBend')
-        # goalJoint = doc.SearchObject('rFoot')
-        # rotValue = 1.571
-        # fixDaz8rot(goalJoint, 'AIM', mainJoint, rotValue)
-
     def importDazFbx(self, filePath):
 
         file = c4d.documents.LoadDocument(filePath, c4d.SCENEFILTER_OBJECTS | c4d.SCENEFILTER_MATERIALS | c4d.SCENEFILTER_MERGESCENE)
@@ -5790,8 +5600,6 @@ class DazToC4D():
             matName = mat.GetName()
             skinMats = ['MainSkin', 'Legs', 'Torso', 'Arms', 'Face', 'Fingernails', 'Toenails', 'EyeSocket','Ears',
                         'Feet','Nipples','Forearms','Hips','Neck','Shoulders','Hands','Head','Nostrils']
-            # if matName in skinMats or 'Skin_' in matName or matname + '_RS' in skinMats:
-            #     print('MatType : ',mat.GetType())
             for x in skinMats:
                 if x in matName:
                     if mat.GetType() == 1038954: #Vray
@@ -5850,26 +5658,8 @@ class DazToC4D():
 
             if matName in eyesMats:
                 mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS] = 0.13
-            # if 'Cornea' in matName:
-            #     print('CORNEA...')
-            #     print(matName)
-            #     colorTest = c4d.Vector(int(0), int(0), int(0))
-            #     mat[c4d.MATERIAL_COLOR_SHADER] = None
-            #     mat[c4d.MATERIAL_USE_ALPHA] = False
-            #     mat[c4d.MATERIAL_ALPHA_SHADER] = None
-            #     mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION] = 0 #0 = Reflection(legacy)
-            #     mat[c4d.MATERIAL_COLOR_COLOR] = colorTest
-            #     mat[c4d.MATERIAL_USE_TRANSPARENCY] = True
-            #     mat[c4d.MATERIAL_TRANSPARENCY_FRESNEL] = False
-            #     mat[c4d.MATERIAL_TRANSPARENCY_EXITREFLECTIONS] = False
-            #     mat[c4d.MATERIAL_TRANSPARENCY_COLOR] = c4d.Vector(0.95, 0.95, 0.95)
-            #     mat[c4d.MATERIAL_TRANSPARENCY_REFRACTION]=0.33
-            #     mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS] = 0.0
-            #     mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_REFLECTION] = 0.7
-            #     mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR] = 0.0
-            #     mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_BUMP] = 0.0
+
             if 'Moisture' in matName or 'Cornea' in matName or 'Tear' in matName or 'EyeReflection' in matName:
-                # mat[c4d.MATERIAL_BUMP_STRENGTH]=0.01 #To make it diferent than Co..
                 mat[c4d.MATERIAL_COLOR_COLOR] = c4d.Vector(0.2, 0.2, 0.2)
                 mat[c4d.MATERIAL_USE_TRANSPARENCY] = True
                 mat[c4d.MATERIAL_TRANSPARENCY_COLOR] = c4d.Vector(0.9, 0.9, 0.9)
@@ -5902,11 +5692,7 @@ class DazToC4D():
             if 'Sclera' in matName:
                 mat[c4d.MATERIAL_USE_REFLECTION]=False
                 mat[c4d.MATERIAL_GLOBALILLUM_RECEIVE_STRENGTH]=2
-                # mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION] = 0 #0 = Reflection(legacy)
-                # mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS] = 0.10
-                # mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_REFLECTION] = 0.10
-                # mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR] = 0.10
-                # mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_BUMP] = 0.5
+
             if 'Iris' in matName:
                 mat[c4d.MATERIAL_USE_REFLECTION]=False
                 mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_REFLECTION] = 0.0
@@ -5919,11 +5705,6 @@ class DazToC4D():
                     mat[c4d.MATERIAL_ALPHA_SHADER][c4d.BITMAPSHADER_FILENAME][c4d.BITMAPSHADER_EXPOSURE] = 1.0
                 except:
                     print('Exposure Skipped...')
-
-
-            # mainLayerId = 526336
-            # mat[mainLayerId + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION] = c4d.REFLECTION_DISTRIBUTION_GGX
-            # mat[mainLayerId + c4d.REFLECTION_LAYER_MAIN_ROUGHNESSREAL] = 0 # sets attenuation to average
 
         c4d.CallCommand(12253, 12253)  # Render All Materials
 
@@ -5946,15 +5727,6 @@ class DazToC4D():
             return 0
 
         self.importDazFbx(filePath)
-        # doc = documents.GetActiveDocument()
-        #
-        # self.fixMaterials()
-        #
-        # obj = doc.SearchObject('hip')
-        # if obj: #Morphs Fixes...
-        #     DazToC4D().cleanMorphsGeoRemove()
-        #     DazToC4D().dazMorphsFix()
-
 
         dazToC4Dutils().readExtraMapsFromFile() #Extra Maps from File...
 
@@ -6098,16 +5870,7 @@ class DazToC4D():
     def autoImportDaz(self):
 
         screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
-        # self.dialog = guiPleaseWaitAUTO()
-        # self.dialog.Open(dlgtype=c4d.DLG_TYPE_ASYNC, pluginid=103299851, xpos=-2, ypos=-2, defaultw=280, defaulth=50)
-
         self.buttonsChangeState(False)
-
-        # guiDazToC4DMainLogo.SetImage(guiDazToC4DMain().img_loading, False)  # Add the image to the button
-        # guiDazToC4DMainImp.SetImage(guiDazToC4DMain().img_btnManualImportOff, False)  # Add the image to the button
-        # guiDazToC4DMainAutoImp.SetImage(guiDazToC4DMain().img_btnAutoImportOff, False)  # Add the image to the button
-        # guiDazToC4DMainConvert.SetImage(guiDazToC4DMain().img_btnConvertMaterialsOff, False)  # Add the image to the button
-        # guiDazToC4DMainIK.SetImage(guiDazToC4DMain().img_btnAutoIKOff, False)  # Add the image to the button
 
         doc = documents.GetActiveDocument()
         filePath = os.path.join(ROOT_DIR, "DazToC4D.fbx")
@@ -6121,49 +5884,22 @@ class DazToC4D():
         self.importDazFbx(filePath)
         doc = documents.GetActiveDocument()
 
-        # if dazReduceSimilar == True:
-        #     DazToC4D().reduceSimilarMaterials()
-
         self.fixMaterials()
-
-        # dazToC4Dutils().fixMoisure() #TESTING DISABLE.. ENABLE AGAIN!..
 
         #----------- AUTO IK ---------------------------------------
         print('***************************************')
         obj = doc.SearchObject('hip')
         if obj:
-            # dazToC4Dutils().sceneToZero()
-            # AllSceneToZero().sceneToZero()
-            #DazToC4D().dazManualRotationFixTpose()
-            #DazToC4D().dazGen8fix()
             if doc.SearchObject('lThighTwist') != True:
                 print('***************************************')
 
                 if DazToC4D().checkIfPosedResetPose(False) == False:
                     gui.MessageDialog('AAA')
                     forceTpose().dazFix_All_To_T_Pose()
-                    # dazToC4Dutils().sceneToZero()
-                    # AllSceneToZero().sceneToZero()
+                    
                 DazToC4D().cleanMorphsGeoRemove()
                 DazToC4D().dazMorphsFix()
-        #
-        #     # dazToC4Dutils().dazFootRotfix() #Foot rotations to Zero Straight Look...
-        #
-        #     guiDazToC4DMain().applyDazIK()
-        #
-        #     dazToC4Dutils().ikGoalsZeroRot()
-        #     dazToC4Dutils().changeSkinType()
-        #     DazToC4D().unhideProps()
-        #
-        #     c4d.EventAdd()
-        #     c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
-        #
-        #     #DONE-AUTOIMPORT
-        #
-
-        #     DazToC4D().protectIKMControls()
-            # ----------- AUTO IK - END --------------------------------------
-
+       
         dazToC4Dutils().readExtraMapsFromFile() #Extra Maps from File...
 
         c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
@@ -6175,10 +5911,8 @@ class DazToC4D():
         obj = doc.SearchObject('hip')
         if obj:
             if DazToC4D().checkIfPosedResetPose(False) == False:
-
                 DazToC4D().dazManualRotationFixTpose()
-                # dazToC4Dutils().sceneToZero()
-                # AllSceneToZero().sceneToZero()
+           
         DazToC4D().unparentObjsFromRig()
         DazToC4D().hideSomeJoints()
         DazToC4D().matBumpFix()
@@ -6223,14 +5957,11 @@ class DazToC4D():
         c4d.EventAdd()
         c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD   | c4d.DRAWFLAGS_STATICBREAK)
         c4d.EventAdd()
-        # if doc.SearchObject('hip'):
-        #     AllSceneToZero().sceneToZero()
-        #     pass
         self.buttonsChangeState(True)
 
         self.dialog = guiASKtoSave()
         self.dialog.Open(dlgtype=c4d.DLG_TYPE_MODAL, xpos=screen['sx2']/2-210, ypos=screen['sy2']/2-100, defaultw=200, defaulth=150)
-        #AllSceneToZero().sceneToZero()
+      
 
     def preAutoIK(self):
 
@@ -6244,20 +5975,13 @@ class DazToC4D():
             if doc.SearchObject('lThighTwist'):
                 if DazToC4D().checkIfPosedResetPose(False) == False:
                     DazToC4D().dazManualRotationFixTpose()
-        #
+        
         c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD   | c4d.DRAWFLAGS_STATICBREAK)
-        #
-        # obj = doc.SearchObject('hip')
-        # if obj:
-        #     if DazToC4D().checkIfPosedResetPose(False) == False:
-        #         DazToC4D().dazManualRotationFixTpose()
-
         c4d.EventAdd()
 
 
     def autoIK(self):
         self.buttonsChangeState(False)
-        # DazToC4D().preAutoIK() #DO PRE AUTO IK STUFF!
         doc = c4d.documents.GetActiveDocument()
         DazToC4D().morphsGroupMoveUp()
 
@@ -6266,8 +5990,6 @@ class DazToC4D():
             AllSceneToZero().sceneToZero()
 
             guiDazToC4DMain().applyDazIK()
-
-            # dazToC4Dutils().ikGoalsZeroRot()
 
             dazToC4Dutils().changeSkinType()
             DazToC4D().unhideProps()
@@ -6285,8 +6007,6 @@ class DazToC4D():
         DazToC4D().limitFloorContact()
         DazToC4D().lockAllModels()
         DazToC4D().freezeTwistBones()
-        # DazToC4D().limitTwistPosition()
-        # DazToC4D().dazEyesLookAtControls()
         DazToC4D().figureFixBrute()
 
         dazToC4Dutils().protectTwist()
@@ -6306,12 +6026,6 @@ class DazToC4D():
         print(filename)
         file = c4d.documents.LoadDocument(filename, c4d.SCENEFILTER_OBJECTS | c4d.SCENEFILTER_MATERIALS | c4d.SCENEFILTER_MERGESCENE)
         c4d.documents.InsertBaseDocument(file)
-        #doc = c4d.documents.LoadDocument(file)
-        #if not doc:
-        #    c4d.gui.MessageDialog("The document could not be loaded.")
-        #    return
-
-        # dazToC4Dutils().sceneToZero()
         if doc.SearchObject('hip'):
             AllSceneToZero().sceneToZero()
         guiDazToC4DMain().applyDazIK()
@@ -6346,13 +6060,10 @@ class randomColors():
             if randomCol == 1:
                 rigColor1 = self.get_random_color()  # c4d.Vector(0,2,0)
                 rigColor2 = self.get_random_color()  # c4d.Vector(1,0,0)
-            # global IKMobjList
             self.IKMobjList = []
-            # parentOb = doc.SearchObject(parentName)
             parentOb = parentName
             for o in self.selchildren(parentOb, parentOb.GetNext()):
                 o[c4d.ID_BASEOBJECT_USECOLOR] = 2
-                # o[c4d.ID_CA_JOINT_OBJECT_ICONCOL] = 1
                 o[c4d.ID_BASEOBJECT_COLOR] = rigColor1
                 if 'HAND' in o.GetName() or \
                         'Pelvis' in o.GetName() or \
@@ -6371,7 +6082,6 @@ class randomColors():
             if randomCol == 1:
                 rigColor1 = self.get_random_color()  # c4d.Vector(0,2,0)
                 rigColor2 = self.get_random_color()  # c4d.Vector(1,0,0)
-            # parentOb = doc.SearchObject(parentName)
             parentOb = parentName
 
             for o in self.selchildren(parentOb, parentOb.GetNext()):
@@ -6390,14 +6100,10 @@ class randomColors():
             if randomCol == 1:
                 rigColor1 = self.get_random_color()  # c4d.Vector(0,2,0)
                 rigColor2 = self.get_random_color()  # c4d.Vector(1,0,0)
-            # parentOb = doc.SearchObject(parentName)
             parentOb = parentName
-            # global IKMobjList
             self.IKMobjList = []
             for o in self.selchildren(parentOb, parentOb.GetNext()):
                 o[c4d.ID_BASEOBJECT_USECOLOR] = 2
-                # o[c4d.ID_CA_JOINT_OBJECT_ICONCOL] = 1
-                # print o.GetName()
 
                 if "Head" in o.GetName():
                     o[c4d.ID_BASEOBJECT_COLOR] = rigColor2
@@ -6702,7 +6408,6 @@ class IKMAXFastAttach(c4d.gui.GeDialog):
         if id == self.BUTTON_ATTACH_FOOT_RIGHT:
             jointSelected = 'jFoot___R'
 
-        # objParent = doc.SearchObject(dazName + jointSelected)
         objParent = ''
         joints = ikmaxUtils().iterateObjChilds(self.jointPelvis)
         if '___R' in jointSelected:
@@ -6967,14 +6672,6 @@ class EXTRADialog(c4d.gui.GeDialog):
             self.SetBool(208, False)
 
         self.AddCheckbox(209,c4d.BFH_LEFT, 0, 0, "Keep facial morphs only")
-        # self.AddCheckbox(209, c4d.BFH_LEFT, 0, 0, "Lock all geometry after Auto-IK")
-        # self.SetBool(209, True)
-
-        # self.AddCheckbox(209,c4d.BFH_LEFT, 0, 0, "Show extra controls")
-        # self.SetBool(209, True)
-
-        # self.AddCheckbox(210,c4d.BFH_LEFT, 0, 0, "Don't hide fingers joints")
-        # self.SetBool(210, True)
 
         self.GroupEnd()
         self.GroupEnd()
@@ -6993,10 +6690,7 @@ class EXTRADialog(c4d.gui.GeDialog):
         self.AddColorField(self.BUTTON_COL2, c4d.BFH_CENTER, 20, 20, c4d.DR_COLORFIELD_NO_SCREENPICKER | c4d.DR_COLORFIELD_NO_SWATCHES | c4d.DR_COLORFIELD_NO_MIXER | c4d.DR_COLORFIELD_NO_MODE_BUTTONS | c4d.DR_COLORFIELD_NO_COLORWHEEL | c4d.DR_COLORFIELD_NO_BRIGHTNESS | c4d.DR_COLORFIELD_NO_COLOR)
         self.AddColorField(self.BUTTON_COL3, c4d.BFH_CENTER, 20, 20, c4d.DR_COLORFIELD_NO_SCREENPICKER | c4d.DR_COLORFIELD_NO_SWATCHES | c4d.DR_COLORFIELD_NO_MIXER | c4d.DR_COLORFIELD_NO_MODE_BUTTONS | c4d.DR_COLORFIELD_NO_COLORWHEEL | c4d.DR_COLORFIELD_NO_BRIGHTNESS | c4d.DR_COLORFIELD_NO_COLOR)
         self.AddColorField(self.BUTTON_COL4, c4d.BFH_CENTER, 20, 20, c4d.DR_COLORFIELD_NO_SCREENPICKER | c4d.DR_COLORFIELD_NO_SWATCHES | c4d.DR_COLORFIELD_NO_MIXER | c4d.DR_COLORFIELD_NO_MODE_BUTTONS | c4d.DR_COLORFIELD_NO_COLORWHEEL | c4d.DR_COLORFIELD_NO_BRIGHTNESS | c4d.DR_COLORFIELD_NO_COLOR)
-        # self.AddColorChooser(123123213, c4d.BFH_CENTER, 20, 20, c4d.DR_COLORFIELD_NO_SCREENPICKER | c4d.DR_COLORFIELD_NO_SWATCHES | c4d.DR_COLORFIELD_NO_MIXER | c4d.DR_COLORFIELD_NO_MODE_BUTTONS | c4d.DR_COLORFIELD_NO_COLORWHEEL | c4d.DR_COLORFIELD_NO_BRIGHTNESS | c4d.DR_COLORFIELD_NO_COLOR)
-        # self.AddColorChooser(123123213, c4d.BFH_CENTER, 20, 20, c4d.DR_COLORFIELD_NO_SCREENPICKER | c4d.DR_COLORFIELD_NO_SWATCHES | c4d.DR_COLORFIELD_NO_MIXER | c4d.DR_COLORFIELD_NO_MODE_BUTTONS | c4d.DR_COLORFIELD_NO_COLORWHEEL | c4d.DR_COLORFIELD_NO_BRIGHTNESS | c4d.DR_COLORFIELD_NO_COLOR)
-        # self.AddColorChooser(123123213, c4d.BFH_CENTER, 20, 20, c4d.DR_COLORFIELD_NO_SCREENPICKER | c4d.DR_COLORFIELD_NO_SWATCHES | c4d.DR_COLORFIELD_NO_MIXER | c4d.DR_COLORFIELD_NO_MODE_BUTTONS | c4d.DR_COLORFIELD_NO_COLORWHEEL | c4d.DR_COLORFIELD_NO_BRIGHTNESS | c4d.DR_COLORFIELD_NO_COLOR)
-
+ 
         self.SetColorField(self.BUTTON_COL1, c4d.Vector(1.0, 0.0, 0.4), 1, 1, 1)
         self.SetColorField(self.BUTTON_COL2, c4d.Vector(0.4, 0.8, 1.0), 1, 1, 1)
         self.SetColorField(self.BUTTON_COL3, c4d.Vector(0.0, 1.0, 0.5), 1, 1, 1)
@@ -7028,27 +6722,14 @@ class EXTRADialog(c4d.gui.GeDialog):
         self.LogoButton15 = self.AddCustomGui(self.BUTTON_EXTRA_FIGURE, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("<b>Reset to Orig Pose</b>", "Preset0"))
         self.LogoButton15.SetImage(self.img_ani_mode, True)  # Add the image to the button
 
-        # self.LogoButton17 = self.AddCustomGui(self.BUTTON_EXTRA_EYES, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("<b>Quick Auto-Eyes</b><br>Generates LookAt controllers<br>for the eyes", "Preset0"))
-        # self.LogoButton17.SetImage(self.img_extra_eyes, True)  # Add the image to the button
-
         self.LogoButton18 = self.AddCustomGui(self.BUTTON_EXTRA_ATTACH, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("<b>Fast-Attach</b><br>Attach object/s easy and<br>fast to body part", "Preset0"))
         self.LogoButton18.SetImage(self.img_QuickAttach, True)  # Add the image to the button
 
-        # self.LogoButton19 = self.AddCustomGui(self.BUTTON_EXTRA_CLOTH, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("<b>Quick-Cloth</b><br>Bind joints to object<br>based on presets", "Preset0"))
-        # self.LogoButton19.SetImage(self.img_extraFWarp, True)  # Add the image to the button
         self.GroupEnd()
 
         self.GroupEnd() #-------------------------------------Main Group
 
         self.AddSeparatorV(100, c4d.BFH_FIT)
-
-        # self.GroupBegin(11, c4d.BFV_TOP, 1, 1)  # ----------------------------------------------------------
-        # self.GroupBorder(c4d.BORDER_NONE)
-        # self.GroupBorderSpace(0, -12, 0, 5)
-        #
-        # self.AddStaticText(99, c4d.BFH_CENTER, 0, 0, name='(c) 2018 3DtoAll. All Rights Reserved.')  # Add the image to the button
-        #
-        # self.GroupEnd()
 
         self.GroupEnd()
 
@@ -7061,11 +6742,6 @@ class EXTRADialog(c4d.gui.GeDialog):
                     self.LogoButton16.SetImage(self.img_lockON, True)
             except:
                 print('Layer test skipped...')
-
-        # doc = c4d.documents.GetActiveDocument()
-        # objTemp = doc.SearchObject("MaleChar-Body")  # temporal para debugearrrr...
-        # self.LinkBox.SetLink(objTemp)
-        #self.checkOld()
 
         return True
 
@@ -7080,7 +6756,6 @@ class EXTRADialog(c4d.gui.GeDialog):
             return 0
 
         if id == self.BUTTON_MODEL_MIRRORPOSE:
-            # print('POSE!!!')
             DazToC4D().mirrorPose()
             return 0
 
@@ -7098,11 +6773,6 @@ class EXTRADialog(c4d.gui.GeDialog):
             self.jointPelvis = getJointFromConstraint(dazJoint)
             self.dazIkmControls =  getJointFromConstraint(self.jointPelvis).GetUp()
             IKMAXFastAttach.jointPelvis = self.jointPelvis
-
-            # obj = self.LinkBox.GetLink()
-            # global dazName
-            # dazName = obj.GetName().replace('.Shape','') + '_'
-            # print(dazName)
 
         # GUIDES
         if DazToC4D().findIK() == 1:
@@ -7181,11 +6851,6 @@ class EXTRADialog(c4d.gui.GeDialog):
             if id == self.BUTTON_RIG_SHOW:
                 doc = c4d.documents.GetActiveDocument()
 
-                # for x in ikmaxUtils().iterateObjChilds(self.jointPelvis):
-                #     displayValue = x[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR]
-                #     x[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR] = not x[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR]
-                # self.jointPelvis[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR] = not self.jointPelvis[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR]
-
                 boneDisplay = self.jointPelvis[c4d.ID_CA_JOINT_OBJECT_BONE_DISPLAY]
                 if boneDisplay != 0:
                     boneDisplay = 0
@@ -7245,9 +6910,6 @@ class EXTRADialog(c4d.gui.GeDialog):
                         except:
                             pass
 
-                # obj = self.LinkBox.GetLink()
-                # objName = obj.GetName().replace('.Shape','') + '_'
-                # obj = doc.SearchObject(objName + 'jPelvis')
                 obj = self.jointPelvis
 
                 getDisplayTAG(obj)
@@ -7255,9 +6917,6 @@ class EXTRADialog(c4d.gui.GeDialog):
 
             if id == self.BUTTON_COL_RANDOM:
                 print('random colors')
-                # obj = self.LinkBox.GetLink()
-                # objName = obj.GetName().replace('.Shape', '') + '_'
-
 
                 randomColors().randomRigColor(self.jointPelvis)
                 print(self.dazIkmControls.GetName())
@@ -7267,7 +6926,6 @@ class EXTRADialog(c4d.gui.GeDialog):
             if id == self.BUTTON_COL_SET:
                 obj = self.LinkBox.GetLink()
                 objName = obj.GetName().replace('.Shape','') + '_'
-                # obj = doc.SearchObject(objName + 'jPelvis')
 
                 RIGCOL1 = self.GetColorField(self.BUTTON_COL1)['color']
                 RIGCOL2 = self.GetColorField(self.BUTTON_COL2)['color']
@@ -7302,22 +6960,14 @@ class EXTRADialog(c4d.gui.GeDialog):
 
             if id == self.BUTTON_MODEL_FREEZE:
                 DazToC4D().lockLayerOnOff()
-                # meshToBind = self.LinkBox.GetLink()
-                # lockLayer = ikmaxUtils().layerSettings(meshToBind)
-                # if lockLayer == True:
-                #     self.LogoButton16.SetImage(self.img_lock, True)
-                # else:
-                #     self.LogoButton16.SetImage(self.img_lockON, True)
 
             if id == self.BUTTON_EXTRA_FIGURE:
                 obj = self.LinkBox.GetLink()
-                # objName = obj.GetName().replace('.Shape','') + '_'
 
                 ikmaxUtils().setProtectionChildren(self.dazIkmControls, 0)
 
                 ikmaxUtils().resetPRS(self.dazIkmControls)
                 ikmaxUtils().resetPRS(self.jointPelvis)
-                # ikmaxUtils().resetPRS(objName + "Eyes-LookAt")
 
                 ikmaxUtils().setProtectionChildren(self.dazIkmControls, 1)
 
@@ -7354,15 +7004,13 @@ class EXTRADialog(c4d.gui.GeDialog):
                     eyesGroup = ikmaxUtils().makeNull('EyesParent', headJoint)
                     eyesGroup2 = ikmaxUtils().makeNull('EyesParent', headJoint)
 
-                    #obj1.SetName(EXTRADialog.PREFFIX + 'Eye1')
-                    #obj2.SetName(EXTRADialog.PREFFIX + 'Eye2')
                     obj1.SetAbsScale(c4d.Vector(1,1,1))
                     obj2.SetAbsScale(c4d.Vector(1,1,1))
 
                     eyesParentNull.SetName(EXTRADialog.PREFFIX + 'Eyes-LookAt')
                     eyesGroup.SetName(EXTRADialog.PREFFIX + 'EyesGroup')
 
-                    masterSize = EXTRADialog.MASTERSIZE  # ikmaxUtils().getObjHeight(characterMesh)
+                    masterSize = EXTRADialog.MASTERSIZE
 
                     obj1[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z] -= masterSize / 4
                     obj2[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z] -= masterSize / 4
@@ -7415,22 +7063,12 @@ class EXTRADialog(c4d.gui.GeDialog):
                     obj1.SetAbsRot(c4d.Vector(0))
                     obj2.SetAbsRot(c4d.Vector(0))
 
-                    #ikmGenerator().constraintObj(eyesGroup, headJoint, '', 0)
                     ikmGenerator().constraintObj(eyesParentNull, headJoint, '', 0)
 
-                    #makeChild(ojo1, eyesGroup)
-                    #makeChild(ojo2, eyesGroup)
-
-                    # if objParent != None:
-                    #     makeChild(eyesGroup, objParent)
-
-                    #eyesGroup.InsertAfter(joints)
                     eyesParentNull.InsertAfter(joints)
 
                     ikmaxUtils().freezeChilds(EXTRADialog.PREFFIX + "Eyes-LookAt")
                     ikmaxUtils().freezeChilds(EXTRADialog.PREFFIX + "EyesLookAtGroup")
-
-                    #ikmaxUtils().freezeChilds(EXTRADialog.PREFFIX + "EyesGroup")
 
                     c4d.EventAdd()
                     c4d.CallCommand(12288, 12288)  # Frame All
@@ -7442,9 +7080,6 @@ class EXTRADialog(c4d.gui.GeDialog):
                     gui.MessageDialog('Select object(s) that you want to attach to joints')
                     return 0
                 else:
-                    # if ikmaxUtils().checkIfExist('jHead') != 1:
-                    #     gui.MessageDialog('Generate a RIG first', c4d.GEMB_OK)
-                    #     return 0
                     dialog = IKMAXFastAttach()
                     dialog.Open(dlgtype=c4d.DLG_TYPE_MODAL, defaultw=200, defaulth=150, xpos=-1, ypos=-1)
 
@@ -7645,42 +7280,41 @@ class guiPleaseWaitAUTO(gui.GeDialog):
 
 
 class guiDazToC4DMain(gui.GeDialog):
-    dialog = None
-    extraDialog = None
-
-    BUTTON_CONFIG = 923123
-    BUTTON_AUTO_IMPORT = 923124
-    BUTTON_MANUAL_IMPORT = 923125
-    BUTTON_CONVERT_MATERIALS = 923126
-    BUTTON_CONFIG = 923127
-    BUTTON_TEMP = 923128
-    BUTTON_HELP = 923129
-    BUTTON_AUTO_IK = 923130
-
-
-    MY_BITMAP_BUTTON = 9353535
-
-    LogoButton = ''
-
-    dir, file = os.path.split(__file__)  # Gets the plugin's directory
-    daztoC4D_Folder = os.path.join(dir, 'res')  # Adds the res folder to the path
-
-    img_d2c4dLogo = os.path.join(daztoC4D_Folder, 'd2c4d_logo.png')
-    img_loading = os.path.join(daztoC4D_Folder, 'd2c4d_loading.png')
-
-    img_d2c4dHelp = os.path.join(daztoC4D_Folder, 'd2c4d_help.png')
-
-    img_btnAutoImport = os.path.join(daztoC4D_Folder, 'btnAutoImport.png')
-    img_btnAutoImportOff = os.path.join(daztoC4D_Folder, 'btnAutoImport0.png')
-    img_btnManualImport = os.path.join(daztoC4D_Folder, 'btnImport.png')
-    img_btnManualImportOff = os.path.join(daztoC4D_Folder, 'btnImport0.png')
-    img_btnConvertMaterials = os.path.join(daztoC4D_Folder, 'btnConvertMaterials.png')
-    img_btnConvertMaterialsOff = os.path.join(daztoC4D_Folder, 'btnConvertMaterials0.png')
-    img_btnAutoIK = os.path.join(daztoC4D_Folder, 'btnAutoIK.png')
-    img_btnAutoIKOff = os.path.join(daztoC4D_Folder, 'btnAutoIK0.png')
+    def __init__(self):
+        dialog = None
+        extraDialog = None
+        
+        BUTTON_CONFIG = 923123
+        BUTTON_AUTO_IMPORT = 923124
+        BUTTON_MANUAL_IMPORT = 923125
+        BUTTON_CONVERT_MATERIALS = 923126
+        BUTTON_CONFIG = 923127
+        BUTTON_TEMP = 923128
+        BUTTON_HELP = 923129
+        BUTTON_AUTO_IK = 923130
 
 
-    img_btnConfig = os.path.join(daztoC4D_Folder, 'btnConfig.png')
+        MY_BITMAP_BUTTON = 9353535
+
+        LogoButton = ''
+
+        dir, file = os.path.split(__file__)  # Gets the plugin's directory
+        daztoC4D_Folder = os.path.join(dir, 'res')  # Adds the res folder to the path
+        
+        # Set Images for UI
+        img_d2c4dLogo = os.path.join(daztoC4D_Folder, 'd2c4d_logo.png')
+        img_loading = os.path.join(daztoC4D_Folder, 'd2c4d_loading.png')
+        img_d2c4dHelp = os.path.join(daztoC4D_Folder, 'd2c4d_help.png')
+        img_btnAutoImport = os.path.join(daztoC4D_Folder, 'btnAutoImport.png')
+        img_btnAutoImportOff = os.path.join(daztoC4D_Folder, 'btnAutoImport0.png')
+        img_btnManualImport = os.path.join(daztoC4D_Folder, 'btnImport.png')
+        img_btnManualImportOff = os.path.join(daztoC4D_Folder, 'btnImport0.png')
+        img_btnConvertMaterials = os.path.join(daztoC4D_Folder, 'btnConvertMaterials.png')
+        img_btnConvertMaterialsOff = os.path.join(daztoC4D_Folder, 'btnConvertMaterials0.png')
+        img_btnAutoIK = os.path.join(daztoC4D_Folder, 'btnAutoIK.png')
+        img_btnAutoIKOff = os.path.join(daztoC4D_Folder, 'btnAutoIK0.png')
+        img_btnConfig = os.path.join(daztoC4D_Folder, 'btnConfig.png')
+
 
     def applyDazIK(self):
         doc = documents.GetActiveDocument()
