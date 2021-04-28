@@ -56,7 +56,63 @@ guiDazToC4DLayerLockButton = None
 
 guiDazToC4DExtraDialog = None
 
-# dazName = 'Object'
+
+def applyDazIK():
+        doc = documents.GetActiveDocument()
+
+        dazToC4Dutils().ungroupDazGeo()
+
+        meshName = dazToC4Dutils().getDazMesh().GetName()
+        meshName = meshName.replace('.Shape', '')
+        global dazName
+        dazName = meshName + '_'
+
+        dazToC4Dutils().guidesToDaz()  # Auto Generate Guides
+        dazToC4Dutils().cleanJointsDaz()  # Some adjustments to Daz Rig...
+        # Ikmax stuff...----------------------
+        ikmGenerator().makeRig()
+        suffix = "___R"
+        objArm = doc.SearchObject(dazName + 'jCollar')
+        objLeg = doc.SearchObject(dazName + 'jUpLeg')
+
+        ikmGenerator().makeIKcontrols()
+        ikmaxUtils().mirrorObjects(objArm, suffix)
+        ikmaxUtils().mirrorObjects(objLeg, suffix)
+        ikmGenerator().makeChildKeepPos(dazName + "Foot_Platform___R", dazName + "Foot_PlatformBase___R")
+        ikmGenerator().makeChildKeepPos(dazName + "Foot_PlatformBase___R", dazName + "IKM_Controls")
+
+        DazToC4D().dazEyesLookAtControls()
+
+        # ------------------------------------
+
+        dazToC4Dutils().cleanJointsDaz('Right')
+        dazToC4Dutils().constraintJointsToDaz()
+        dazToC4Dutils().constraintJointsToDaz('Right')
+        if doc.SearchObject(dazName + 'ForearmTwist_ctrl'):
+            dazToC4Dutils().twistBoneSetup() #TwistBone Setup
+            obj = doc.SearchObject(dazName + "ForearmTwist_ctrl")
+            obj[c4d.ID_BASEOBJECT_REL_ROTATION,c4d.VECTOR_X] = 0
+            obj = doc.SearchObject(dazName + "ForearmTwist_ctrl___R")
+            obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
+            ikmGenerator().constraintObj("lForearmTwist", dazName + "ForearmTwist_ctrl")
+            ikmGenerator().constraintObj("rForearmTwist", dazName + "ForearmTwist_ctrl___R")
+            dazToC4Dutils().fixConstraints()
+            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl", "lForearmTwist")
+            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl___R", "rForearmTwist")
+
+        ikmaxUtils().freezeChilds(dazName + "IKM_Controls")
+        ikmaxUtils().freezeChilds(dazName + "jPelvis")
+
+        dazToC4Dutils().addProtection()  # Foot controls lock position, allow rotations.
+        ikmaxUtils().hideGuides(1)
+        dazToC4Dutils().hideRig()
+        c4d.CallCommand(12113, 12113)  # Deselect All
+        guides = doc.SearchObject(dazName + '__IKM-Guides')
+        if guides:
+            guides.Remove() #REMOVE GUIDES
+        c4d.EventAdd()
+
+
 
 def _GetNextHierarchyObject(op):
     """Return the next object in hieararchy.
@@ -3633,7 +3689,6 @@ class DazToC4D():
     dialog = None
 
     def AUTH(self):
-        # authhh = authDialogDazToC4D()
 
         bc = c4d.plugins.GetWorldPluginData(PLUGIN_ID)
         if bc is not None:
@@ -3643,7 +3698,6 @@ class DazToC4D():
                 if result:
                     return True
 
-        #print ("3DtoAll: DazToC4D - Activation Needed")
 
         screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
 
@@ -5016,37 +5070,6 @@ class DazToC4D():
 
         c4d.EventAdd()
 
-    def buttonsChangeState(self, btnState):
-        c4d.StatusClear()
-        c4d.EventAdd()
-        c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
-        c4d.DrawViews(c4d.EVMSG_CHANGEDSCRIPTMODE)
-        c4d.EventAdd(c4d.EVENT_ANIMATE)
-        c4d.StatusClear()
-        if btnState == False:
-            guiDazToC4DMainLogo.SetImage(guiDazToC4DMain().img_loading, False)  # Add the image to the button
-            try:
-                guiDazToC4DMainLogo.LayoutChanged()
-                guiDazToC4DMainLogo.Redraw()
-            except:
-                print("DazToC4D: LayoutChanged skip...")
-
-            guiDazToC4DMainAutoImp.SetImage(guiDazToC4DMain().img_btnAutoImportOff, False)  # Add the image to the button
-            guiDazToC4DMainConvert.SetImage(guiDazToC4DMain().img_btnConvertMaterialsOff, False)  # Add the image to the button
-            guiDazToC4DMainIK.SetImage(guiDazToC4DMain().img_btnAutoIKOff, False)  # Add the image to the button
-
-        if btnState == True:
-            guiDazToC4DMainLogo.SetImage(guiDazToC4DMain().img_d2c4dLogo, False)  # Add the image to the button
-            guiDazToC4DMainAutoImp.SetImage(guiDazToC4DMain().img_btnAutoImport, False)  # Add the image to the button
-            guiDazToC4DMainConvert.SetImage(guiDazToC4DMain().img_btnConvertMaterials, False)  # Add the image to the button
-            guiDazToC4DMainIK.SetImage(guiDazToC4DMain().img_btnAutoIK, False)  # Add the image to the button
-
-        bc = c4d.BaseContainer()
-        c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
-
-        return True
-
     def checkStdMats(self):
         doc = c4d.documents.GetActiveDocument()
         docMaterials = doc.GetMaterials()
@@ -5712,18 +5735,17 @@ class DazToC4D():
 
 
     def autoImportDazJustImport(self):
-        self.buttonsChangeState(False)
+        #self.buttonsChangeState(False)
 
         doc = documents.GetActiveDocument()
     
-        filePath = os.path.join(ROOT_DIR, "DazToC4D.fbx") 
-      
+        filePath = os.path.join(EXPORT_DIR, "FIG", "FIG0", "B_FIG.fbx") # Temp
 
         if os.path.exists(filePath) == False:
             gui.MessageDialog(
                 'Nothing to import.\nYou have to export from DAZ Studio first',
                 c4d.GEMB_OK)
-            self.buttonsChangeState(True)
+            #self.buttonsChangeState(True)
             return 0
 
         self.importDazFbx(filePath)
@@ -5736,10 +5758,6 @@ class DazToC4D():
         c4d.CallCommand(12113, 12113)  # Deselect All
 
         screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
-
-        # DazToC4D().unparentObjsFromRig()
-        # DazToC4D().hideSomeJoints()
-        # DazToC4D().matBumpFix()
 
         c4d.EventAdd()
         c4d.CallCommand(12148)  # Frame Geometry
@@ -5765,9 +5783,6 @@ class DazToC4D():
 
         DazToC4D().morphsFixRemoveAndRename()
         xpressoTag = connectEyeLashesMorphXpresso()
-        # morphsGroup = DazToC4D().moveMorphsToGroup(dazObj)
-        # DazToC4D().xpressoTagToMorphsGroup(morphsGroup)
-        # DazToC4D().morphTagsToGroups()
 
         c4d.EventAdd()
         c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
@@ -5788,7 +5803,7 @@ class DazToC4D():
         c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
         c4d.EventAdd()
 
-        self.buttonsChangeState(True)
+        #self.buttonsChangeState(True)
 
         self.dialog = guiASKtoSave()
         self.dialog.Open(dlgtype=c4d.DLG_TYPE_MODAL, xpos=screen['sx2']//2-210, ypos=screen['sy2']//2-100, defaultw=200, defaulth=150)
@@ -5808,9 +5823,6 @@ class DazToC4D():
                 rotRX = abs(joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X])
                 rotRY = abs(joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y])
                 rotRZ = abs(joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z])
-                # print(rotRX)
-                # print(rotRY)
-                # print(rotRZ)
                 if rotRX == rotRY == rotRZ == 0.0:
                     return False
                 else:
@@ -5832,9 +5844,6 @@ class DazToC4D():
                 rotLX = round(rotLX, 2)
                 rotLY = round(rotLY, 2)
                 rotLZ = round(rotLZ, 2)
-                # print(rotRX, rotLX)
-                # print(rotRY, rotLY)
-                # print(rotRZ, rotLZ)
                 if rotRX == rotLX and rotRY == rotLY and rotRZ == rotLZ:
                     return False
                 else:
@@ -5867,101 +5876,6 @@ class DazToC4D():
 
         return isPosed
 
-    def autoImportDaz(self):
-
-        screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
-        self.buttonsChangeState(False)
-
-        doc = documents.GetActiveDocument()
-        filePath = os.path.join(ROOT_DIR, "DazToC4D.fbx")
-        
-        if os.path.exists(filePath) == False:
-            gui.MessageDialog(
-                'Be sure to export first from DAZ Studio',
-                c4d.GEMB_OK)
-            return 0
-
-        self.importDazFbx(filePath)
-        doc = documents.GetActiveDocument()
-
-        self.fixMaterials()
-
-        #----------- AUTO IK ---------------------------------------
-        print('***************************************')
-        obj = doc.SearchObject('hip')
-        if obj:
-            if doc.SearchObject('lThighTwist') != True:
-                print('***************************************')
-
-                if DazToC4D().checkIfPosedResetPose(False) == False:
-                    gui.MessageDialog('AAA')
-                    forceTpose().dazFix_All_To_T_Pose()
-                    
-                DazToC4D().cleanMorphsGeoRemove()
-                DazToC4D().dazMorphsFix()
-       
-        dazToC4Dutils().readExtraMapsFromFile() #Extra Maps from File...
-
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
-        c4d.CallCommand(300001026, 300001026)  # Deselect All
-        c4d.CallCommand(12168, 12168)  # Remove Unused Materials
-        c4d.CallCommand(12113, 12113)  # Deselect All
-
-        screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
-        obj = doc.SearchObject('hip')
-        if obj:
-            if DazToC4D().checkIfPosedResetPose(False) == False:
-                DazToC4D().dazManualRotationFixTpose()
-           
-        DazToC4D().unparentObjsFromRig()
-        DazToC4D().hideSomeJoints()
-        DazToC4D().matBumpFix()
-
-        c4d.EventAdd()
-        c4d.CallCommand(12148)  # Frame Geometry
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD   | c4d.DRAWFLAGS_STATICBREAK)
-
-        c4d.CallCommand(300001026, 300001026)  # Deselect All
-        c4d.CallCommand(12168, 12168)  # Remove Unused Materials
-
-        DazToC4D().eyeLashAndOtherFixes()
-        c4d.EventAdd()
-        c4d.EventAdd()
-
-        print('--- Import Done ---')
-        if dazReduceSimilar == True:
-            c4d.CallCommand(12211, 12211)  # Remove Duplicate Materials
-            DazToC4D().reduceMatFix()
-            DazToC4D().removeDisp()
-
-        dazToC4Dutils().readExtraMapsFromFile() #Extra Maps from File...
-
-        DazToC4D().addLipsMaterial() # Add Lips Material
-        dazObj = dazToC4Dutils().getDazMesh()
-        
-        DazToC4D().morphsFixRemoveAndRename()
-        xpressoTag = connectEyeLashesMorphXpresso()
-        morphsGroup = DazToC4D().moveMorphsToGroup(dazObj)
-        DazToC4D().xpressoTagToMorphsGroup(morphsGroup)
-        DazToC4D().morphTagsToGroups()
-        # morphsGroup.InsertTag(xpressoTag)
-        c4d.EventAdd()
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD   | c4d.DRAWFLAGS_STATICBREAK)
-        c4d.EventAdd()
-        c4d.CallCommand(300001026, 300001026)  # Deselect All
-        c4d.CallCommand(12168, 12168)  # Remove Unused Materials
-        # c4d.CallCommand(12211, 12211)  # Remove Duplicate Materials
-
-        DazToC4D().stdMatExtrafixes()
-
-        c4d.EventAdd()
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD   | c4d.DRAWFLAGS_STATICBREAK)
-        c4d.EventAdd()
-        self.buttonsChangeState(True)
-
-        self.dialog = guiASKtoSave()
-        self.dialog.Open(dlgtype=c4d.DLG_TYPE_MODAL, xpos=screen['sx2']/2-210, ypos=screen['sy2']/2-100, defaultw=200, defaulth=150)
-      
 
     def preAutoIK(self):
 
@@ -5981,7 +5895,7 @@ class DazToC4D():
 
 
     def autoIK(self):
-        self.buttonsChangeState(False)
+        #self.buttonsChangeState(False)
         doc = c4d.documents.GetActiveDocument()
         DazToC4D().morphsGroupMoveUp()
 
@@ -5989,7 +5903,7 @@ class DazToC4D():
         if obj:
             AllSceneToZero().sceneToZero()
 
-            guiDazToC4DMain().applyDazIK()
+            applyDazIK()
 
             dazToC4Dutils().changeSkinType()
             DazToC4D().unhideProps()
@@ -6012,25 +5926,11 @@ class DazToC4D():
         dazToC4Dutils().protectTwist()
 
 
-        self.buttonsChangeState(True)
+        #self.buttonsChangeState(True)
         c4d.CallCommand(12168, 12168)  # Delete Unused Materials
         # quit()  # -------------------------------------------------
 
         print('Done')
-
-    def manualImportDaz(self):
-        filename = c4d.storage.LoadDialog(c4d.FILESELECTTYPE_SCENES)
-        if not filename or not os.path.isfile(filename):
-            return
-
-        print(filename)
-        file = c4d.documents.LoadDocument(filename, c4d.SCENEFILTER_OBJECTS | c4d.SCENEFILTER_MATERIALS | c4d.SCENEFILTER_MERGESCENE)
-        c4d.documents.InsertBaseDocument(file)
-        if doc.SearchObject('hip'):
-            AllSceneToZero().sceneToZero()
-        guiDazToC4DMain().applyDazIK()
-        dazToC4Dutils().changeSkinType()
-        c4d.EventAdd()
 
 
 class randomColors():
@@ -7278,102 +7178,78 @@ class guiPleaseWaitAUTO(gui.GeDialog):
 
         return True
 
-
 class guiDazToC4DMain(gui.GeDialog):
+    
+    dialog = None
+    extraDialog = None
+    
+    BUTTON_CONFIG = 923123
+    BUTTON_AUTO_IMPORT = 923124
+    BUTTON_CONVERT_MATERIALS = 923126
+    BUTTON_CONFIG = 923127
+    BUTTON_TEMP = 923128
+    BUTTON_HELP = 923129
+    BUTTON_AUTO_IK = 923130
+
+
+    MY_BITMAP_BUTTON = 9353535
+
+    LogoButton = ''
+
+    dir, file = os.path.split(__file__)  # Gets the plugin's directory
+    daztoC4D_Folder = os.path.join(dir, 'res')  # Adds the res folder to the path
+    
+    # Set Images for UI
+    img_d2c4dLogo = os.path.join(daztoC4D_Folder, 'd2c4d_logo.png')
+    img_loading = os.path.join(daztoC4D_Folder, 'd2c4d_loading.png')
+    img_d2c4dHelp = os.path.join(daztoC4D_Folder, 'd2c4d_help.png')
+    img_btnAutoImport = os.path.join(daztoC4D_Folder, 'btnAutoImport.png')
+    img_btnAutoImportOff = os.path.join(daztoC4D_Folder, 'btnAutoImport0.png')
+    img_btnManualImport = os.path.join(daztoC4D_Folder, 'btnImport.png')
+    img_btnManualImportOff = os.path.join(daztoC4D_Folder, 'btnImport0.png')
+    img_btnConvertMaterials = os.path.join(daztoC4D_Folder, 'btnConvertMaterials.png')
+    img_btnConvertMaterialsOff = os.path.join(daztoC4D_Folder, 'btnConvertMaterials0.png')
+    img_btnAutoIK = os.path.join(daztoC4D_Folder, 'btnAutoIK.png')
+    img_btnAutoIKOff = os.path.join(daztoC4D_Folder, 'btnAutoIK0.png')
+    img_btnConfig = os.path.join(daztoC4D_Folder, 'btnConfig.png')
+
+
     def __init__(self):
-        dialog = None
-        extraDialog = None
-        
-        BUTTON_CONFIG = 923123
-        BUTTON_AUTO_IMPORT = 923124
-        BUTTON_MANUAL_IMPORT = 923125
-        BUTTON_CONVERT_MATERIALS = 923126
-        BUTTON_CONFIG = 923127
-        BUTTON_TEMP = 923128
-        BUTTON_HELP = 923129
-        BUTTON_AUTO_IK = 923130
+        try:
+            self.AddGadget(c4d.DIALOG_NOMENUBAR, 0)#disable menubar
+        except:
+            pass
 
+    def buttonsChangeState(self, btnState):
+            c4d.StatusClear()
+            c4d.EventAdd()
+            c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
+            c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
+            c4d.DrawViews(c4d.EVMSG_CHANGEDSCRIPTMODE)
+            c4d.EventAdd(c4d.EVENT_ANIMATE)
+            c4d.StatusClear()
+            if btnState == False:
+                self.main_logo.SetImage(self.img_loading, False)  # Add the image to the button
+                try:
+                    self.main_logo.LayoutChanged()
+                    self.main_logo.Redraw()
+                except:
+                    print("DazToC4D: LayoutChanged skip...")
 
-        MY_BITMAP_BUTTON = 9353535
+                self.auto_import_but.SetImage(self.img_btnAutoImportOff, False)  # Add the image to the button
+                self.convert_mat_but.SetImage(self.img_btnConvertMaterialsOff, False)  # Add the image to the button
+                self.auto_ik_but.SetImage(self.img_btnAutoIKOff, False)  # Add the image to the button
 
-        LogoButton = ''
+            if btnState == True:
+                self.main_logo.SetImage(self.img_d2c4dLogo, False)  # Add the image to the button
+                self.auto_import_but.SetImage(self.img_btnAutoImport, False)  # Add the image to the button
+                self.convert_mat_but.SetImage(self.img_btnConvertMaterials, False)  # Add the image to the button
+                self.auto_ik_but.SetImage(self.img_btnAutoIK, False)  # Add the image to the button
 
-        dir, file = os.path.split(__file__)  # Gets the plugin's directory
-        daztoC4D_Folder = os.path.join(dir, 'res')  # Adds the res folder to the path
-        
-        # Set Images for UI
-        img_d2c4dLogo = os.path.join(daztoC4D_Folder, 'd2c4d_logo.png')
-        img_loading = os.path.join(daztoC4D_Folder, 'd2c4d_loading.png')
-        img_d2c4dHelp = os.path.join(daztoC4D_Folder, 'd2c4d_help.png')
-        img_btnAutoImport = os.path.join(daztoC4D_Folder, 'btnAutoImport.png')
-        img_btnAutoImportOff = os.path.join(daztoC4D_Folder, 'btnAutoImport0.png')
-        img_btnManualImport = os.path.join(daztoC4D_Folder, 'btnImport.png')
-        img_btnManualImportOff = os.path.join(daztoC4D_Folder, 'btnImport0.png')
-        img_btnConvertMaterials = os.path.join(daztoC4D_Folder, 'btnConvertMaterials.png')
-        img_btnConvertMaterialsOff = os.path.join(daztoC4D_Folder, 'btnConvertMaterials0.png')
-        img_btnAutoIK = os.path.join(daztoC4D_Folder, 'btnAutoIK.png')
-        img_btnAutoIKOff = os.path.join(daztoC4D_Folder, 'btnAutoIK0.png')
-        img_btnConfig = os.path.join(daztoC4D_Folder, 'btnConfig.png')
+            bc = c4d.BaseContainer()
+            c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
 
-
-    def applyDazIK(self):
-        doc = documents.GetActiveDocument()
-
-        dazToC4Dutils().ungroupDazGeo()
-
-        meshName = dazToC4Dutils().getDazMesh().GetName()
-        meshName = meshName.replace('.Shape', '')
-        global dazName
-        dazName = meshName + '_'
-
-        dazToC4Dutils().guidesToDaz()  # Auto Generate Guides
-        dazToC4Dutils().cleanJointsDaz()  # Some adjustments to Daz Rig...
-        # Ikmax stuff...----------------------
-        ikmGenerator().makeRig()
-        suffix = "___R"
-        objArm = doc.SearchObject(dazName + 'jCollar')
-        objLeg = doc.SearchObject(dazName + 'jUpLeg')
-
-        ikmGenerator().makeIKcontrols()
-        ikmaxUtils().mirrorObjects(objArm, suffix)
-        ikmaxUtils().mirrorObjects(objLeg, suffix)
-        ikmGenerator().makeChildKeepPos(dazName + "Foot_Platform___R", dazName + "Foot_PlatformBase___R")
-        ikmGenerator().makeChildKeepPos(dazName + "Foot_PlatformBase___R", dazName + "IKM_Controls")
-
-        DazToC4D().dazEyesLookAtControls()
-
-
-
-        # ------------------------------------
-
-        dazToC4Dutils().cleanJointsDaz('Right')
-        dazToC4Dutils().constraintJointsToDaz()
-        dazToC4Dutils().constraintJointsToDaz('Right')
-        if doc.SearchObject(dazName + 'ForearmTwist_ctrl'):
-            dazToC4Dutils().twistBoneSetup() #TwistBone Setup
-            obj = doc.SearchObject(dazName + "ForearmTwist_ctrl")
-            obj[c4d.ID_BASEOBJECT_REL_ROTATION,c4d.VECTOR_X] = 0
-            obj = doc.SearchObject(dazName + "ForearmTwist_ctrl___R")
-            obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
-            ikmGenerator().constraintObj("lForearmTwist", dazName + "ForearmTwist_ctrl")
-            ikmGenerator().constraintObj("rForearmTwist", dazName + "ForearmTwist_ctrl___R")
-            dazToC4Dutils().fixConstraints()
-            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl", "lForearmTwist")
-            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl___R", "rForearmTwist")
-
-        ikmaxUtils().freezeChilds(dazName + "IKM_Controls")
-        ikmaxUtils().freezeChilds(dazName + "jPelvis")
-
-        dazToC4Dutils().addProtection()  # Foot controls lock position, allow rotations.
-        ikmaxUtils().hideGuides(1)
-        dazToC4Dutils().hideRig()
-        c4d.CallCommand(12113, 12113)  # Deselect All
-        guides = doc.SearchObject(dazName + '__IKM-Guides')
-        if guides:
-            guides.Remove() #REMOVE GUIDES
-        c4d.EventAdd()
-
-
+            return True
 
     def buttonBC(self, tooltipText="", presetLook=""):
         # Logo Image #############################################################
@@ -7392,11 +7268,6 @@ class guiDazToC4DMain(gui.GeDialog):
         return bc
         # Logo Image #############################################################
 
-    def __init__(self):
-        try:
-            self.AddGadget(c4d.DIALOG_NOMENUBAR, 0)#disable menubar
-        except:
-            pass
 
     def CreateLayout(self):
         self.SetTitle('DazToC4D v1.1.2')
@@ -7407,8 +7278,8 @@ class guiDazToC4DMain(gui.GeDialog):
         bc.SetInt32(c4d.BITMAPBUTTON_BORDER, c4d.BORDER_ROUND)  # Sets the border to look like a button
         self.LogoButton = self.AddCustomGui(self.MY_BITMAP_BUTTON, c4d.CUSTOMGUI_BITMAPBUTTON, "Logo", c4d.BFH_CENTER, 0, 0, bc)
         self.LogoButton.SetImage(self.img_d2c4dLogo, False)  # Add the image to the button
-        global guiDazToC4DMainLogo
-        guiDazToC4DMainLogo = self.LogoButton
+    
+        self.main_logo = self.LogoButton
         print('**********************')
         print(self.LogoButton)
         print('**********************')
@@ -7431,54 +7302,20 @@ class guiDazToC4DMain(gui.GeDialog):
 
         self.LogoButton6 = self.AddCustomGui(self.BUTTON_AUTO_IMPORT, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
         self.LogoButton6.SetImage(self.img_btnAutoImport, True)  # Add the image to the button
-        global guiDazToC4DMainAutoImp
-        guiDazToC4DMainAutoImp = self.LogoButton6
+        self.auto_import_but = self.LogoButton6
 
         self.AddSeparatorV(0, c4d.BFV_SCALEFIT)  # Separator V
 
 
         self.LogoButton6 = self.AddCustomGui(self.BUTTON_AUTO_IK, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
         self.LogoButton6.SetImage(self.img_btnAutoIK, True)  # Add the image to the button
-        global guiDazToC4DMainIK
-        guiDazToC4DMainIK = self.LogoButton6
+        self.auto_ik_but = self.LogoButton6
 
 
         self.GroupEnd()  # END ///////////////////////////////////////////////
         self.GroupEnd()  # END ///////////////////////////////////////////////
-
-        # Rig
-        # self.GroupBegin(10000, c4d.BFH_CENTER, 1, title='Rig:')
-        # self.GroupBorder(c4d.BORDER_OUT)
-        # self.GroupBorderSpace(0, 0, 0, 0)
-        #
-        # self.GroupBegin(10000, c4d.BFH_SCALEFIT, 5)  # BEGIN ----------------------
-        # self.GroupBorderNoTitle(c4d.BORDER_NONE)
-        # self.GroupBorderSpace(12, 5, 10, 5)
-        #
-        # self.LogoButton6 = self.AddCustomGui(self.BUTTON_CONFIG, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
-        # self.LogoButton6.SetImage(self.img_btnConfig, True)  # Add the image to the button
-        #
-        # self.AddSeparatorV(0, c4d.BFV_SCALEFIT)  # Separator V
-        #
-        # self.LogoButton6 = self.AddCustomGui(self.BUTTON_AUTO_IK, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
-        # self.LogoButton6.SetImage(self.img_btnAutoIK, True)  # Add the image to the button
-        # global guiDazToC4DMainIK
-        # guiDazToC4DMainIK = self.LogoButton6
-        #
-        # self.GroupEnd()  # END ///////////////////////////////////////////////
+    
         self.GroupEnd()  # END ///////////////////////////////////////////////
-
-        # self.GroupBegin(10000, c4d.BFH_SCALEFIT, 2)
-        # self.GroupBorderNoTitle(c4d.BORDER_THIN_OUT)
-        # self.GroupBorderSpace(80, 10, 10, 10)
-        #
-        # self.AddStaticText(99, c4d.BFH_CENTER, 70, 0, name='Scale: ')
-        # self.AddComboBox(1000, c4d.BFH_CENTER, 150, 15, False)
-        # self.AddChild(1000, 0, 'Automatic')
-        # self.GroupEnd()
-        #
-        # self.GroupEnd()
-
 
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
 
@@ -7492,8 +7329,7 @@ class guiDazToC4DMain(gui.GeDialog):
 
         self.LogoButton6 = self.AddCustomGui(self.BUTTON_CONVERT_MATERIALS, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
         self.LogoButton6.SetImage(self.img_btnConvertMaterials, True)  # Add the image to the button
-        global guiDazToC4DMainConvert
-        guiDazToC4DMainConvert = self.LogoButton6
+        self.convert_mat_but = self.LogoButton6
         self.AddSeparatorV(0, c4d.BFV_SCALEFIT)  # Separator V
         self.AddComboBox(2001, c4d.BFH_SCALEFIT, 100, 15, False)
         self.AddChild(2001, 0, ' - Select -')
@@ -7530,9 +7366,6 @@ class guiDazToC4DMain(gui.GeDialog):
 
         self.GroupEnd() # MATERIALS END ///////////////////////////////////////////////
 
-        # self.AddButton(BUTTON_TEMP, name='cacca')
-        # self.AddButton(self.BUTTON_TEMP, c4d.BFV_MASK, initw=150, inith=35, name="TEST")
-
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
 
         self.GroupBegin(10000, c4d.BFH_CENTER, 2, title='Global Skin Parameters:')  # BEGIN ----------------------
@@ -7560,16 +7393,8 @@ class guiDazToC4DMain(gui.GeDialog):
             DazToC4D().matSetSpec('Rough', slider_value)
             c4d.EventAdd()  
 
-        if id == self.BUTTON_MANUAL_IMPORT:
-            # gui.MessageDialog('Not in beta', c4d.GEMB_OK)
-            new = 2  # open in a new tab, if possible
-            url = "http://www.daz3d.com"
-            webbrowser.open(url, new=new)
-
         if id == self.BUTTON_AUTO_IMPORT:
             DazToC4D().autoImportDazJustImport()
-            # DazToC4D().autoImportDaz()
-
 
         if id == self.BUTTON_AUTO_IK:
 
@@ -7602,17 +7427,16 @@ class guiDazToC4DMain(gui.GeDialog):
                     else:
                         DazToC4D().checkIfPosedResetPose() #THIS RUNS AUTO-IK !
 
-            DazToC4D().buttonsChangeState(True)
+            self.buttonsChangeState(True)
 
         if id == self.BUTTON_CONFIG:
             if self.extraDialog != None:
                 self.extraDialog.Close()
             if self.extraDialog == None:
                 self.extraDialog = EXTRADialog()
-                # global guiDazToC4DExtraDialog
                 guiDazToC4DExtraDialog = self.extraDialog
             self.extraDialog = EXTRADialog()
-            # global guiDazToC4DExtraDialog
+
             guiDazToC4DExtraDialog = self.extraDialog
             self.extraDialog.Open(dlgtype=c4d.DLG_TYPE_ASYNC, xpos=-1, ypos=-1, defaultw=200, defaulth=150)
 

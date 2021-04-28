@@ -29,7 +29,6 @@ class DazToC4DPlugin(c4d.plugins.CommandData):
 
 
 if __name__=='__main__':
-    
     icon = c4d.bitmaps.BaseBitmap()
     icon.InitWith(os.path.join(os.path.dirname(__file__), "res", "icon.tif"))
 
