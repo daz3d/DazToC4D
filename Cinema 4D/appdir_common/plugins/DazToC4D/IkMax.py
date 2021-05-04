@@ -3,6 +3,71 @@ import os
 import c4d
 from c4d import gui, documents
 
+folder = os.path.dirname( __file__ )
+if folder not in sys.path: 
+    sys.path.insert( 0, folder )
+
+from Utilities import dazToC4Dutils
+
+
+
+def applyDazIK():
+        doc = documents.GetActiveDocument()
+
+        dazToC4Dutils().ungroupDazGeo()
+
+        meshName = dazToC4Dutils().getDazMesh().GetName()
+        meshName = meshName.replace('.Shape', '')
+        global dazName
+        dazName = meshName + '_'
+
+        dazToC4Dutils().guidesToDaz()  # Auto Generate Guides
+        dazToC4Dutils().cleanJointsDaz()  # Some adjustments to Daz Rig...
+        # Ikmax stuff...----------------------
+        ikmGenerator().makeRig()
+        suffix = "___R"
+        objArm = doc.SearchObject(dazName + 'jCollar')
+        objLeg = doc.SearchObject(dazName + 'jUpLeg')
+
+        ikmGenerator().makeIKcontrols()
+        ikmaxUtils().mirrorObjects(objArm, suffix)
+        ikmaxUtils().mirrorObjects(objLeg, suffix)
+        ikmGenerator().makeChildKeepPos(dazName + "Foot_Platform___R", dazName + "Foot_PlatformBase___R")
+        ikmGenerator().makeChildKeepPos(dazName + "Foot_PlatformBase___R", dazName + "IKM_Controls")
+
+        DazToC4D().dazEyesLookAtControls()
+
+        # ------------------------------------
+
+        dazToC4Dutils().cleanJointsDaz('Right')
+        dazToC4Dutils().constraintJointsToDaz()
+        dazToC4Dutils().constraintJointsToDaz('Right')
+        if doc.SearchObject(dazName + 'ForearmTwist_ctrl'):
+            dazToC4Dutils().twistBoneSetup() #TwistBone Setup
+            obj = doc.SearchObject(dazName + "ForearmTwist_ctrl")
+            obj[c4d.ID_BASEOBJECT_REL_ROTATION,c4d.VECTOR_X] = 0
+            obj = doc.SearchObject(dazName + "ForearmTwist_ctrl___R")
+            obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
+            ikmGenerator().constraintObj("lForearmTwist", dazName + "ForearmTwist_ctrl")
+            ikmGenerator().constraintObj("rForearmTwist", dazName + "ForearmTwist_ctrl___R")
+            dazToC4Dutils().fixConstraints()
+            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl", "lForearmTwist")
+            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl___R", "rForearmTwist")
+
+        ikmaxUtils().freezeChilds(dazName + "IKM_Controls")
+        ikmaxUtils().freezeChilds(dazName + "jPelvis")
+
+        dazToC4Dutils().addProtection()  # Foot controls lock position, allow rotations.
+        ikmaxUtils().hideGuides(1)
+        dazToC4Dutils().hideRig()
+        c4d.CallCommand(12113, 12113)  # Deselect All
+        guides = doc.SearchObject(dazName + '__IKM-Guides')
+        if guides:
+            guides.Remove() #REMOVE GUIDES
+        c4d.EventAdd()
+
+
+
 
 class ikmaxUtils():
 
@@ -1033,6 +1098,7 @@ class ikmGenerator():
 
     def makeIKtag(self, jName, jTarget, goalName, poleName="", polePosition="", poleDirection="", preset=""):
         doc = documents.GetActiveDocument()
+
         ikJoint = doc.SearchObject(dazName + jName)
         ikJointTarget = doc.SearchObject(dazName + jTarget)
         nullGoal = doc.SearchObject(dazName + goalName)
@@ -1547,3 +1613,218 @@ class ikmGenerator():
         self.makeChildKeepPos(dazName + "ForearmTwist_ctrl___R", dazName + "jForeArm___R")
 
         dazToC4Dutils().initialDisplaySettings()
+
+class alignFingersFull():
+
+    def fixRotations(self, jointName):
+        doc = documents.GetActiveDocument()
+        try:
+            obj = doc.SearchObject(jointName)
+            obj[c4d.ID_BASEOBJECT_ROTATION_ORDER] = 5
+
+            objRotX = obj.GetAbsRot()[0]
+            objRotY = obj.GetAbsRot()[1]
+            objRotZ = obj.GetAbsRot()[2]
+            obj.SetAbsRot(c4d.Vector(objRotX, 0, 0))
+        except:
+            print('FixR skipped...')
+
+    def AlignBoneChain(self, rootBone, upAxis, primaryAxis=1, primaryDirection=0, upDirection=4):
+        doc = documents.GetActiveDocument()
+        try:
+            c4d.CallCommand(12113, 12113)  # Deselect All
+            joint = doc.SearchObject(rootBone)
+
+            normalNull = doc.SearchObject('normalNull')  # Normal Null ...!!..
+
+            doc.SetActiveObject(joint, c4d.SELECTION_NEW)
+            # c4d.CallCommand(1021334, 1021334)
+            c4d.CallCommand(1021334)  # Joint Align Tool
+            tool = c4d.plugins.FindPlugin(doc.GetAction(), c4d.PLUGINTYPE_TOOL)
+            if tool is not None:
+                tool[c4d.ID_CA_JOINT_ALIGN_PRIMARY_AXIS] = primaryAxis
+                tool[c4d.ID_CA_JOINT_ALIGN_PRIMARY_DIRECTION] = primaryDirection
+                tool[c4d.ID_CA_JOINT_ALIGN_UP_AXIS] = upAxis
+                tool[c4d.ID_CA_JOINT_ALIGN_UP_DIRECTION] = upDirection
+                tool[c4d.ID_CA_JOINT_ALIGN_UP_FROMPREV] = True
+                tool[c4d.ID_CA_JOINT_ALIGN_CHILDREN] = True
+                tool[c4d.ID_CA_JOINT_ALIGN_UP_LINK] = normalNull
+                c4d.CallButton(tool, c4d.ID_CA_JOINT_ALIGN)
+        except:
+            print('AlignBC Skipped...')
+        c4d.EventAdd()
+
+    def alignJoints(self, jointName):
+        doc = documents.GetActiveDocument()
+        try:
+            obj = doc.SearchObject(jointName)
+
+            obj[c4d.ID_CA_JOINT_OBJECT_BONE_AXIS] = 1
+            c4d.CallCommand(1019883)  # Align
+        except:
+            print('alignPass skipped...')
+        c4d.EventAdd()
+
+    def constraintClamp(self, obj, normalPolyObj):
+        doc = documents.GetActiveDocument()
+        constraintTAG = c4d.BaseTag(1019364)
+        constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_CLAMP] = True
+        constraintTAG[50004, 1] = 4  # To: Surface
+        constraintTAG[50004, 3] = 5  # Align: Z-
+        constraintTAG[50004, 2] = 3  # Mode: Fix Axis
+        constraintTAG[50004, 4] = 4  # As: Normal
+        constraintTAG[50001] = normalPolyObj
+        obj.InsertTag(constraintTAG)
+        c4d.EventAdd()
+
+    def generateNormalFromObjs(self, target1, target2, target3):
+        doc = documents.GetActiveDocument()
+        obj1 = doc.SearchObject('normalNull')
+        obj2 = doc.SearchObject('normalPoly')
+        obj3 = doc.SearchObject('normalPos1')
+        obj4 = doc.SearchObject('normalPos2')
+        obj5 = doc.SearchObject('normalPos3')
+
+        try:
+            obj1.Remove()
+        except:
+            pass
+        try:
+            obj2.Remove()
+        except:
+            pass
+        try:
+            obj3.Remove()
+        except:
+            pass
+        try:
+            obj4.Remove()
+        except:
+            pass
+        try:
+            obj5.Remove()
+        except:
+            pass
+
+        objNull = c4d.BaseObject(c4d.Onull)
+        objNull.SetName('normalNull')
+        doc.InsertObject(objNull)
+        c4d.EventAdd()
+
+        obj1 = c4d.BaseObject(c4d.Onull)
+        obj1.SetName('normalPos1')
+        doc.InsertObject(obj1)
+        obj2 = c4d.BaseObject(c4d.Onull)
+        doc.InsertObject(obj2)
+        obj2.SetName('normalPos2')
+        obj3 = c4d.BaseObject(c4d.Onull)
+        doc.InsertObject(obj3)
+        obj3.SetName('normalPos3')
+
+        targetObj1 = doc.SearchObject(target1)
+        targetObj2 = doc.SearchObject(target2)
+        targetObj3 = doc.SearchObject(target3)
+
+        obj1.SetMg(targetObj1.GetMg())
+        obj2.SetMg(targetObj2.GetMg())
+        obj3.SetMg(targetObj3.GetMg())
+
+        mypoly = c4d.BaseObject(c4d.Opolygon)  # Create an empty polygon object
+        mypoly.ResizeObject(4, 1)  # New number of points, New number of polygons
+
+        mypoly.SetPoint(0, obj1.GetAbsPos())
+        mypoly.SetPoint(1, obj2.GetAbsPos())
+        mypoly.SetPoint(2, obj3.GetAbsPos())
+        mypoly.SetPoint(3, obj3.GetAbsPos())
+
+        mypoly.SetName('normalPoly')
+        mypoly.SetPolygon(0, c4d.CPolygon(0, 1, 2, 3))  # The Polygon's index, Polygon's points
+        doc.InsertObject(mypoly, None, None)
+        mypoly.Message(c4d.MSG_UPDATE)
+
+        doc.SetActiveObject(mypoly, c4d.SELECTION_NEW)
+        c4d.CallCommand(14039)  # Optimize...
+        c4d.CallCommand(1011982)  # Center Axis to
+
+        objNull.SetMg(mypoly.GetMg())
+
+        c4d.EventAdd()
+
+        self.constraintClamp(objNull, mypoly)
+        c4d.EventAdd()
+
+    def start(self, modelName, lastFinger=''):
+        doc = c4d.documents.GetActiveDocument()
+        # modelName = 'Human_Builder_' #Replace with model name....
+        jHand = modelName + 'jHand'
+        jIndex1 = modelName + 'jIndex1'
+        jIndex2 = modelName + 'jIndex2'
+        jIndex3 = modelName + 'jIndex3'
+        jMiddle1 = modelName + 'jMiddle1'
+        jMiddle2 = modelName + 'jMiddle2'
+        jMiddle3 = modelName + 'jMiddle3'
+        jRing1 = modelName + 'jRing1'
+        jRing2 = modelName + 'jRing2'
+        jRing3 = modelName + 'jRing3'
+        jPink1 = modelName + 'jPink1'
+        jPink2 = modelName + 'jPink2'
+        jPink3 = modelName + 'jPink3'
+        fingersList = ['jIndex1', 'jIndex2', 'jIndex3',
+                       'jMiddle1', 'jMiddle2', 'jMiddle3',
+                       'jRing1', 'jRing2', 'jRing3',
+                       'jPink1', 'jPink2', 'jPink3']
+
+        for j in fingersList:
+            self.alignJoints(modelName + j)  # Replace with model name....
+
+        # Generate plane if at least jIndex and other finger present...
+        if lastFinger == 'jPink':
+            self.generateNormalFromObjs(jHand, jIndex1, jPink1)
+        if lastFinger == 'jRing':
+            self.generateNormalFromObjs(jHand, jIndex1, jRing1)
+        if lastFinger == 'jMiddle':
+            self.generateNormalFromObjs(jHand, jIndex1, jMiddle1)
+
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
+
+        self.AlignBoneChain(modelName + 'jIndex1', 2, 3, 0, 2)
+        self.AlignBoneChain(modelName + 'jMiddle1', 2, 3, 0, 2)
+        self.AlignBoneChain(modelName + 'jRing1', 2, 3, 0, 2)
+        self.AlignBoneChain(modelName + 'jPink1', 2, 3, 0, 2)
+
+        self.fixRotations(jIndex2)
+        self.fixRotations(jIndex3)
+        self.fixRotations(jMiddle2)
+        self.fixRotations(jMiddle3)
+        self.fixRotations(jRing2)
+        self.fixRotations(jRing3)
+        self.fixRotations(jPink2)
+        self.fixRotations(jPink3)
+
+        obj1 = doc.SearchObject('normalNull')
+        obj2 = doc.SearchObject('normalPoly')
+        obj3 = doc.SearchObject('normalPos1')
+        obj4 = doc.SearchObject('normalPos2')
+        obj5 = doc.SearchObject('normalPos3')
+        try:
+            obj1.Remove()
+        except:
+            pass
+        try:
+            obj2.Remove()
+        except:
+            pass
+        try:
+            obj3.Remove()
+        except:
+            pass
+        try:
+            obj4.Remove()
+        except:
+            pass
+        try:
+            obj5.Remove()
+        except:
+            pass
+
+        c4d.EventAdd()

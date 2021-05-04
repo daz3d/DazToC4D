@@ -298,3 +298,515 @@ class Materials:
                     mat[c4d.OCT_MATERIAL_OPACITY_FLOAT] = 0.0
 
         c4d.EventAdd()
+
+
+class convertToRedshift:
+
+    def __init__(self):
+        try:
+            import redshift
+        except:
+            print('No Redshift found')
+
+        self.bump_input_type = 1 # Tangent-Space Normals
+        self.NewMatList = [] 
+
+    def execute(self):
+        # Execute main()
+        doc = c4d.documents.GetActiveDocument()
+
+        # Process for all materials of scene
+        docMaterials = doc.GetMaterials()
+        if DazToC4D().checkStdMats() == True:
+            return
+
+        for mat in docMaterials:
+            matName = mat.GetName()
+            if mat.GetType() == 5703:
+                self.makeRSmat(mat)
+
+        self.applyMaterials()
+
+        c4d.EventAdd()
+        bc = c4d.BaseContainer()
+        c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
+
+    def getBumpType(self,index):
+        if index == 0:
+            self.bump_input_type = 1
+        elif index == 1:
+            self.bump_input_type = 0
+        elif index == 2:
+            self.bump_input_type = 2
+
+
+    def applyMaterials(self):
+        doc = c4d.documents.GetActiveDocument()
+        obj = doc.GetFirstObject()
+        while obj:
+            for tag in obj.GetTags():
+                if tag.GetType() == c4d.Ttexture:
+                    oMat = tag.GetMaterial()
+                    for mat in self.NewMatList:
+                        if oMat == mat[0]:
+                            tag.SetMaterial(mat[1])
+            obj = _GetNextHierarchyObject(obj)
+
+        for mat in self.NewMatList:
+            mat[0].Remove()
+
+        c4d.EventAdd()
+
+
+    def makeRSmat(self, mat):
+        doc = c4d.documents.GetActiveDocument()
+        skinMats = ['Legs', 'Torso', 'Body', 'Arms', 'Face', 'Fingernails', 'Toenails', 'Lips', 'EyeSocket', 'Ears',
+                    'Feet', 'Nipples', 'Forearms', 'Hips', 'Neck', 'Shoulders', 'Hands', 'Head', 'Nostrils']
+        matName = mat.GetName()
+        matDiffuseColor = mat[c4d.MATERIAL_COLOR_COLOR]
+        
+        INPORT = 0
+
+        def getRSnode(mat):
+            gvNodeMaster = redshift.GetRSMaterialNodeMaster(mat)
+            rootNode_ShaderGraph = gvNodeMaster.GetRoot()
+            output = rootNode_ShaderGraph.GetDown()
+            RShader = output.GetNext()
+            return RShader
+
+        c4d.CallCommand(1036759, 1000)  # Create RS Mat...
+
+        newMat = c4d.documents.GetActiveDocument().GetActiveMaterial()
+        newMat.SetName(matName + '_RS')
+
+        self.NewMatList.append([mat, newMat])  # Add Original and New
+
+        RShader = getRSnode(newMat)
+        gvNodeMaster = redshift.GetRSMaterialNodeMaster(newMat)
+        nodeRoot = gvNodeMaster.GetRoot()
+
+        RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_WEIGHT] = 0.7
+        RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_ROUGHNESS] = 0.35
+
+        try:
+            rsMaterial = nodeRoot.GetDown().GetNext()
+            rsMaterial[c4d.REDSHIFT_SHADER_MATERIAL_DIFFUSE_COLOR] = matDiffuseColor
+        except:
+            print('RootNode color skip...')
+
+        if mat[c4d.MATERIAL_USE_COLOR]:
+            if mat[c4d.MATERIAL_COLOR_SHADER]:
+                if mat[c4d.MATERIAL_COLOR_SHADER].GetType() == 5833:
+                    # Texture Node:
+                    Node = gvNodeMaster.CreateNode(nodeRoot, 1036227, None, 10, 200)
+                    Node[c4d.GV_REDSHIFT_SHADER_META_CLASSNAME] = 'TextureSampler'
+                    fileName = mat[c4d.MATERIAL_COLOR_SHADER][c4d.BITMAPSHADER_FILENAME]
+                    Node[(c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0, c4d.REDSHIFT_FILE_PATH)] = fileName
+
+                    if 'Sclera' in mat.GetName():
+                        Node[c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0_GAMMAOVERRIDE] = True
+                        Node[c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0_GAMMA] = 1.0
+
+                    nodeShaderDiffuseColInput = RShader.AddPort(c4d.GV_PORT_INPUT,
+                                                    c4d.DescID(c4d.DescLevel(c4d.REDSHIFT_SHADER_MATERIAL_DIFFUSE_COLOR)),
+                                                    message=True)
+
+                    Node.GetOutPort(0).Connect(nodeShaderDiffuseColInput)
+
+        if mat[c4d.MATERIAL_USE_ALPHA]:
+            if mat[c4d.MATERIAL_ALPHA_SHADER]:
+                if mat[c4d.MATERIAL_ALPHA_SHADER].GetType() == 5833:
+                    # Texture Node:
+                    Node = gvNodeMaster.CreateNode(nodeRoot, 1036227, None, 10, 400)
+                    Node[c4d.GV_REDSHIFT_SHADER_META_CLASSNAME] = 'TextureSampler'
+                    fileName = mat[c4d.MATERIAL_ALPHA_SHADER][c4d.BITMAPSHADER_FILENAME]
+                    Node[(c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0, c4d.REDSHIFT_FILE_PATH)] = fileName
+                    Node[c4d.REDSHIFT_SHADER_TEXTURESAMPLER_ALPHA_IS_LUMINANCE] = True
+                    Node[c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0_GAMMAOVERRIDE] = True
+                    Node[c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0_GAMMA] = 0.1
+                    if 'Eyelash' in mat.GetName():
+                        Node[c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0_GAMMAOVERRIDE] = True
+                        Node[c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0_GAMMA] = 1.0
+
+                    nodeShaderOpacityColInput = RShader.AddPort(c4d.GV_PORT_INPUT,
+                                                    c4d.DescID(c4d.DescLevel(c4d.REDSHIFT_SHADER_MATERIAL_OPACITY_COLOR)),
+                                                    message=True)
+
+                    Node.GetOutPort(0).Connect(nodeShaderOpacityColInput)
+
+        if mat[c4d.MATERIAL_USE_BUMP]:
+            if mat[c4d.MATERIAL_BUMP_SHADER]:
+                if mat[c4d.MATERIAL_BUMP_SHADER].GetType() == 5833:
+                    # Bump Node:
+                    NodeBump = gvNodeMaster.CreateNode(nodeRoot, 1036227, None, 200, 150)  # Always use this to create any nodeee!!!
+                    NodeBump[c4d.GV_REDSHIFT_SHADER_META_CLASSNAME] = 'BumpMap'  # This defines the node!!!
+                    NodeBump[c4d.REDSHIFT_SHADER_BUMPMAP_INPUTTYPE] = self.bump_input_type
+                    NodeBump[c4d.REDSHIFT_SHADER_BUMPMAP_SCALE] = 0.5
+                    # Texture Node:
+                    NodeTexture = gvNodeMaster.CreateNode(nodeRoot, 1036227, None, 80, 150)  # Always use this to create any nodeee!!!
+                    NodeTexture[c4d.GV_REDSHIFT_SHADER_META_CLASSNAME] = 'TextureSampler'  # This defines the node!!!
+                    fileName = mat[c4d.MATERIAL_BUMP_SHADER][c4d.BITMAPSHADER_FILENAME]
+                    NodeTexture[(c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0, c4d.REDSHIFT_FILE_PATH)] = fileName
+
+                    nodeShaderBumpInput = RShader.AddPort(c4d.GV_PORT_INPUT,
+                                                    c4d.DescID(c4d.DescLevel(c4d.REDSHIFT_SHADER_MATERIAL_BUMP_INPUT)),
+                                                    message=True)
+                    nodeBumpMapInput = NodeBump.AddPort(c4d.GV_PORT_INPUT,
+                                                     c4d.DescID(c4d.DescLevel(c4d.REDSHIFT_SHADER_BUMPMAP_INPUT)),
+                                                     message=True)
+
+                    NodeTexture.GetOutPort(0).Connect(nodeBumpMapInput)
+                    NodeBump.GetOutPort(0).Connect(nodeShaderBumpInput)
+
+        extraMapGlossyRough = dazToC4Dutils().findTextInFile(mat.GetName(), 'Glossy_Roughness_Map')
+        if extraMapGlossyRough != None:
+            Node = gvNodeMaster.CreateNode(nodeRoot, 1036227, None, 10, 465)
+            Node[c4d.GV_REDSHIFT_SHADER_META_CLASSNAME] = 'TextureSampler'
+            fileName = extraMapGlossyRough
+            Node[(c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0, c4d.REDSHIFT_FILE_PATH)] = fileName
+
+            nodeShaderReflectionColInput = RShader.AddPort(c4d.GV_PORT_INPUT,
+                                            c4d.DescID(c4d.DescLevel(c4d.REDSHIFT_SHADER_MATERIAL_REFL_ROUGHNESS)),
+                                            message=True)
+
+            Node.GetOutPort(0).Connect(nodeShaderReflectionColInput)
+        if mat[c4d.MATERIAL_USE_REFLECTION]:
+            layer = mat.GetReflectionLayerIndex(0)
+            caca = mat[layer.GetDataID() + c4d.REFLECTION_LAYER_TRANS_TEXTURE]
+            if caca:
+                if caca.GetType() == 5833:
+                    # Texture Node:
+                    Node = gvNodeMaster.CreateNode(nodeRoot, 1036227, None, 10, 465)
+                    Node[c4d.GV_REDSHIFT_SHADER_META_CLASSNAME] = 'TextureSampler'
+                    fileName = caca[c4d.BITMAPSHADER_FILENAME]
+                    Node[(c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0, c4d.REDSHIFT_FILE_PATH)] = fileName
+
+                    nodeShaderReflectionColInput = RShader.AddPort(c4d.GV_PORT_INPUT,
+                                                    c4d.DescID(c4d.DescLevel(c4d.REDSHIFT_SHADER_MATERIAL_REFL_COLOR)),
+                                                    message=True)
+
+                    Node.GetOutPort(0).Connect(nodeShaderReflectionColInput)
+
+
+        for x in skinMats:  # Skin Stuff...
+            if x in matName:
+                RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_WEIGHT] = 0.4
+                RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_ROUGHNESS] = 0.4
+
+        if 'Eyelash' in matName:
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_WEIGHT] = 0.0
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_DIFFUSE_COLOR] = c4d.Vector(0.0, 0.0, 0.0)
+
+        if 'Teeth' in matName:
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_WEIGHT] = 0.85
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_ROUGHNESS] = 0.35
+
+        if 'Cornea' in matName or 'Tear' in matName or 'Reflection' in matName:
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_WEIGHT] = 1.0
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_ROUGHNESS] = 0.0
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFR_WEIGHT] = 1.0
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_DIFFUSE_COLOR] = c4d.Vector(0.0, 0.0, 0.0)
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_IOR] = 1.8
+
+        if 'Moisture' in matName:
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_WEIGHT] = 1.0
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFL_ROUGHNESS] = 0.0
+
+            RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFR_WEIGHT] = 1.0
+
+        c4d.EventAdd()
+
+    print('Convert to Redshift')
+
+
+class convertMaterials:
+
+    def _GetNextHierarchyObject(self, op):
+        """Return the next object in hieararchy.
+        """
+        if op is None:
+            return None
+        down = op.GetDown()
+        if down:
+            return down
+        next = op.GetNext()
+        if next:
+            return next
+        prev = op.GetUp()
+        while prev:
+            next = prev.GetNext()
+            if next:
+                return next
+            prev = prev.GetUp()
+        return None
+
+    def convertShader(self, sourceMat, mat):
+
+        def makeVrayShader(slotName, bmpPath):
+            # With Bitmap found:
+            bmpShader = c4d.BaseShader(1026701)
+            bmpShader[c4d.VRAY_SHADERS_LIST] = 10 # Set as Bitmap Shader
+            bc = bmpShader.GetData()
+            #bc[89981968] = 2 # Sets to sRGB but no - leave as default.
+            bc.SetFilename(4999,bmpPath)
+            bmpShader.SetData(bc)
+            mat.InsertShader( bmpShader )
+            if slotName == 'diffuse':
+                mat[c4d.VRAYSTDMATERIAL_DIFFUSECOLOR_TEX] = bmpShader
+            if slotName == 'mapRough':
+                mat[c4d.VRAYSTDMATERIAL_REFLECTGLOSSINESS_TEX] = bmpShader
+            if slotName == 'bump':
+                mat[c4d.VRAYSTDMATERIAL_BUMP_BUMPMAP] = bmpShader
+                try:
+                    mat[c4d.VRAYSTDMATERIAL_BUMP_BUMPMAP_MULT] = 0.2
+                except:
+                    pass
+            if slotName == 'mapAlpha':
+                mat[c4d.VRAYSTDMATERIAL_OPACITY_TEX] = bmpShader
+            if slotName == 'mapSpec':
+                mat[c4d.VRAYSTDMATERIAL_REFLECTCOLOR] = c4d.Vector(0.0, 0.0, 0.0)
+                mat[c4d.VRAYSTDMATERIAL_REFLECTGLOSSINESS] = 0.7
+                mat[c4d.VRAYSTDMATERIAL_REFLECTFRESNELIOR_LOCK] = False
+                mat[c4d.VRAYSTDMATERIAL_REFLECTCOLOR_TEX] = bmpShader
+                try:
+                    mat[c4d.VRAYSTDMATERIAL_REFLECTCOLOR_TEX][107820085] = True #ALPHA_FROM_INTENSITY
+                except:
+                    pass
+
+
+        bmpPath = r''
+
+        #To all Octane mats... With or without Bitmap:
+        if self.matType == 'Octane':          
+            mat[c4d.OCT_MATERIAL_TYPE] = 2511  # Glossy
+            mat[c4d.OCT_MATERIAL_DIFFUSE_COLOR] = sourceMat[c4d.MATERIAL_COLOR_COLOR]
+            mat[c4d.OCT_MATERIAL_ROUGHNESS_FLOAT] = 0.3
+            if 'LENS' in mat.GetName():
+                mat[c4d.OCT_MATERIAL_OPACITY_FLOAT] = 0.0
+            if 'Moisture' in mat.GetName():
+                mat[c4d.OCT_MATERIAL_TYPE] = 2513 # Specular
+                mat[c4d.OCT_MATERIAL_ROUGHNESS_FLOAT] = 0.0
+            if 'Cornea' in mat.GetName():
+                mat[c4d.OCT_MATERIAL_TYPE] = 2513 # Specular
+                mat[c4d.OCT_MATERIAL_INDEX] = 2.8
+                mat[c4d.OCT_MATERIAL_OPACITY_FLOAT] = 0.2
+                mat[c4d.OCT_MATERIAL_ROUGHNESS_FLOAT] = 0.0
+            if 'Mouth' in mat.GetName():
+                mat[c4d.OCT_MATERIAL_INDEX] = 4.8
+                mat[c4d.OCT_MATERIAL_SPECULAR_COLOR] = c4d.Vector(0.4, 0.2, 0.1)
+                mat[c4d.OCT_MATERIAL_ROUGHNESS_COLOR] = c4d.Vector(0.08, 0.06, 0.0)
+
+        # Check if maps found...
+        diffuseMap = None
+        mapBump = None
+        mapSpec = None
+        mapAlpha = None
+
+        # DIFFUSE ---------------------------
+        try:
+            diffuseMap = sourceMat[c4d.MATERIAL_COLOR_SHADER][c4d.BITMAPSHADER_FILENAME]
+        except:
+            diffuseMap = None
+        # BUMP ---------------------------
+        try:
+            mapBump = sourceMat[c4d.MATERIAL_BUMP_SHADER][c4d.BITMAPSHADER_FILENAME]
+        except:
+            mapBump = None
+        # ALPHA ---------------------------
+        try:
+            mapAlpha = sourceMat[c4d.MATERIAL_ALPHA_SHADER][c4d.BITMAPSHADER_FILENAME]
+        except:
+            mapAlpha = None
+        # SPEC ---------------------------
+        try:
+            layer = sourceMat.GetReflectionLayerIndex(0)
+            caca = sourceMat[layer.GetDataID() + c4d.REFLECTION_LAYER_TRANS_TEXTURE]
+            if caca:
+                if caca.GetType() == 5833:
+                    mapSpec = caca[c4d.BITMAPSHADER_FILENAME]
+        except:
+            mapSpec = None
+        # ----------------------
+
+        bmpShader = None
+
+        if self.matType == 'Std':
+            bmpShader = c4d.BaseList2D(c4d.Xbitmap) # create a bitmap shader for the material
+            bmpShader[c4d.BITMAPSHADER_FILENAME] = bmpPath
+            mat.InsertShader( bmpShader )
+            mat[dstSlotID]  = bmpShader
+        elif self.matType == 'Vray':
+            mat[c4d.VRAYSTDMATERIAL_DIFFUSECOLOR] = sourceMat[c4d.MATERIAL_COLOR_COLOR]
+            mat[c4d.VRAYSTDMATERIAL_REFRACTCOLOR] = sourceMat[c4d.MATERIAL_TRANSPARENCY_COLOR]
+            mat[c4d.VRAYSTDMATERIAL_REFRACTIOR] = sourceMat[c4d.MATERIAL_TRANSPARENCY_REFRACTION]
+
+            extraMapGlossyRough = dazToC4Dutils().findTextInFile(sourceMat.GetName(), 'Glossy_Roughness_Map')
+
+            # If Bitmap found:
+            if diffuseMap != None:
+                makeVrayShader('diffuse', diffuseMap)
+            if mapBump != None:
+                makeVrayShader('bump', mapBump)
+            if mapSpec != None:
+                makeVrayShader('mapSpec', mapSpec)
+            if mapAlpha != None:
+                makeVrayShader('mapAlpha', mapAlpha)
+            if extraMapGlossyRough != None:
+                makeVrayShader('mapRough', extraMapGlossyRough)
+
+            #Extra adjust.. specular and stuff..
+            matName = mat.GetName()
+            if 'Cornea' in matName or 'Sclera' in matName or 'Pupil' in matName:
+                mat[c4d.VRAYSTDMATERIAL_REFLECTCOLOR] = c4d.Vector(1,1,1)
+                mat[c4d.VRAYSTDMATERIAL_REFLECTFRESNELIOR_LOCK] = False
+                mat[c4d.VRAYSTDMATERIAL_REFLECTFRESNELIOR] = 1.6
+            if 'Mouth' in matName or 'Teeth' in matName:
+                mat[c4d.VRAYSTDMATERIAL_REFLECTCOLOR] = c4d.Vector(0.8, 0.8, 0.8)
+                mat[c4d.VRAYSTDMATERIAL_REFLECTFRESNELIOR_LOCK] = False
+                mat[c4d.VRAYSTDMATERIAL_REFLECTFRESNELIOR] = 1.6
+        
+
+        elif self.matType == 'Redshift':
+            bmpShader = mat.CreateShader(dstSlotID, "TextureSampler")
+            bmpShader[c4d.REDSHIFT_SHADER_TEXTURESAMPLER_TEX0, c4d.REDSHIFT_FILE_PATH] = bmpPath.encode('utf-8')
+        elif self.matType == 'Octane':
+            bmpShader = c4d.BaseList2D(1029508)
+
+            if isinstance(bmpPath,str):
+                bmpShader[c4d.IMAGETEXTURE_FILE] = bmpPath
+                bmpShader[c4d.IMAGETEXTURE_MODE] = 0
+                bmpShader[c4d.IMAGETEXTURE_GAMMA] = 2.2
+                bmpShader[c4d.IMAGETEX_BORDER_MODE] = 0
+                if slotName == 'diffuse':
+                    mat[c4d.OCT_MATERIAL_DIFFUSE_LINK] = bmpShader
+                    mat[c4d.OCT_MATERIAL_DIFFUSE_COLOR] = sourceMat[c4d.MATERIAL_COLOR_COLOR]
+                if slotName == 'alpha':
+                    mat[c4d.OCT_MATERIAL_OPACITY_LINK] = bmpShader
+                    mat[c4d.OCT_MATERIAL_OPACITY_LINK][c4d.IMAGETEXTURE_GAMMA] = 0.5
+                    # mat[c4d.OCT_MATERIAL_OPACITY_LINK][c4d.IMAGETEXTURE_INVERT] = True
+                if slotName == 'glossy':
+                    mat[c4d.OCT_MATERIAL_ROUGHNESS_LINK] = bmpShader
+                mat[c4d.OCT_MATERIAL_TYPE]=2511 #Glossy
+                mat.InsertShader(bmpShader)
+                mat.Message(c4d.MSG_UPDATE)
+
+                c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
+                mat.Message( c4d.MSG_UPDATE )
+                mat.Update( True, True )
+                c4d.EventAdd()
+
+        elif self.matType == 'Corona':
+            bmpShader = c4d.BaseList2D(c4d.Xbitmap) # create a bitmap shader for the material
+            bmpShader[1036473] = bmpPath
+            mat.InsertShader( bmpShader )
+            mat[dstSlotID]  = bmpShader
+
+        return True
+
+    def convertMat(self, sourceMat, matType='Std'):
+
+        self.matType = matType
+
+        print("----- Converting : " + sourceMat.GetName() + ' -----')
+
+        matName = sourceMat.GetName()
+        mat = None
+
+        if matType == 'Std':
+            mat = c4d.BaseMaterial(5703)
+            self.MatNameAdd = '_STD'
+        elif matType == 'Vray':
+            mat = c4d.BaseMaterial(1038954)
+            self.MatNameAdd = '_VR'
+        elif matType == 'Redshift':
+            mat = RedshiftMaterial()
+            self.MatNameAdd = '_RS'
+        elif matType == 'Octane':
+            mat = c4d.BaseMaterial(1029501)
+            self.MatNameAdd = '_OCT'
+        elif matType == 'Corona':
+            mat = c4d.BaseMaterial(1032100)
+            self.MatNameAdd = '_CRNA'
+
+        mat.SetName( matName + self.MatNameAdd)
+        self.NewMatList.append([sourceMat,mat])
+
+        self.convertShader(sourceMat, mat)
+
+
+        if mat == None: return False
+
+        mat.Message( c4d.MSG_UPDATE )
+        mat.Update( True, True )
+
+        doc = c4d.documents.GetActiveDocument()
+        doc.InsertMaterial( mat )
+        c4d.EventAdd()
+
+        print("----- Converted : "+matName+" : "+mat.GetName()+' -----')
+        bc = c4d.BaseContainer()
+        c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
+        return True
+
+    def ApplyMaterials(self):
+        doc = c4d.documents.GetActiveDocument()
+        obj = doc.GetFirstObject()
+        while obj:
+            for tag in obj.GetTags():
+                if tag.GetType() == c4d.Ttexture:
+                    oMat = tag.GetMaterial()
+                    for mat in self.NewMatList:
+                        if oMat == mat[0]:
+                            tag.SetMaterial(mat[1])
+            obj = self._GetNextHierarchyObject(obj)
+
+        for mat in self.NewMatList:
+            mat[0].Remove()
+
+        c4d.EventAdd()
+
+    def convertTo(self, matType='Std'):
+        doc = c4d.documents.GetActiveDocument()
+
+        success = False
+
+        self.NewMatList = []
+
+        myMaterials = doc.GetMaterials()
+        for mat in myMaterials:
+            success = self.convertMat(mat, matType)
+
+        self.ApplyMaterials()
+
+        if success:
+            print("Done Material Conversion.")
+        else:
+            c4d.gui.MessageDialog("A problem has occurred or no mats to convert.")
+
+        if matType == 'Octane':
+            c4d.CallCommand(12168, 12168)  # Remove Unused Materials
+            c4d.CallCommand(100004766, 100004766) # Select All
+            c4d.CallCommand(100004819, 100004819) # Cut
+            c4d.CallCommand(100004821, 100004821) # Paste
+
+        return True
+
+    
+def _GetNextHierarchyObject(op):
+    """Return the next object in hieararchy.
+    """
+    if op is None:
+        return None
+    down = op.GetDown()
+    if down:
+        return down
+    next = op.GetNext()
+    if next:
+        return next
+    prev = op.GetUp()
+    while prev:
+        next = prev.GetNext()
+        if next:
+            return next
+        prev = prev.GetUp()
+    return None

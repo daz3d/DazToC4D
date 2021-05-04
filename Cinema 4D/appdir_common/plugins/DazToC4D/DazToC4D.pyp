@@ -7,7 +7,7 @@ folder = os.path.dirname( __file__ )
 if folder not in sys.path: 
     sys.path.insert( 0, folder )
 
-from DazToC4DClasses import guiDazToC4DMain
+from DtC4DWindow import guiDazToC4DMain
 
 PLUGIN_ID=1052690
 
