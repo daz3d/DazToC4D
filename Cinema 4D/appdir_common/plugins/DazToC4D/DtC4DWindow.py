@@ -10,6 +10,9 @@ from Utilities import dazToC4Dutils
 from DazToC4DClasses import DazToC4D
 from Materials import Materials, convertToRedshift, convertMaterials
 from CustomIterators import ObjectIterator, TagIterator
+from CustomImports import CustomImports
+from DtC4DDialogs import EXTRADialog
+from DtC4DPosing import Poses
 
 class guiDazToC4DMain(gui.GeDialog):
     
@@ -28,26 +31,22 @@ class guiDazToC4DMain(gui.GeDialog):
 
     MY_BITMAP_BUTTON = 9353535
 
-    LogoButton = ''
-
-    dir, file = os.path.split(__file__)  # Gets the plugin's directory
-    daztoC4D_Folder = os.path.join(dir, 'res')  # Adds the res folder to the path
+    root_dir = os.path.dirname(__file__)  # Gets the plugin's directory
+    res_dir = os.path.join(root_dir, 'res')  # Adds the res folder to the path
     
     # Set Images for UI
-    img_d2c4dLogo = os.path.join(daztoC4D_Folder, 'd2c4d_logo.png')
-    img_loading = os.path.join(daztoC4D_Folder, 'd2c4d_loading.png')
-    img_d2c4dHelp = os.path.join(daztoC4D_Folder, 'd2c4d_help.png')
-    img_btnAutoImport_FIG = os.path.join(daztoC4D_Folder, 'btnGenesisImport.png')
-    img_btnAutoImportOff_FIG = os.path.join(daztoC4D_Folder, 'btnGenesisImport.png')
-    img_btnAutoImport_PROP = os.path.join(daztoC4D_Folder, 'btnPropImport.png')
-    img_btnAutoImportOff_PROP = os.path.join(daztoC4D_Folder, 'btnPropImport.png')
-    img_btnManualImport = os.path.join(daztoC4D_Folder, 'btnImport.png')
-    img_btnManualImportOff = os.path.join(daztoC4D_Folder, 'btnImport0.png')
-    img_btnConvertMaterials = os.path.join(daztoC4D_Folder, 'btnConvertMaterials.png')
-    img_btnConvertMaterialsOff = os.path.join(daztoC4D_Folder, 'btnConvertMaterials0.png')
-    img_btnAutoIK = os.path.join(daztoC4D_Folder, 'btnAutoIK.png')
-    img_btnAutoIKOff = os.path.join(daztoC4D_Folder, 'btnAutoIK0.png')
-    img_btnConfig = os.path.join(daztoC4D_Folder, 'btnConfig.png')
+    img_d2c4dLogo = os.path.join(res_dir, 'd2c4d_logo.png')
+    img_loading = os.path.join(res_dir, 'd2c4d_loading.png')
+    img_d2c4dHelp = os.path.join(res_dir, 'd2c4d_help.png')
+    img_btnAutoImport_FIG = os.path.join(res_dir, 'btnGenesisImport.png')
+    img_btnAutoImportOff_FIG = os.path.join(res_dir, 'btnGenesisImport.png')
+    img_btnAutoImport_PROP = os.path.join(res_dir, 'btnPropImport.png')
+    img_btnAutoImportOff_PROP = os.path.join(res_dir, 'btnPropImport.png')
+    img_btnConvertMaterials = os.path.join(res_dir, 'btnConvertMaterials.png')
+    img_btnConvertMaterialsOff = os.path.join(res_dir, 'btnConvertMaterials0.png')
+    img_btnAutoIK = os.path.join(res_dir, 'btnAutoIK.png')
+    img_btnAutoIKOff = os.path.join(res_dir, 'btnAutoIK0.png')
+    img_btnConfig = os.path.join(res_dir, 'btnConfig.png')
 
 
     def __init__(self):
@@ -57,40 +56,40 @@ class guiDazToC4DMain(gui.GeDialog):
             pass
 
     def buttonsChangeState(self, btnState):
-            c4d.StatusClear()
-            c4d.EventAdd()
-            c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
-            c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
-            c4d.DrawViews(c4d.EVMSG_CHANGEDSCRIPTMODE)
-            c4d.EventAdd(c4d.EVENT_ANIMATE)
-            c4d.StatusClear()
-            if btnState == False:
-                self.main_logo.SetImage(self.img_loading, False)  # Add the image to the button
-                try:
-                    self.main_logo.LayoutChanged()
-                    self.main_logo.Redraw()
-                except:
-                    print("DazToC4D: LayoutChanged skip...")
+        c4d.StatusClear()
+        c4d.EventAdd()
+        c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(c4d.EVMSG_CHANGEDSCRIPTMODE)
+        c4d.EventAdd(c4d.EVENT_ANIMATE)
+        c4d.StatusClear()
+        if btnState == False:
+            self.main_logo.SetImage(self.img_loading, False)  # Add the image to the button
+            try:
+                self.main_logo.LayoutChanged()
+                self.main_logo.Redraw()
+            except:
+                print("DazToC4D: LayoutChanged skip...")
 
-                self.auto_import_fig_but.SetImage(self.img_btnAutoImportOff_FIG, False)  # Add the image to the button
-                self.auto_import_prop_but.SetImage(self.img_btnAutoImportOff_PROP, False)  # Add the image to the button
-                self.convert_mat_but.SetImage(self.img_btnConvertMaterialsOff, False)  # Add the image to the button
-                self.auto_ik_but.SetImage(self.img_btnAutoIKOff, False)  # Add the image to the button
+            self.auto_import_fig_but.SetImage(self.img_btnAutoImportOff_FIG, False)  # Add the image to the button
+            self.auto_import_prop_but.SetImage(self.img_btnAutoImportOff_PROP, False)  # Add the image to the button
+            self.convert_mat_but.SetImage(self.img_btnConvertMaterialsOff, False)  # Add the image to the button
+            self.auto_ik_but.SetImage(self.img_btnAutoIKOff, False)  # Add the image to the button
 
-            if btnState == True:
-                self.main_logo.SetImage(self.img_d2c4dLogo, False)  # Add the image to the button
-                self.auto_import_fig_but.SetImage(self.img_btnAutoImport_FIG, False)  # Add the image to the button
-                self.auto_import_prop_but.SetImage(self.img_btnAutoImport_PROP, False)  # Add the image to the button
-                self.convert_mat_but.SetImage(self.img_btnConvertMaterials, False)  # Add the image to the button
-                self.auto_ik_but.SetImage(self.img_btnAutoIK, False)  # Add the image to the button
+        if btnState == True:
+            self.main_logo.SetImage(self.img_d2c4dLogo, False)  # Add the image to the button
+            self.auto_import_fig_but.SetImage(self.img_btnAutoImport_FIG, False)  # Add the image to the button
+            self.auto_import_prop_but.SetImage(self.img_btnAutoImport_PROP, False)  # Add the image to the button
+            self.convert_mat_but.SetImage(self.img_btnConvertMaterials, False)  # Add the image to the button
+            self.auto_ik_but.SetImage(self.img_btnAutoIK, False)  # Add the image to the button
 
-            bc = c4d.BaseContainer()
-            c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
+        bc = c4d.BaseContainer()
+        c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
 
-            return True
+        return True
 
+    # Reusable Presets
     def buttonBC(self, tooltipText="", presetLook=""):
-        # Logo Image #############################################################
         bc = c4d.BaseContainer()  # Create a new container to store the button image
         bc.SetBool(c4d.BITMAPBUTTON_BUTTON, True)
         bc.SetString(c4d.BITMAPBUTTON_TOOLTIP, tooltipText)
@@ -104,25 +103,16 @@ class guiDazToC4DMain(gui.GeDialog):
             bc.SetBool(c4d.BITMAPBUTTON_BUTTON, False)
 
         return bc
-        # Logo Image #############################################################
 
 
     def CreateLayout(self):
-        self.SetTitle('DazToC4D v1.1.2')
+        self.SetTitle('DazToC4D v1.2.0 Beta')
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
 
-        # Logo Image #############################################################
         bc = c4d.BaseContainer()  # Create a new container to store the button image
         bc.SetInt32(c4d.BITMAPBUTTON_BORDER, c4d.BORDER_ROUND)  # Sets the border to look like a button
-        self.LogoButton = self.AddCustomGui(self.MY_BITMAP_BUTTON, c4d.CUSTOMGUI_BITMAPBUTTON, "Logo", c4d.BFH_CENTER, 0, 0, bc)
-        self.LogoButton.SetImage(self.img_d2c4dLogo, False)  # Add the image to the button
-    
-        self.main_logo = self.LogoButton
-        print('**********************')
-        print(self.LogoButton)
-        print('**********************')
-
-        # Logo Image #############################################################
+        self.main_logo = self.AddCustomGui(self.MY_BITMAP_BUTTON, c4d.CUSTOMGUI_BITMAPBUTTON, "Logo", c4d.BFH_CENTER, 0, 0, bc)
+        self.main_logo.SetImage(self.img_d2c4dLogo, False)  # Add the image to the button
 
         # Import
         self.GroupBegin(10000, c4d.BFH_CENTER, 1, title='')
@@ -141,22 +131,18 @@ class guiDazToC4DMain(gui.GeDialog):
         self.GroupBegin(10000, c4d.BFH_CENTER, 1, title='')
         self.GroupBorderNoTitle(c4d.BORDER_OUT)
         self.GroupBorderSpace(0, 0, 0, 0)
-        self.LogoButton6 = self.AddCustomGui(self.BUTTON_AUTO_IMPORT_FIG, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
-        self.LogoButton6.SetImage(self.img_btnAutoImportOff_FIG, True)  # Add the image to the button
-        self.auto_import_fig_but = self.LogoButton6
+        self.auto_import_fig_but = self.AddCustomGui(self.BUTTON_AUTO_IMPORT_FIG, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
+        self.auto_import_fig_but.SetImage(self.img_btnAutoImportOff_FIG, True)  # Add the image to the button
 
-        self.LogoButton7 = self.AddCustomGui(self.BUTTON_AUTO_IMPORT_PROP, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
-        self.LogoButton7.SetImage(self.img_btnAutoImportOff_PROP, True)  # Add the image to the button
-        self.auto_import_prop_but = self.LogoButton7
+        self.auto_import_prop_but = self.AddCustomGui(self.BUTTON_AUTO_IMPORT_PROP, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
+        self.auto_import_prop_but.SetImage(self.img_btnAutoImportOff_PROP, True)  # Add the image to the button
 
         self.GroupEnd()  # END ///////////////////////////////////////////////
         self.AddSeparatorV(0, c4d.BFV_SCALEFIT)  # Separator V
 
 
-        self.LogoButton6 = self.AddCustomGui(self.BUTTON_AUTO_IK, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
-        self.LogoButton6.SetImage(self.img_btnAutoIK, True)  # Add the image to the button
-        self.auto_ik_but = self.LogoButton6
-
+        self.auto_ik_but = self.AddCustomGui(self.BUTTON_AUTO_IK, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
+        self.auto_ik_but.SetImage(self.img_btnAutoIK, True)  # Add the image to the button
 
         self.GroupEnd()  # END ///////////////////////////////////////////////
         self.GroupEnd()  # END ///////////////////////////////////////////////
@@ -173,9 +159,8 @@ class guiDazToC4DMain(gui.GeDialog):
         self.GroupBorderNoTitle(c4d.BORDER_NONE)
         self.GroupBorderSpace(20, 5, 20, 5)
 
-        self.LogoButton6 = self.AddCustomGui(self.BUTTON_CONVERT_MATERIALS, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
-        self.LogoButton6.SetImage(self.img_btnConvertMaterials, True)  # Add the image to the button
-        self.convert_mat_but = self.LogoButton6
+        self.convert_mat_but = self.AddCustomGui(self.BUTTON_CONVERT_MATERIALS, c4d.CUSTOMGUI_BITMAPBUTTON, "Bitmap Button", c4d.BFH_CENTER, 0, 0, self.buttonBC("", "Preset0"))
+        self.convert_mat_but.SetImage(self.img_btnConvertMaterials, True)  # Add the image to the button
         self.AddSeparatorV(0, c4d.BFV_SCALEFIT)  # Separator V
         self.AddComboBox(2001, c4d.BFH_SCALEFIT, 100, 15, False)
         self.AddChild(2001, 0, ' - Select -')
@@ -230,17 +215,16 @@ class guiDazToC4DMain(gui.GeDialog):
 
         if id == 17524:
             slider_value = self.GetFloat(17524)
-            DazToC4D().matSetSpec('Weight', slider_value)
+            Materials().matSetSpec('Weight', slider_value)
             c4d.EventAdd()
 
         if id == 17525:
             slider_value = self.GetFloat(17525)
-            print(slider_value/100)
-            DazToC4D().matSetSpec('Rough', slider_value)
+            Materials().matSetSpec('Rough', slider_value)
             c4d.EventAdd()  
 
         if id == self.BUTTON_AUTO_IMPORT_FIG:
-            DazToC4D().genesisImport()
+            CustomImports().auto_import_genesis()
 
         if id == self.BUTTON_AUTO_IK:
 
@@ -271,7 +255,7 @@ class guiDazToC4DMain(gui.GeDialog):
                     if DazToC4D().findMesh() == False:
                         gui.MessageDialog('No Figure found, Auto-Import a Figure and try again.', c4d.GEMB_OK)
                     else:
-                        DazToC4D().checkIfPosedResetPose() #THIS RUNS AUTO-IK !
+                        Poses().checkIfPosedResetPose() #THIS RUNS AUTO-IK !
 
             self.buttonsChangeState(True)
 
@@ -299,11 +283,11 @@ class guiDazToC4DMain(gui.GeDialog):
                 gui.MessageDialog('Please select renderer from the list')
 
             else:
-                if DazToC4D().checkStdMats() == True:
+                if Materials().checkStdMats() == True:
                     return
                 else:
                     answer = gui.MessageDialog('::: WARNING :::\n\nNo Undo for this.\nSave your scene first, in case you want to revert changes.\n\nProceed and Convert Materials now?', c4d.GEMB_YESNO)
-                    if answer is 6:
+                    if answer == 6:
                         if comboRender == 1:
                             convertMaterials().convertTo('Vray')
                             c4d.CallCommand(1026375)  # Reload Python Plugins

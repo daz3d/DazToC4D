@@ -4,7 +4,6 @@ import c4d
 from c4d import gui, documents
 from xml.etree import ElementTree
 
-
 HOME_DIR = os.path.expanduser("~")
 ROOT_DIR = os.path.join(HOME_DIR, "Documents", "DAZ 3D", "Bridges", "Daz To C4D")
 
@@ -62,7 +61,15 @@ class TagIterator:
         return tag
     next = __next__             #To Support Python 2.0
 
-
+def findIK():
+    doc = documents.GetActiveDocument()
+    obj = doc.GetFirstObject()
+    scene = ObjectIterator(obj)
+    ikfound = 0
+    for obj in scene:
+        if 'Foot_PlatformBase' in obj.GetName():
+            ikfound = 1
+    return ikfound
 
 
 class dazToC4Dutils:
@@ -71,7 +78,6 @@ class dazToC4Dutils:
         dazExtraMapsFile = os.path.join(ROOT_DIR,"DazToC4D.xml")
         
         if os.path.exists(dazExtraMapsFile) == False:
-            print('...')
             return
         xmlFilePath = dazExtraMapsFile
         xmlFile = ElementTree.parse(xmlFilePath)

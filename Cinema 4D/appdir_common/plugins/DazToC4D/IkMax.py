@@ -10,7 +10,6 @@ if folder not in sys.path:
 from Utilities import dazToC4Dutils
 
 
-
 def applyDazIK():
         doc = documents.GetActiveDocument()
 
@@ -254,7 +253,7 @@ class ikmaxUtils():
         doc = documents.GetActiveDocument()
         answer = gui.MessageDialog('Are you sure to remove Guides and RIG???\n\nYES:REMOVES ALL!!!', c4d.GEMB_YESNOCANCEL)
         removed = 0
-        if answer is 6:
+        if answer == 6:
             try:
                 obj = doc.SearchObject(dazName + '_IKM-Guides')
                 obj.Remove()

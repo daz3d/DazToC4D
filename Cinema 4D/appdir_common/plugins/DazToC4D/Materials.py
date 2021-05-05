@@ -1,14 +1,349 @@
 import c4d
 import os
 import sys
+from c4d import documents
+try:
+    import redshift
+except:
+    print('DaztoC4D : Redshift not installed can not convert.')
 
 folder = os.path.dirname( __file__ )
 if folder not in sys.path: 
     sys.path.insert( 0, folder )
 
 from Utilities import dazToC4Dutils
+from CustomIterators import ObjectIterator, TagIterator
 
 class Materials:
+    def fixGenEyes(self):
+        dir, file = os.path.split(__file__)  # Gets the plugin's directory
+        folder_DazToC4D_res = os.path.join(dir, 'res')  # Adds the res folder to the path
+        folder_DazToC4D_xtra = os.path.join(folder_DazToC4D_res, 'xtra')  # Adds the res folder to the path
+        file_G3_IrisFixMap = os.path.join(folder_DazToC4D_xtra, 'G3_Iris_Alpha.psd')
+
+        destination_G3_IrisFixMap = os.path.join(ROOT_DIR, "G3_Iris_Alpha.psd")
+     
+        try:
+            copyfile(file_G3_IrisFixMap, destination_G3_IrisFixMap)
+        except:
+            print('Iris Map transfer...Skipped.')
+
+        doc = c4d.documents.GetActiveDocument()
+        docMaterials = doc.GetMaterials()
+        for mat in docMaterials:
+            if 'Iris' in mat.GetName():
+                matDiffuseMap = ''
+                try:
+                    matDiffuseMap = mat[c4d.MATERIAL_COLOR_SHADER][c4d.BITMAPSHADER_FILENAME]
+                except:
+                    pass
+                skipThis = False
+                if '3duG3FTG2_Eyes' in matDiffuseMap:
+                    skipThis = True
+
+                if skipThis == False and os.path.exists(destination_G3_IrisFixMap):
+                    mat[c4d.MATERIAL_USE_ALPHA] = True
+                    shda = c4d.BaseList2D(c4d.Xbitmap)
+                    shda[c4d.BITMAPSHADER_FILENAME] = destination_G3_IrisFixMap
+                    mat[c4d.MATERIAL_ALPHA_SHADER] = shda
+                    mat.InsertShader(shda)
+
+
+    def specificFiguresFixes(self):
+        doc = c4d.documents.GetActiveDocument()
+
+        figureModel = ''
+
+        def findMatName(matToFind):
+            matFound = None
+            sceneMats = doc.GetMaterials()
+            for mat in sceneMats:
+                matName = mat.GetName()
+                if matToFind in matName:
+                    matFound = mat
+                    return matFound
+            return matFound
+
+        #TOON GENERATION 2
+        doc = documents.GetActiveDocument()
+        sceneMats = doc.GetMaterials()
+        #ZOMBIE ... GEN3...
+        if findMatName('Cornea') != None and findMatName('EyeMoisture') == None:
+            mat = findMatName('Cornea')
+            mat[c4d.MATERIAL_USE_ALPHA] = False
+
+        for mat in sceneMats:
+            matName = mat.GetName()
+            if 'Eyelashes' in matName:
+                if mat[c4d.MATERIAL_ALPHA_SHADER] == None:
+                    try:
+                        shaderColor = c4d.BaseList2D(c4d.Xcolor)  # create a bitmap shader for the material
+                        mat.InsertShader(shaderColor)
+                        mat[c4d.MATERIAL_USE_ALPHA] = True
+                        mat[c4d.MATERIAL_ALPHA_SHADER] = shaderColor
+                        mat[c4d.MATERIAL_ALPHA_SHADER][c4d.COLORSHADER_BRIGHTNESS] = 0.0
+                    except:
+                        pass
+
+        c4d.EventAdd()
+
+
+    def transpMapFix(self, mat):
+        if mat[c4d.MATERIAL_TRANSPARENCY_SHADER] != None:
+            mat[c4d.MATERIAL_ALPHA_SHADER] = mat[c4d.MATERIAL_TRANSPARENCY_SHADER]
+            mat[c4d.MATERIAL_USE_TRANSPARENCY] = 0
+            mat[c4d.MATERIAL_USE_ALPHA] = 1
+            mat[c4d.MATERIAL_TRANSPARENCY_SHADER] = None
+
+
+    def fixMaterials(self):
+
+        doc = c4d.documents.GetActiveDocument()
+
+        # Process for all materials of scene
+        docMaterials = doc.GetMaterials()
+        for mat in docMaterials:
+            self.transpMapFix(mat)
+            matName = mat.GetName()
+            eyesMats = ['Eyelashes', 'Cornea', 'EyeMoisture','EyeMoisture2', 'Sclera', 'Irises']
+            layer = mat.GetReflectionLayerIndex(0)
+
+            mat[c4d.MATERIAL_NORMAL_STRENGTH] = 0.25
+            mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR] = 0.05
+            try: #Remove extra layers stuff...
+                mat.RemoveReflectionLayerIndex(1)
+                mat.RemoveReflectionLayerIndex(2)
+                mat.RemoveReflectionLayerIndex(3)
+                mat.RemoveReflectionLayerIndex(4)
+            except:
+                pass
+
+            if matName in eyesMats:
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS] = 0.13
+
+            if 'Moisture' in matName or 'Cornea' in matName or 'Tear' in matName or 'EyeReflection' in matName:
+                mat[c4d.MATERIAL_COLOR_COLOR] = c4d.Vector(0.2, 0.2, 0.2)
+                mat[c4d.MATERIAL_USE_TRANSPARENCY] = True
+                mat[c4d.MATERIAL_TRANSPARENCY_COLOR] = c4d.Vector(0.9, 0.9, 0.9)
+                mat[c4d.MATERIAL_TRANSPARENCY_REFRACTION] = 1.0
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION] = 0 #0 = Reflection(legacy)
+                mat[c4d.MATERIAL_USE_TRANSPARENCY] = True
+                mat[c4d.MATERIAL_TRANSPARENCY_FRESNEL] = False
+                mat[c4d.MATERIAL_TRANSPARENCY_EXITREFLECTIONS] = False
+                mat[c4d.MATERIAL_TRANSPARENCY_COLOR] = c4d.Vector(0.95, 0.95, 0.95)
+                mat[c4d.MATERIAL_TRANSPARENCY_REFRACTION]=1.33
+
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_COLOR_COLOR] = c4d.Vector(1.0, 1.0, 1.0)
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS] = 0.0
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_REFLECTION] = 0.7
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR] = 0.0
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_BUMP] = 0.0
+            if 'Eyes' in matName:
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR] = 0.0
+            if 'Pupils' in matName:
+                mat[c4d.MATERIAL_USE_REFLECTION]=False
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR] = 0.0
+            if 'Teeth' in matName:
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION] = 0 #0 = Reflection(legacy)
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS] = 0.07
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_REFLECTION] = 0.09
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR] = 0.03
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_BUMP] = 0.25
+            if 'Mouth' in matName:
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION] = 0 #0 = Reflection(legacy)
+            if 'Sclera' in matName:
+                mat[c4d.MATERIAL_USE_REFLECTION]=False
+                mat[c4d.MATERIAL_GLOBALILLUM_RECEIVE_STRENGTH]=2
+
+            if 'Iris' in matName:
+                mat[c4d.MATERIAL_USE_REFLECTION]=False
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_REFLECTION] = 0.0
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR] = 0.0
+                mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION] = 0 #0 = Reflection(legacy)
+            if 'Eyelash' in matName:
+                mat[c4d.MATERIAL_COLOR_SHADER] = None
+                mat[c4d.MATERIAL_COLOR_COLOR] = c4d.Vector(0.0, 0.0, 0.0)
+                try:
+                    mat[c4d.MATERIAL_ALPHA_SHADER][c4d.BITMAPSHADER_FILENAME][c4d.BITMAPSHADER_EXPOSURE] = 1.0
+                except:
+                    print('Exposure Skipped...')
+
+        c4d.CallCommand(12253, 12253)  # Render All Materials
+
+        c4d.EventAdd()
+
+
+    def stdMatExtrafixes(self):
+        doc = c4d.documents.GetActiveDocument()
+        
+        #--- Fix duplicated Moisture material...??
+        myMaterials = doc.GetMaterials()
+        for mat in myMaterials:
+            if "EyeMoisture" in mat.GetName():
+                mat.SetName('EyeMoisture2')
+                return True
+
+        def setRenderToPhysical():
+            try:
+                rdata = doc.GetActiveRenderData()
+                vpost = rdata.GetFirstVideoPost()
+                rdata[c4d.RDATA_RENDERENGINE] = c4d.RDATA_RENDERENGINE_PHYSICAL
+
+                while vpost:
+                    if vpost.CheckType(c4d.VPxmbsampler): break
+                    vpost = vpost.GetNext()
+
+                if not vpost:
+                    vpost = c4d.BaseList2D(c4d.VPxmbsampler)
+                    rdata.InsertVideoPost(vpost)
+
+                c4d.EventAdd()
+            except:
+                pass
+
+        setRenderToPhysical()
+        figureModel = 'Genesis8'
+
+        def findMatName(matToFind):
+            matFound = None
+            sceneMats = doc.GetMaterials()
+            for mat in sceneMats:
+                matName = mat.GetName()
+                if matToFind in matName:
+                    matFound = mat
+                    return matFound
+            return matFound
+
+        if findMatName('EyeReflection'):
+            figureModel = 'Genesis2'
+        if findMatName('Fingernails'):
+            figureModel = 'Genesis3'
+
+        # FIX MATERIAL NAMES etc... USE THIS FOR ALL CONVERTIONS NOT JUST OCTANE!
+        if findMatName('1_SkinFace') == None and findMatName('1_Nostril') != None:
+            try:
+                findMatName('1_Nostril').SetName('1_SkinFace')
+            except:
+                pass
+        if findMatName('3_SkinHand') == None and findMatName('3_SkinFoot') != None:
+            try:
+                findMatName('3_SkinFoot').SetName('3_ArmsLegs')
+            except:
+                pass
+        # ////
+        doc = documents.GetActiveDocument()
+        sceneMats = doc.GetMaterials()
+
+        for mat in sceneMats:
+            matName = mat.GetName()
+            try:
+                mat[c4d.MATERIAL_ALPHA_SHADER][c4d.BITMAPSHADER_WHITEPOINT] = 0.5
+            except:
+                pass
+            try:
+                layerTransp = mat.GetReflectionLayerTrans()
+                mat[layerTransp.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS] = 0.0
+            except:
+                pass
+
+            # GENESIS 3 Patches -------------------------
+            if figureModel == 'Genesis3' or figureModel == 'Genesis2' or figureModel == 'Genesis8':
+                if 'Cornea' in matName:
+                    bmpPath = 'CACA'
+                    shaderColor = c4d.BaseList2D(c4d.Xcolor)  # create a bitmap shader for the material
+                    # bmpShader[c4d.BITMAPSHADER_FILENAME] = bmpPath
+                    mat.InsertShader(shaderColor)
+                    mat[c4d.MATERIAL_USE_ALPHA] = True
+                    mat[c4d.MATERIAL_ALPHA_SHADER] = shaderColor
+                    mat[c4d.MATERIAL_ALPHA_SHADER][c4d.COLORSHADER_BRIGHTNESS] = 0.0
+
+                if 'Moisture' in matName or 'Tear' in matName:
+                    mat[c4d.MATERIAL_USE_ALPHA] = True
+                    mat[c4d.MATERIAL_ALPHA_SHADER] = None
+                    mat[c4d.MATERIAL_COLOR_COLOR] = c4d.Vector(0, 0, 0)
+                    mat[c4d.MATERIAL_TRANSPARENCY_REFRACTION] = 1.0
+
+
+
+                if 'Sclera' in matName:
+                    try:
+                        mat[c4d.MATERIAL_COLOR_SHADER][c4d.BITMAPSHADER_WHITEPOINT] = 0.8
+                    except:
+                        pass
+
+        c4d.EventAdd()
+    
+    
+    def addLipsMaterial(self):
+        doc = documents.GetActiveDocument()
+        obj = doc.GetFirstObject()
+        scene = ObjectIterator(obj)
+        objTags = TagIterator(obj)
+        for ob in scene:
+            objTags = TagIterator(ob)
+            if objTags:
+                for tag in objTags:
+                    matSel = tag[c4d.TEXTURETAG_RESTRICTION]
+                    if matSel == 'Lips':
+                        try:
+                            old_mat = tag[c4d.TEXTURETAG_MATERIAL]
+
+                            doc.SetActiveMaterial(old_mat)
+                            c4d.CallCommand(300001022, 300001022)  # Copy
+                            c4d.CallCommand(300001023, 300001023)  # Paste
+                            newMat = doc.GetFirstMaterial()
+                            newMat[c4d.ID_BASELIST_NAME] = 'Lips'
+
+                            tag[c4d.TEXTURETAG_MATERIAL] = newMat
+                        except:
+                            pass
+
+        c4d.EventAdd()
+
+
+    def matSetSpec(self, setting, value):
+        doc = c4d.documents.GetActiveDocument()
+
+        # Process for all materials of scene
+        docMaterials = doc.GetMaterials()
+        for mat in docMaterials:
+            matName = mat.GetName()
+            skinMats = ['MainSkin', 'Legs', 'Torso', 'Arms', 'Face', 'Fingernails', 'Toenails', 'EyeSocket','Ears',
+                        'Feet','Nipples','Forearms','Hips','Neck','Shoulders','Hands','Head','Nostrils']
+            for x in skinMats:
+                if x in matName:
+                    if mat.GetType() == 1038954: #Vray
+                        if setting == 'Rough':
+                            mat[c4d.VRAYSTDMATERIAL_REFLECTGLOSSINESS] = 1.0 - value/100
+                        if setting == 'Weight':
+                            colorValue = value / 100
+                            mat[c4d.VRAYSTDMATERIAL_REFLECTCOLOR] = c4d.Vector(colorValue, colorValue, colorValue)
+
+                    if mat.GetType() == 5703: #Standard
+                        layer = mat.GetReflectionLayerIndex(0)
+                        if setting == 'Rough':
+                            mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS] = value/100
+                        if setting == 'Weight':
+                            mat[layer.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR] = value/100
+                    if mat.GetType() == 1029501: #Octane
+                        if setting == 'Weight':
+                            mat[c4d.OCT_MATERIAL_SPECULAR_FLOAT] = value/100
+                        if setting == 'Rough':
+                            mat[c4d.OCT_MATERIAL_ROUGHNESS_FLOAT] = value/100
+                    if mat.GetType() == 1036224: #Redshift
+                        gvNodeMaster = redshift.GetRSMaterialNodeMaster(mat)
+                        rootNode_ShaderGraph = gvNodeMaster.GetRoot()
+                        output = rootNode_ShaderGraph.GetDown()
+                        RShader = output.GetNext()
+                        gvNodeMaster = redshift.GetRSMaterialNodeMaster(mat)
+                        nodeRoot = gvNodeMaster.GetRoot()
+                        rsMaterial = nodeRoot.GetDown().GetNext()
+                        if setting == 'Weight':
+                            rsMaterial[c4d.REDSHIFT_SHADER_MATERIAL_REFL_WEIGHT] = value/100
+                            rsMaterial[c4d.REDSHIFT_SHADER_MATERIAL_REFL_IOR] = value/10
+                        if setting == 'Rough':
+                            rsMaterial[c4d.REDSHIFT_SHADER_MATERIAL_REFL_ROUGHNESS] = value/100
+
     # TODO: Very if necessary with Material Rework
     def eyeLashAndOtherFixes(self):
         doc = c4d.documents.GetActiveDocument()
@@ -515,8 +850,6 @@ class convertToRedshift:
             RShader[c4d.REDSHIFT_SHADER_MATERIAL_REFR_WEIGHT] = 1.0
 
         c4d.EventAdd()
-
-    print('Convert to Redshift')
 
 
 class convertMaterials:
