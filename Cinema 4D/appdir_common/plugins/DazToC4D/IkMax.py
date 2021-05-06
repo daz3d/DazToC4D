@@ -8,62 +8,63 @@ if folder not in sys.path:
     sys.path.insert( 0, folder )
 
 from Utilities import dazToC4Dutils
+from DazRig import DazRig
 
 
 def applyDazIK():
-        doc = documents.GetActiveDocument()
+    doc = documents.GetActiveDocument()
 
-        dazToC4Dutils().ungroupDazGeo()
+    dazToC4Dutils().ungroupDazGeo()
 
-        meshName = dazToC4Dutils().getDazMesh().GetName()
-        meshName = meshName.replace('.Shape', '')
-        global dazName
-        dazName = meshName + '_'
+    meshName = dazToC4Dutils().getDazMesh().GetName()
+    meshName = meshName.replace('.Shape', '')
+    global dazName
+    dazName = meshName + '_'
 
-        dazToC4Dutils().guidesToDaz()  # Auto Generate Guides
-        dazToC4Dutils().cleanJointsDaz()  # Some adjustments to Daz Rig...
-        # Ikmax stuff...----------------------
-        ikmGenerator().makeRig()
-        suffix = "___R"
-        objArm = doc.SearchObject(dazName + 'jCollar')
-        objLeg = doc.SearchObject(dazName + 'jUpLeg')
+    dazToC4Dutils().guidesToDaz()  # Auto Generate Guides
+    dazToC4Dutils().cleanJointsDaz()  # Some adjustments to Daz Rig...
+    # Ikmax stuff...----------------------
+    ikmGenerator().makeRig()
+    suffix = "___R"
+    objArm = doc.SearchObject(dazName + 'jCollar')
+    objLeg = doc.SearchObject(dazName + 'jUpLeg')
 
-        ikmGenerator().makeIKcontrols()
-        ikmaxUtils().mirrorObjects(objArm, suffix)
-        ikmaxUtils().mirrorObjects(objLeg, suffix)
-        ikmGenerator().makeChildKeepPos(dazName + "Foot_Platform___R", dazName + "Foot_PlatformBase___R")
-        ikmGenerator().makeChildKeepPos(dazName + "Foot_PlatformBase___R", dazName + "IKM_Controls")
+    ikmGenerator().makeIKcontrols()
+    ikmaxUtils().mirrorObjects(objArm, suffix)
+    ikmaxUtils().mirrorObjects(objLeg, suffix)
+    ikmGenerator().makeChildKeepPos(dazName + "Foot_Platform___R", dazName + "Foot_PlatformBase___R")
+    ikmGenerator().makeChildKeepPos(dazName + "Foot_PlatformBase___R", dazName + "IKM_Controls")
 
-        DazToC4D().dazEyesLookAtControls()
+    DazRig(dazName).dazEyesLookAtControls()
 
-        # ------------------------------------
+    # ------------------------------------
 
-        dazToC4Dutils().cleanJointsDaz('Right')
-        dazToC4Dutils().constraintJointsToDaz()
-        dazToC4Dutils().constraintJointsToDaz('Right')
-        if doc.SearchObject(dazName + 'ForearmTwist_ctrl'):
-            dazToC4Dutils().twistBoneSetup() #TwistBone Setup
-            obj = doc.SearchObject(dazName + "ForearmTwist_ctrl")
-            obj[c4d.ID_BASEOBJECT_REL_ROTATION,c4d.VECTOR_X] = 0
-            obj = doc.SearchObject(dazName + "ForearmTwist_ctrl___R")
-            obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
-            ikmGenerator().constraintObj("lForearmTwist", dazName + "ForearmTwist_ctrl")
-            ikmGenerator().constraintObj("rForearmTwist", dazName + "ForearmTwist_ctrl___R")
-            dazToC4Dutils().fixConstraints()
-            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl", "lForearmTwist")
-            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl___R", "rForearmTwist")
+    dazToC4Dutils().cleanJointsDaz('Right')
+    dazToC4Dutils().constraintJointsToDaz()
+    dazToC4Dutils().constraintJointsToDaz('Right')
+    if doc.SearchObject(dazName + 'ForearmTwist_ctrl'):
+        dazToC4Dutils().twistBoneSetup() #TwistBone Setup
+        obj = doc.SearchObject(dazName + "ForearmTwist_ctrl")
+        obj[c4d.ID_BASEOBJECT_REL_ROTATION,c4d.VECTOR_X] = 0
+        obj = doc.SearchObject(dazName + "ForearmTwist_ctrl___R")
+        obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
+        ikmGenerator().constraintObj("lForearmTwist", dazName + "ForearmTwist_ctrl")
+        ikmGenerator().constraintObj("rForearmTwist", dazName + "ForearmTwist_ctrl___R")
+        dazToC4Dutils().fixConstraints()
+        dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl", "lForearmTwist")
+        dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl___R", "rForearmTwist")
 
-        ikmaxUtils().freezeChilds(dazName + "IKM_Controls")
-        ikmaxUtils().freezeChilds(dazName + "jPelvis")
+    ikmaxUtils().freezeChilds(dazName + "IKM_Controls")
+    ikmaxUtils().freezeChilds(dazName + "jPelvis")
 
-        dazToC4Dutils().addProtection()  # Foot controls lock position, allow rotations.
-        ikmaxUtils().hideGuides(1)
-        dazToC4Dutils().hideRig()
-        c4d.CallCommand(12113, 12113)  # Deselect All
-        guides = doc.SearchObject(dazName + '__IKM-Guides')
-        if guides:
-            guides.Remove() #REMOVE GUIDES
-        c4d.EventAdd()
+    dazToC4Dutils().addProtection()  # Foot controls lock position, allow rotations.
+    ikmaxUtils().hideGuides(1)
+    dazToC4Dutils().hideRig()
+    c4d.CallCommand(12113, 12113)  # Deselect All
+    guides = doc.SearchObject(dazName + '_IKM-Guides')
+    if guides:
+        guides.Remove() #REMOVE GUIDES
+    c4d.EventAdd()
 
 
 
@@ -286,7 +287,6 @@ class ikmaxUtils():
 
     def resetPRS(self, parentObj=""):
         doc = c4d.documents.GetActiveDocument()
-        # obj = doc.SearchObject(parentObj)
         obj = parentObj
 
         if obj != None:
@@ -296,7 +296,6 @@ class ikmaxUtils():
                 x.SetRelRot(c4d.Vector(0, 0, 0))
                 x.SetRelScale(c4d.Vector(1, 1, 1))
 
-        # HEREEEEE DESELECT PARENTS????? TO AVOID BACK TO 0 POS??
         c4d.EventAdd()
 
     def freezePolygons(self, parentObj=""):
@@ -387,7 +386,6 @@ class ikmaxUtils():
         c4d.CallCommand(16768)  # Connect Objects + Delete
         fixedObj = doc.GetActiveObject()
         fixedObj.SetName(objOrigName)
-        # doc.SetActiveObject(fixedObj, c4d.SELECTION_NEW)
         c4d.EventAdd()
         return fixedObj
 
@@ -1241,7 +1239,6 @@ class ikmGenerator():
     def makeDAZCollarNull(self, sideName=""):
         doc = c4d.documents.GetActiveDocument()
         objNull = c4d.BaseObject(c4d.Onull)
-        # neck = doc.SearchObject(dazName + "Neck_Start")
         dazCollar = doc.SearchObject('lCollar')
         ikmGuides = doc.SearchObject(dazName + '_IKM-Guides')
         shoulder = doc.SearchObject(dazName + "Shoulder" + sideName)
@@ -1578,9 +1575,6 @@ class ikmGenerator():
         if sideName == "":
             self.makeNull(dazName + "Head_ctrl", dazName + "jHead", "head")
             self.constraintObj(dazName + "jHead", dazName + "Head_ctrl")
-
-
-
 
         self.makeChildKeepPos(dazName + "Head_ctrl", dazName + "Neck_ctrl")
         self.makeChildKeepPos(dazName + "Neck_ctrl", dazName + "ChestUpper_ctrl")

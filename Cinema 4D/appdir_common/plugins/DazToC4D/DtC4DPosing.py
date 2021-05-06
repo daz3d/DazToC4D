@@ -1,6 +1,6 @@
 import os
 import sys
-from c4d import documents
+from c4d import documents, gui
 import c4d
 
 

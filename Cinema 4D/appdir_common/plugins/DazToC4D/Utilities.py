@@ -7,6 +7,53 @@ from xml.etree import ElementTree
 HOME_DIR = os.path.expanduser("~")
 ROOT_DIR = os.path.join(HOME_DIR, "Documents", "DAZ 3D", "Bridges", "Daz To C4D")
 
+def get_daz_mesh():
+    doc = documents.GetActiveDocument()
+    obj = doc.SearchObject('hip')
+    if obj:
+        dazRigName = obj.GetUp().GetName()
+        dazMeshObj = doc.SearchObject(dazRigName + '.Shape')
+        return dazMeshObj
+    return None
+    
+
+def get_daz_name():
+    doc = documents.GetActiveDocument()
+    obj = doc.SearchObject('hip')
+    if obj:
+        dazRigName = obj.GetUp().GetName()
+        dazMeshObj = doc.SearchObject(dazRigName + '.Shape')
+        return dazMeshObj.GetName().replace(".Shape", "")
+    return ""
+
+
+def hideEyePolys(self):
+    doc = documents.GetActiveDocument()
+    obj = doc.GetFirstObject()
+    scene = ObjectIterator(obj)
+    for obj in scene:
+        self.hidePolyTagByName(obj, 'EyeMoisture')
+        self.hidePolyTagByName(obj, 'Cornea')
+
+
+def getJointFromSkin(obj, jointName):
+    objTags =  TagIterator(obj)
+    for t in objTags:
+        if 'Weight' in t.GetName():
+            for j in range(t.GetJointCount()):
+                if jointName in t.GetJoint(j).GetName():
+                    return t.GetJoint(j)
+    return None
+
+
+def getJointFromConstraint(jointName):
+    objTags =  TagIterator(jointName)
+    for t in objTags:
+        if 'Constraint' in t.GetName():
+            return t[10001]
+
+    return None
+
 
 class ObjectIterator :
     def __init__(self, baseObject):
@@ -161,6 +208,17 @@ class dazToC4Dutils:
                     pass
     
     
+    def walker(self, parent, obj):
+        if not obj:
+            return  # if obj is None, the function returns None and breaks the while loop
+        elif obj.GetDown():  # if there is a child of obj
+            return obj.GetDown()  # the walker function returns that child
+        while obj.GetUp() and not obj.GetNext() and obj.GetUp() != parent:  # if there is a parent of the obj and there isn't another object after the obj and the parent object is not the same object stored in "parent"
+            obj = obj.GetUp()  # it set's the current obj to that parent
+        return obj.GetNext()  # and return the object that's after that parent, not under, after :)
+    
+
+
     def iterateObjChilds(self, obj):
         parent = obj  # stores the active object in a 'parent' variable, so it always stays the same
         children = []  # create an empty list to store children
@@ -202,7 +260,7 @@ class dazToC4Dutils:
 
     def protectTwist(self):
         doc = c4d.documents.GetActiveDocument()
-
+        dazName = get_daz_name() + "_"
         def addProtTag(obj):
             xtag = c4d.BaseTag(c4d.Tprotection)
             xtag[c4d.PROTECTION_P] = 1
@@ -478,7 +536,7 @@ class dazToC4Dutils:
 
     def twistBoneSetup(self):
         doc = documents.GetActiveDocument()
-
+        dazName = get_daz_name() + "_"
         def aimObj(slave, master, mode="", searchObj=1):
             doc = documents.GetActiveDocument()
             if searchObj == 1:
@@ -563,7 +621,7 @@ class dazToC4Dutils:
                 protectionTAG[c4d.PROTECTION_S_X] = False
             obj.InsertTag(protectionTAG)
             c4d.EventAdd()
-        dazName = self.getDazMesh().GetName() + "_"
+        dazName =  get_daz_name() + "_"
         protectObj(dazName + 'Toe_Rot')
         protectObj(dazName + 'Toe_Rot___R')
         protectObj(dazName + 'Foot_Roll')
@@ -656,6 +714,7 @@ class dazToC4Dutils:
         doc = documents.GetActiveDocument()
         dazName = self.getDazMesh().GetName()
         meshName = dazName + "_"
+        meshName = meshName.replace('.Shape', '')
         actObj = doc.SearchObject(meshName + actObjName)
         Aobj = doc.SearchObject(meshName + nameA)  # Direction line Start
         Bobj = doc.SearchObject(meshName + nameB)  # Direction line End
@@ -703,7 +762,7 @@ class dazToC4Dutils:
 
     def moveToObj(self, source, target):
         doc = documents.GetActiveDocument()
-        dazName = self.getDazMesh().GetName()
+        dazName = get_daz_name()
         parentGuidesName = dazName + '__IKM-Guides'
 
         if doc.SearchObject(parentGuidesName) == None:
@@ -731,7 +790,7 @@ class dazToC4Dutils:
         c4d.EventAdd()
 
     def guidesToDaz(self):
-        dazName = self.getDazMesh().GetName()
+        dazName = get_daz_name()
         doc = documents.GetActiveDocument()
         meshName = dazName + "_"
         self.addHeadEndBone()
@@ -841,7 +900,7 @@ class dazToC4Dutils:
 
     def constraintJointsToDaz(self, side='Left'):
         doc = documents.GetActiveDocument()
-        azName = self.getDazMesh().GetName()
+        dazName = get_daz_name()
         meshName = dazName + "_"
         prefix = 'l'
         suffix = ''

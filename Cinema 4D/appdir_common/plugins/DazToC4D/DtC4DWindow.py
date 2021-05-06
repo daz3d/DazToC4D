@@ -6,6 +6,7 @@ from c4d import gui, documents
 folder = os.path.dirname( __file__ )
 if folder not in sys.path: 
     sys.path.insert( 0, folder )
+import Utilities
 from Utilities import dazToC4Dutils
 from DazToC4DClasses import DazToC4D
 from Materials import Materials, convertToRedshift, convertMaterials
@@ -270,15 +271,13 @@ class guiDazToC4DMain(gui.GeDialog):
             guiDazToC4DExtraDialog = self.extraDialog
             self.extraDialog.Open(dlgtype=c4d.DLG_TYPE_ASYNC, xpos=-1, ypos=-1, defaultw=200, defaulth=150)
 
-            '''
-
-            '''
 
         if id == self.BUTTON_CONVERT_MATERIALS:
             #CONVERT MATERIAL
             doc = c4d.documents.GetActiveDocument()
             comboRender = self.GetInt32(2001)
             redshiftBumpType = self.GetInt32(2002)
+            mat = Materials()
             if comboRender == 0:
                 gui.MessageDialog('Please select renderer from the list')
 
@@ -296,13 +295,13 @@ class guiDazToC4DMain(gui.GeDialog):
                             convert_to_redshift = convertToRedshift()
                             convert_to_redshift.getBumpType(redshiftBumpType)
                             convert_to_redshift.execute()
-                            DazToC4D().hideEyePolys()
+                            Utilities.hideEyePolys()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             c4d.CallCommand(100004767, 100004767)  # Deselect All
 
                         if comboRender == 3:
-                            Materials.Materials().convertToOctane()
-                            DazToC4D().hideEyePolys()
+                            mat.convertToOctane()
+                            Utilities.hideEyePolys()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             c4d.CallCommand(100004767, 100004767)  # Deselect All
 

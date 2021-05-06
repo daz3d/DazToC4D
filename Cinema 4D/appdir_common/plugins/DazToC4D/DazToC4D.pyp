@@ -24,7 +24,8 @@ def module_reload():
     modules = ['Utilities', 'DazToC4DClasses', 'CustomIterators', \
                'CustomImports', 'CustomColors', 'Materials', \
                'IkMax', 'DtC4DPosing', 'DtC4DPosing', \
-               'DtC4DDialogs', 'DtC4DWindow', 'Morphs']
+               'DtC4DDialogs', 'DtC4DWindow', 'Morphs', \
+                'DazRig']
     for module in modules:
         if module not in sys.modules:
             continue

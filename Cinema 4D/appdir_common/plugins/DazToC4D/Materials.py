@@ -1,7 +1,7 @@
 import c4d
 import os
 import sys
-from c4d import documents
+from c4d import documents, gui
 try:
     import redshift
 except:
@@ -15,6 +15,20 @@ from Utilities import dazToC4Dutils
 from CustomIterators import ObjectIterator, TagIterator
 
 class Materials:
+    def checkStdMats(self):
+        doc = c4d.documents.GetActiveDocument()
+        docMaterials = doc.GetMaterials()
+        noStd = True
+        for mat in docMaterials:
+            matName = mat.GetName()
+            if mat.GetType() == 5703:
+                noStd = False
+        if noStd == True:
+            gui.MessageDialog('No standard mats found. This scene was already converted')
+
+        return noStd
+    
+    
     def fixGenEyes(self):
         dir, file = os.path.split(__file__)  # Gets the plugin's directory
         folder_DazToC4D_res = os.path.join(dir, 'res')  # Adds the res folder to the path
@@ -652,7 +666,7 @@ class convertToRedshift:
 
         # Process for all materials of scene
         docMaterials = doc.GetMaterials()
-        if DazToC4D().checkStdMats() == True:
+        if Materials().checkStdMats() == True:
             return
 
         for mat in docMaterials:

@@ -2,13 +2,13 @@ import c4d
 import os 
 import sys
 import webbrowser
-from c4d import gui
+from c4d import gui, documents
 
 folder = os.path.dirname( __file__ )
 if folder not in sys.path: 
     sys.path.insert( 0, folder )
 
-from Utilities import dazToC4Dutils, findIK
+from Utilities import dazToC4Dutils, findIK, getJointFromConstraint, getJointFromSkin, TagIterator, ObjectIterator
 from IkMax import ikmaxUtils, ikmGenerator
 from CustomColors import randomColors
 from DtC4DPosing import Poses
