@@ -1,5 +1,6 @@
 import c4d 
 from c4d import documents
+from random import randint
 
 class randomColors():
     IKMobjList = []

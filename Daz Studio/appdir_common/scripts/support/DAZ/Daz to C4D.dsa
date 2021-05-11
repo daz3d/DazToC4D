@@ -39,6 +39,7 @@
 	var s_sRootPath = "";
 	var s_sPresetPath = "";
 	
+	var s_sFbxPath = "";
 	var s_sMorphRules = "";
 	var s_oMorphLinks = {};
 	var s_aMorphNamesToExport = []
@@ -46,6 +47,7 @@
 	var s_oLimitsData = {};
 	var s_oHeadTailData = {};
 	var s_oPoseData = {};
+	var s_aTexturePaths = [];
 
 	var s_nLenName = 0;
 	var s_nMaxName = 19;
@@ -61,8 +63,8 @@
 	// Setting variables
 	var s_nSubDivLevel;
 	var s_bIncludeAnim;
-	var s_bIncludeMorphs
-	
+	var s_bIncludeMorphs;
+	var s_bCollectTextures;
 	
 	
 	
@@ -370,6 +372,9 @@
 			}
 			// Clean up; don't leak memory
 			oExporter.deleteLater();
+			
+			//Store FBX Path
+			s_sFbxPath = sPath;
 		// We didn't find an exporter with the class name we wanted
 		} else {
 			// Inform the user
@@ -1043,6 +1048,14 @@
 		wIncludeMorphsCbx.text = "Include Morphs";
 		wIncludeMorphsCbx.checked = false;
 		wSettingsDialog.addWidget( wIncludeMorphsCbx );
+
+		// Checkbox to collect textures at export
+		var wCollectTexturesCbx = new DzCheckBox( wSettingsDialog );
+		wCollectTexturesCbx.text = "Collect Textures";
+		wCollectTexturesCbx.checked = false;
+		wSettingsDialog.addWidget( wCollectTexturesCbx );
+
+
 		// When user Cancels the dialog
 		if( !wSettingsDialog.exec() ){
 			return false;
@@ -1052,6 +1065,7 @@
 		s_nSubDivLevel = wSubDivGroup.selected;
 		s_bIncludeAnim = wIncludeAnimationsCbx.checked;
 		s_bIncludeMorphs = wIncludeMorphsCbx.checked;
+		s_bCollectTextures = wCollectTexturesCbx.checked;
 		// When user Accepts the dialog
 		return true;
 	};
@@ -1824,7 +1838,7 @@
 	// void : ...
 	// Note: Configure DTU File
 	// TO DO: Grab Subdivision info and Morphs Exporting
-	function writeConfiguration( oNode, sFilename )
+	function writeConfiguration( oNode, sFilename, sDir )
 	{
 		var sDtufilename = sFilename + ".dtu";
 		var oDtufile = new DzFile( sDtufilename );
@@ -1836,6 +1850,7 @@
 		
 		oDtuJson["Asset Name"] = oNode.getLabel();
 		oDtuJson["Asset Type"] = sContentType;
+		oDtuJson["FBX File"] = s_sFbxPath;
 		oDtuJson["Materials"] = [];
 		oDtuJson["MorphLinks"] = s_oMorphLinks;
 		oDtuJson["MorphNames"] = s_aMorphNamesToExport;
@@ -1855,6 +1870,9 @@
 				}		
 			}
 		};
+		if(s_bCollectTextures){
+			writeTextures( sDir );
+		}
 		
 		function combineMaterials( key, value ){
 			var aNewMaterials = [];
@@ -1877,6 +1895,22 @@
 		oDtufile.write( JSON.stringify( oDtuJson, combineMaterials, 4 ) );
 		oDtufile.close();
 	};
+	/*********************************************************************/
+	// Void : Writes All TexturePaths to Export
+	function writeTextures( sDir ){
+		var sPath = String( "%1/%2" ).arg( sDir ).arg( "Textures" );
+		var oDir = new DzDir( "" );
+		oDir.setPath( sPath );
+		if( !oDir.exists() ){
+			oDir.mkdir( sPath );
+		};
+		for( var i = 0; s_aTexturePaths.length; i++ ){
+			var sSrcPath = s_aTexturePaths[i];
+			var sRelFile = sSrcPath.substring( sPath.length );
+		}
+
+	}
+
 
 	/*********************************************************************/	
 	// Array : ...
@@ -2125,7 +2159,8 @@
 		prepareForExport( s_nExportType );
 		
 		var sFileBasename;
-		
+		var sBaseDirectory; 
+
 		if( s_nExportType == s_oExportTypes.Both
 		|| s_nExportType == s_oExportTypes.Figure ){
 			setHideRoot( false, false );
@@ -2155,16 +2190,10 @@
 					s_sMorphRules = getMorphString( aExportableProperties );
 					loadMorphLinks( aExportableProperties );
 					disconnectMorphs( aExportableProperties );
-				};
-				
-				
-				// Write data
-				sFileBasename = String( "%1%2/%2%3/%2" ).arg( s_sRootPath ).arg( s_sFig ).arg( i );
+				};	
+				// Export Figure
 				loadFigureBoneData( oFigure );
 				loadPoseData( oFigure, true );
-				writeParentingData( oFigure, sFileBasename + ".dat" );
-				writeConfiguration( oFigure, sFileBasename );
-				
 				setEyelashVisibility( oFigure, false );
 				exportOBJ( oFigure, s_sFig, i );
 				setEyelashVisibility( oFigure, true );
@@ -2176,6 +2205,13 @@
 				if ( s_bIncludeMorphs ){
 					reconnectMorphs( aExportableProperties );
 				}
+
+				// Write data
+				sFileBasename = String( "%1%2/%2%3/%2" ).arg( s_sRootPath ).arg( s_sFig ).arg( i );
+				sBaseDirectory = String( "%1%2/%2%3" ).arg( s_sRootPath ).arg( s_sFig ).arg( i );
+				writeParentingData( oFigure, sFileBasename + ".dat" );
+				writeConfiguration( oFigure, sFileBasename, sBaseDirectory );
+
 			}
 		}
 		

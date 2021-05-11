@@ -2,10 +2,7 @@ import c4d
 import os
 import sys
 from c4d import documents, gui
-try:
-    import redshift
-except:
-    print('DaztoC4D : Redshift not installed can not convert.')
+
 
 folder = os.path.dirname( __file__ )
 if folder not in sys.path: 
@@ -654,8 +651,8 @@ class convertToRedshift:
     def __init__(self):
         try:
             import redshift
-        except:
-            print('No Redshift found')
+        except ImportError:
+            print('DaztoC4D : Redshift not installed can not convert.')
 
         self.bump_input_type = 1 # Tangent-Space Normals
         self.NewMatList = [] 

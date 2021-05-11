@@ -11,6 +11,7 @@ if folder not in sys.path:
 from Materials import Materials
 from CustomIterators import ObjectIterator, TagIterator
 from DazToC4DClasses import DazToC4D
+from AllSceneToZero import AllSceneToZero
 
 class autoAlignArms():
     def constraintObj(self, obj, target):

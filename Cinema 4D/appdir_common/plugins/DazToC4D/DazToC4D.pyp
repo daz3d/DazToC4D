@@ -5,7 +5,7 @@ import os
 check = importlib.util.find_spec("ptvsd") is not None
 if check:
     import ptvsd
-    ptvsd.enable_attach(address = ('127.0.0.1', 3000))
+    ptvsd.enable_attach(address = ("127.0.0.1", 3000))
     ptvsd.wait_for_attach()
 
 import c4d
@@ -25,7 +25,7 @@ def module_reload():
                'CustomImports', 'CustomColors', 'Materials', \
                'IkMax', 'DtC4DPosing', 'DtC4DPosing', \
                'DtC4DDialogs', 'DtC4DWindow', 'Morphs', \
-                'DazRig']
+               'DazRig', 'AllSceneToZero', 'DtuLoader']
     for module in modules:
         if module not in sys.modules:
             continue
@@ -34,6 +34,7 @@ def module_reload():
 
 class DazToC4DPlugin(c4d.plugins.CommandData):
     dialog = None
+    
     def Execute(self, doc):
         try:
             self.dialog.Close()
@@ -53,3 +54,7 @@ if __name__=='__main__':
     initialize = plugins.RegisterCommandPlugin(PLUGIN_ID, "DazToC4D", 0, icon, "Import from DAZ Studio", DazToC4DPlugin())
     if initialize:
         print("DazToC4D : has successfully loaded")
+        HOME_DIR = os.path.expanduser("~")
+        ROOT_DIR = os.path.join(HOME_DIR, "Documents", "DAZ 3D", "Bridges", "Daz To C4D")
+        EXPORT_DIR = os.path.join(ROOT_DIR, "Exports")
+        print("DaztoC4D : Exports to {0}.".format(ROOT_DIR))

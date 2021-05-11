@@ -8,17 +8,19 @@ class DtuLoader:
     bone_head_tail_dict = dict()
     morph_links_dict = dict()
     asset_name = ""
+    fbx_path = ""
     materials_list = []
-
+    def __init__(self, imported_dir):
+        self.import_dir = imported_dir
 
     def load_dtu(self):
-        for file in os.listdir(Global.getHomeTown()):
+        for file in os.listdir(self.import_dir):
             if file.endswith(".dtu"):
-                dtu = os.path.join(Global.getHomeTown(), file)
+                dtu = os.path.join(self.import_dir, file)
                 break
         with open(dtu, "r") as data:
             self.dtu_dict = json.load(data)
-           
+    
 
     def get_dtu_dict(self):
         if len(self.dtu_dict.keys()) == 0:
@@ -35,6 +37,17 @@ class DtuLoader:
         if self.asset_name == "":
             self.load_asset_name()
         return self.asset_name
+
+
+    def load_fbx_path(self):
+        dtu_dict = self.get_dtu_dict()
+        self.fbx_path = dtu_dict["FBX File"]
+
+
+    def get_fbx_path(self):
+        if self.asset_name == "":
+            self.load_fbx_path()
+        return self.fbx_path
 
 
     def load_bone_head_tail_dict(self):

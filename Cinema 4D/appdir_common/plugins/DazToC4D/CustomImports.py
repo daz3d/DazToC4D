@@ -23,25 +23,30 @@ class CustomImports:
     export_dir = os.path.join(root_dir, "Exports")
 
 
-    def get_import_list(self, version):
-        importList = []
-        for export in os.listdir(os.path.join(self.export_dir, version)):
-            if os.path.isdir(os.path.join(self.export_dir, version, export)):
-                for fbx in os.listdir(os.path.join(self.export_dir, version, export)):
-                    if fbx.endswith(".fbx"):
-                        importList.append(os.path.join(self.export_dir, version, export, fbx))
-        return importList
+    def get_genesis_list(self):
+        import_list = []
+        for i in os.listdir(os.path.join(self.export_dir, "FIG")):
+            import_list.append(os.path.join(self.export_dir, "FIG", i))
+        return import_list
 
-    
+
+    def manual_import_genesis(self, path):
+        dtu = DtuLoader.DtuLoader(path)
+        fbx_path = dtu.get_fbx_path()
+        self.genesis_import(fbx_path, dtu, mat)
+
+
     def auto_import_genesis(self):
-        dtu = DtuLoader.DtuLoader()
-        mat = Materials.Materials()
         doc = documents.GetActiveDocument()
-        import_list = self.get_import_list("FIG")
-        for file_path in import_list:
-            self.genesis_import(file_path, dtu, mat)
+        import_list = self.get_genesis_list()
+        for imported_dir in import_list:
+            dtu = DtuLoader.DtuLoader(imported_dir)
+            fbx_path = dtu.get_fbx_path()
+            self.genesis_import(fbx_path, dtu)
 
-    def genesis_import(self, filePath, dtu, mat):
+
+    def genesis_import(self, filePath, dtu):
+        mat = Materials.Materials()
         if os.path.exists(filePath) == False:
             gui.MessageDialog(
                 'Nothing to import.\nYou have to export from DAZ Studio first',
