@@ -1,11 +1,10 @@
 import sys
 import os 
 import c4d
-from c4d import gui, documents
+from c4d import documents, utils
 from xml.etree import ElementTree
 
-HOME_DIR = os.path.expanduser("~")
-ROOT_DIR = os.path.join(HOME_DIR, "Documents", "DAZ 3D", "Bridges", "Daz To C4D")
+from .Definitions import ROOT_DIR
 
 def get_daz_mesh():
     doc = documents.GetActiveDocument()
@@ -53,6 +52,7 @@ def getJointFromConstraint(jointName):
             return t[10001]
 
     return None
+
 
 
 class ObjectIterator :
@@ -118,8 +118,15 @@ def findIK():
             ikfound = 1
     return ikfound
 
+class Utils:
+    
+    def update_viewport(self):
+        c4d.CallCommand(12148)  # Frame Geometry
+        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
+
 
 class dazToC4Dutils:
+    
     def findTextInFile(self, matName, propertyName):
         
         dazExtraMapsFile = os.path.join(ROOT_DIR,"DazToC4D.xml")
@@ -454,7 +461,7 @@ class dazToC4Dutils:
             c4d.EventAdd()
 
         doc = documents.GetActiveDocument()
-
+        dazName = get_daz_name() + "_"
         jointObj = doc.SearchObject(dazName + 'jHand')
         ikZeroRot(jointObj)
 

@@ -4,19 +4,15 @@ from c4d import gui, documents
 from c4d import utils
 from c4d import plugins
 from random import randint
-from shutil import copyfile
 import webbrowser
 import json
 
-folder = os.path.dirname( __file__ )
-if folder not in sys.path: 
-    sys.path.insert( 0, folder )
 
-import DtuLoader
-import Materials
-from Utilities import dazToC4Dutils
-from IkMax import applyDazIK, ikmaxUtils, ikmGenerator
-from AllSceneToZero import AllSceneToZero
+from . import DtuLoader
+from . import Materials
+from .Utilities import dazToC4Dutils
+from .IkMax import applyDazIK, ikmaxUtils, ikmGenerator
+from .AllSceneToZero import AllSceneToZero
 
 
 

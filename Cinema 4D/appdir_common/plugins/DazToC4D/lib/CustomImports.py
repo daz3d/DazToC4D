@@ -3,35 +3,38 @@ import os
 import sys
 from c4d import documents, gui
 
-folder = os.path.dirname( __file__ )
-if folder not in sys.path: 
-    sys.path.insert( 0, folder )
-
-from Utilities import dazToC4Dutils
-from DazToC4DClasses import DazToC4D
-import DtuLoader
-import Materials
-from DtC4DPosing import Poses
-from Morphs import Morphs, connectEyeLashesMorphXpresso
-from DtC4DDialogs import guiASKtoSave
+from .Utilities import dazToC4Dutils, Utils
+from .DazToC4DClasses import DazToC4D
+from . import DtuLoader
+from . import Materials
+from .DtC4DPosing import Poses
+from .Morphs import Morphs, connectEyeLashesMorphXpresso
+from .DtC4DDialogs import guiASKtoSave
+from .Definitions import EXPORT_DIR
 
 dazReduceSimilar = True
 
 class CustomImports:
-    home_dir = os.path.expanduser("~")
-    root_dir = os.path.join(home_dir, "Documents", "DAZ 3D", "Bridges", "Daz To C4D")
-    export_dir = os.path.join(root_dir, "Exports")
+    
 
 
     def get_genesis_list(self):
+        """
+        Returns the Absolute Paths of the Exports from Daz for Figures
+        """
         import_list = []
-        for i in os.listdir(os.path.join(self.export_dir, "FIG")):
-            import_list.append(os.path.join(self.export_dir, "FIG", i))
+        for i in os.listdir(os.path.join(EXPORT_DIR, "FIG")):
+            import_list.append(os.path.join(EXPORT_DIR, "FIG", i))
         return import_list
 
 
+    # Hidden
     def manual_import_genesis(self, path):
+        """
+        Manually Imports Figure of the Given Path
+        """
         dtu = DtuLoader.DtuLoader(path)
+        mat = Materials.Materials()
         fbx_path = dtu.get_fbx_path()
         self.genesis_import(fbx_path, dtu, mat)
 
@@ -47,6 +50,7 @@ class CustomImports:
 
     def genesis_import(self, filePath, dtu):
         mat = Materials.Materials()
+        util = Utils()
         if os.path.exists(filePath) == False:
             gui.MessageDialog(
                 'Nothing to import.\nYou have to export from DAZ Studio first',
@@ -64,8 +68,7 @@ class CustomImports:
         screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
 
         c4d.EventAdd()
-        c4d.CallCommand(12148)  # Frame Geometry
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD  | c4d.DRAWFLAGS_STATICBREAK)
+        util.update_viewport()       
 
         c4d.CallCommand(300001026, 300001026)  # Deselect All
         c4d.CallCommand(12168, 12168)  # Remove Unused Materials

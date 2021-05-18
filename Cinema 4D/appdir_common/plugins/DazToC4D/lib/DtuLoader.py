@@ -1,6 +1,9 @@
 import os
 import json
 class DtuLoader:
+    """
+    Loader to Store the Necessary information from the Companion JSON into Memory
+    """
     dtu_dict = dict()
     bone_limits_dict = dict()
     skeleton_data_dict = dict()

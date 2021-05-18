@@ -47,7 +47,6 @@
 	var s_oLimitsData = {};
 	var s_oHeadTailData = {};
 	var s_oPoseData = {};
-	var s_aTexturePaths = [];
 
 	var s_nLenName = 0;
 	var s_nMaxName = 19;
@@ -972,21 +971,25 @@
 			oDir.mkdir( sPath );
 		};
 		
+		var aDirs = []
 		// Delete Files
 		aFiles = oDir.getFilesFromDir( [], true );
 		for( var j = 0; j < aFiles.length; j += 1 ){
+			var oFile = new DzFile( aFiles[j] );
+			var sFileName = oFile.fileName()
+			dir = oDir.relativeFilePath( aFiles[j] ).replace(  sFileName, "" )
+			aDirs.pushIfNotExists( dir );
 			oDir.remove( aFiles[j] );
+
 		};
+
 		// Delete Dirs
-		var aDirs = oDir.entryList( "*",
-			DzDir.Dirs | DzDir.NoSymLinks | DzDir.NoDotAndDotDot, DzDir.Name );
-		
 		for ( var j = 0; j < aDirs.length; j += 1 ){
 			sDelPath = sPath + aDirs[j]
 			oDelDir.setPath( sDelPath );
 			if( oDelDir.exists() ){
 				oDelDir.rmdir( sDelPath );
-			}
+			}	
 		};
 	};
 	
@@ -1859,20 +1862,17 @@
 		oDtuJson["LimitData"] = s_oLimitsData;
 		oDtuJson["PoseData"] = s_oPoseData;
 		
-		aFigureMats = writeMaterials( oNode );
+		aFigureMats = writeMaterials( oNode, sDir );
 		oDtuJson["Materials"].push( aFigureMats );
 		if (nChildren > 0){
 			for ( var i = 0; i < nChildren; i++ ){
 				var oChild = aChildren[ i ]; 
-				aChildMats = writeMaterials( oChild );
+				aChildMats = writeMaterials( oChild, sDir );
 				if ( aChildMats != false ){
 					oDtuJson["Materials"].push( aChildMats );
 				}		
 			}
 		};
-		if(s_bCollectTextures){
-			writeTextures( sDir );
-		}
 		
 		function combineMaterials( key, value ){
 			var aNewMaterials = [];
@@ -1896,26 +1896,34 @@
 		oDtufile.close();
 	};
 	/*********************************************************************/
-	// Void : Writes All TexturePaths to Export
-	function writeTextures( sDir ){
-		var sPath = String( "%1/%2" ).arg( sDir ).arg( "Textures" );
+	// String : Writes Texture and returns new Path
+	// TODO: Find a better method to get the paths
+	function writeTexture( sDir, sOrigTexture )
+	{
+		var oOrigFile = new DzFile( sOrigTexture );
+		var sOrgImageName = oOrigFile.fileName();
+		var sAbsPath = oOrigFile.absolutePath();
+		var aSplitPath = sAbsPath.split("Textures");
+		var sSubDir = aSplitPath[aSplitPath.length - 1];
+		var sPath = String( "%1/%2%3" ).arg( sDir ).arg( "Textures" ).arg( sSubDir );
+
 		var oDir = new DzDir( "" );
 		oDir.setPath( sPath );
 		if( !oDir.exists() ){
-			oDir.mkdir( sPath );
-		};
-		for( var i = 0; s_aTexturePaths.length; i++ ){
-			var sSrcPath = s_aTexturePaths[i];
-			var sRelFile = sSrcPath.substring( sPath.length );
+			oDir.mkpath( sPath );
 		}
 
-	}
+		var sNewTexture = String( "%1/%2" ).arg( sPath ).arg( sOrgImageName )
+		oOrigFile.copy( sNewTexture )
+		return sNewTexture
+		
+	};
 
 
 	/*********************************************************************/	
 	// Array : ...
 	// Note: Cycle through all the Materials on a Node and return an array
-	function writeMaterials( oNode )
+	function writeMaterials( oNode, sDir )
 	{	
 		var oObj = oNode.getObject();
 		if( oObj != null ){
@@ -1953,9 +1961,9 @@
 							var bImageProperty = oProperty.inherits( "DzImageProperty" );
 							var bColorProperty = oProperty.inherits( "DzColorProperty" );
 							var bNumericProperty = oProperty.inherits( "DzNumericProperty" );
+							var sTextureName = "";
 
 							if( bImageProperty ){
-								var sTextureName = "";
 								if(oProperty.getValue()){
 									sTextureName = oProperty.getValue().getFilename();	
 								}
@@ -1964,8 +1972,6 @@
 								oPropertyInfo["Texture"] = sTextureName;
 							}
 							else if( bColorProperty ){
-								var sName = oProperty.getName();
-								var sTextureName ="";
 								if ( oProperty.getMapValue() ){
 									sTextureName = oProperty.getMapValue().getFilename();
 								}
@@ -1974,8 +1980,6 @@
 								oPropertyInfo["Texture"] = sTextureName;
 							}
 							else if( bNumericProperty ){
-								var sName = oProperty.getName();
-								var sTextureName = "";
 								if ( oProperty.getMapValue() ){
 									sTextureName = oProperty.getMapValue().getFilename();
 								}
@@ -1984,6 +1988,12 @@
 								oPropertyInfo["Texture"] = sTextureName;
 							}
 							aProperties.push( oPropertyInfo );
+							if ( sTextureName != "" ){
+								if(s_bCollectTextures){
+									sNewTexture = writeTexture( sDir, sTextureName );
+									oPropertyInfo["Texture"] = sNewTexture;
+								}
+							}
 						}
 						oMaterialInfo["Properties"] = aProperties;
 						

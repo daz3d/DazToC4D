@@ -3,11 +3,7 @@ import sys
 import c4d
 from c4d import documents
 
-
-folder = os.path.dirname( __file__ )
-if folder not in sys.path: 
-    sys.path.insert( 0, folder )
-from CustomIterators import ObjectIterator
+from .CustomIterators import ObjectIterator
 
 class AllSceneToZero:
     doc = documents.GetActiveDocument()

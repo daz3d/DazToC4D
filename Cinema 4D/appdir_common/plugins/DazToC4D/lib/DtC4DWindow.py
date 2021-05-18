@@ -3,17 +3,14 @@ import os
 import sys
 from c4d import gui, documents
 
-folder = os.path.dirname( __file__ )
-if folder not in sys.path: 
-    sys.path.insert( 0, folder )
-import Utilities
-from Utilities import dazToC4Dutils
-from DazToC4DClasses import DazToC4D
-from Materials import Materials, convertToRedshift, convertMaterials
-from CustomIterators import ObjectIterator, TagIterator
-from CustomImports import CustomImports
-from DtC4DDialogs import EXTRADialog
-from DtC4DPosing import Poses
+from .Utilities import dazToC4Dutils, hideEyePolys
+from .DazToC4DClasses import DazToC4D
+from .Materials import Materials, convertToRedshift, convertMaterials
+from .CustomIterators import ObjectIterator, TagIterator
+from .CustomImports import CustomImports
+from .DtC4DDialogs import EXTRADialog
+from .DtC4DPosing import Poses
+from .Definitions import RES_DIR
 
 class guiDazToC4DMain(gui.GeDialog):
     
@@ -32,8 +29,7 @@ class guiDazToC4DMain(gui.GeDialog):
 
     MY_BITMAP_BUTTON = 9353535
 
-    root_dir = os.path.dirname(__file__)  # Gets the plugin's directory
-    res_dir = os.path.join(root_dir, 'res')  # Adds the res folder to the path
+    res_dir = RES_DIR # Adds the res folder to the path
     
     # Set Images for UI
     img_d2c4dLogo = os.path.join(res_dir, 'd2c4d_logo.png')
@@ -295,13 +291,13 @@ class guiDazToC4DMain(gui.GeDialog):
                             convert_to_redshift = convertToRedshift()
                             convert_to_redshift.getBumpType(redshiftBumpType)
                             convert_to_redshift.execute()
-                            Utilities.hideEyePolys()
+                            hideEyePolys()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             c4d.CallCommand(100004767, 100004767)  # Deselect All
 
                         if comboRender == 3:
                             mat.convertToOctane()
-                            Utilities.hideEyePolys()
+                            hideEyePolys()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             c4d.CallCommand(100004767, 100004767)  # Deselect All
 

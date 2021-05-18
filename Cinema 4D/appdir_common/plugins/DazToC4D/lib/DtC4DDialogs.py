@@ -4,14 +4,11 @@ import sys
 import webbrowser
 from c4d import gui, documents
 
-folder = os.path.dirname( __file__ )
-if folder not in sys.path: 
-    sys.path.insert( 0, folder )
-
-from Utilities import dazToC4Dutils, findIK, getJointFromConstraint, getJointFromSkin, TagIterator, ObjectIterator
-from IkMax import ikmaxUtils, ikmGenerator
-from CustomColors import randomColors
-from DtC4DPosing import Poses
+from .Utilities import dazToC4Dutils, findIK, getJointFromConstraint, getJointFromSkin, TagIterator, ObjectIterator
+from .IkMax import ikmaxUtils, ikmGenerator
+from .CustomColors import randomColors
+from .DtC4DPosing import Poses
+from .Definitions import RES_DIR
 
 dazReduceSimilar = True
 
@@ -59,8 +56,7 @@ class guiASKtoSave(gui.GeDialog):
 
     MY_BITMAP_BUTTON = 927125
 
-    root_dir = os.path.dirname(__file__)  # Gets the plugin's directory
-    res_dir = os.path.join(root_dir, 'res')  # Adds the res folder to the path
+    res_dir = RES_DIR  # Adds the res folder to the path
     img_dir = os.path.join(res_dir, 'imgs')  # Adds the res folder to the path
 
     img_btnSave = os.path.join(img_dir, 'btnSave.png')
@@ -158,8 +154,7 @@ class guiPleaseWaitAUTO(gui.GeDialog):
 
 
 class IKMAXFastAttach(c4d.gui.GeDialog):
-    dir, file = os.path.split(__file__)  # Gets the plugin's directory
-    LogoFolder_Path = os.path.join(dir, 'res')  # Adds the res folder to the path
+    LogoFolder_Path = RES_DIR # Adds the res folder to the path
     LogoFolder_PathImgs = os.path.join(LogoFolder_Path, 'imgs')  # Adds the res folder to the path
 
     img_fa_head = os.path.join(LogoFolder_PathImgs, 'fa_head.png')
@@ -441,9 +436,6 @@ class IKMAXFastAttach(c4d.gui.GeDialog):
 
 class EXTRADialog(c4d.gui.GeDialog):
     dialog = None
-
-    dir, file = os.path.split(__file__)  # Gets the plugin's directory
-
     testStuff = 'asdasdasdasdasd!!!!!!!!!'
     dazMeshObj = ''
     jointPelvis = '---'
@@ -501,7 +493,7 @@ class EXTRADialog(c4d.gui.GeDialog):
 
     BUTTON_MODEL_MIRRORPOSE = 241798039
 
-    LogoFolder_Path = os.path.join(dir, 'res')  # Adds the res folder to the path
+    LogoFolder_Path = RES_DIR # Adds the res folder to the path
     LogoFolder_PathIcons = os.path.join(LogoFolder_Path, 'icons')  # Adds the res folder to the path
     LogoFolder_PathImgs = os.path.join(LogoFolder_Path, 'imgs')  # Adds the res folder to the path
 
@@ -591,8 +583,7 @@ class EXTRADialog(c4d.gui.GeDialog):
             if layer.GetName() == "IKM_Lock":
                 layer_data = layer.GetLayerData(doc)
                 lockValue = layer_data['locked']
-                dir, file = os.path.split(__file__)  # Gets the plugin's directory
-                LogoFolder_Path = os.path.join(dir, 'res')  # Adds the res folder to the path
+                LogoFolder_Path = RES_DIR  # Adds the res folder to the path
                 LogoFolder_PathIcons = os.path.join(LogoFolder_Path, 'icons')  # Adds the res folder to the path
                 img_lock = os.path.join(LogoFolder_PathIcons, 'm_lock.png')
                 img_lockON = os.path.join(LogoFolder_PathIcons, 'm_lockON.png')

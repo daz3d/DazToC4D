@@ -3,12 +3,8 @@ import os
 import c4d
 from c4d import gui, documents
 
-folder = os.path.dirname( __file__ )
-if folder not in sys.path: 
-    sys.path.insert( 0, folder )
-
-from Utilities import dazToC4Dutils
-from DazRig import DazRig
+from .Utilities import dazToC4Dutils
+from .DazRig import DazRig
 
 
 def applyDazIK():

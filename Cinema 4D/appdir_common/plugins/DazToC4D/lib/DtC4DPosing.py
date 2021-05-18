@@ -3,15 +3,10 @@ import sys
 from c4d import documents, gui
 import c4d
 
-
-folder = os.path.dirname( __file__ )
-if folder not in sys.path: 
-    sys.path.insert( 0, folder )
-
-from Materials import Materials
-from CustomIterators import ObjectIterator, TagIterator
-from DazToC4DClasses import DazToC4D
-from AllSceneToZero import AllSceneToZero
+from .Materials import Materials
+from .CustomIterators import ObjectIterator, TagIterator
+from .DazToC4DClasses import DazToC4D
+from .AllSceneToZero import AllSceneToZero
 
 class autoAlignArms():
     def constraintObj(self, obj, target):
@@ -352,7 +347,8 @@ class Poses:
 
 
         if dazType == 'Genesis3':
-            Materials().fixGenEyes() # Apply IRIS alpha fix
+            # TODO: Why Material updates here?
+            # Materials().fixGenEyes() # Apply IRIS alpha fix
             # GENESIS 3 -ZOMBIE WORKS TOO -------------------------------------------
             autoAlignArms()
 

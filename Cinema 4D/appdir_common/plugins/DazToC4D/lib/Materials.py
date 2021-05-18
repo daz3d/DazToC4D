@@ -1,17 +1,20 @@
 import c4d
 import os
 import sys
+from shutil import copyfile
 from c4d import documents, gui
 
+from .Utilities import dazToC4Dutils
+from .CustomIterators import ObjectIterator, TagIterator
+from .Definitions import RES_DIR
 
-folder = os.path.dirname( __file__ )
-if folder not in sys.path: 
-    sys.path.insert( 0, folder )
+class NewMaterials:
+    def __init__(self, Dtu):
+        pass
 
-from Utilities import dazToC4Dutils
-from CustomIterators import ObjectIterator, TagIterator
 
 class Materials:
+
     def checkStdMats(self):
         doc = c4d.documents.GetActiveDocument()
         docMaterials = doc.GetMaterials()
@@ -26,13 +29,12 @@ class Materials:
         return noStd
     
     
-    def fixGenEyes(self):
-        dir, file = os.path.split(__file__)  # Gets the plugin's directory
-        folder_DazToC4D_res = os.path.join(dir, 'res')  # Adds the res folder to the path
+    def fixGenEyes(self, path):
+        folder_DazToC4D_res = RES_DIR # Adds the res folder to the path
         folder_DazToC4D_xtra = os.path.join(folder_DazToC4D_res, 'xtra')  # Adds the res folder to the path
         file_G3_IrisFixMap = os.path.join(folder_DazToC4D_xtra, 'G3_Iris_Alpha.psd')
 
-        destination_G3_IrisFixMap = os.path.join(ROOT_DIR, "G3_Iris_Alpha.psd")
+        destination_G3_IrisFixMap = os.path.join(path, "G3_Iris_Alpha.psd")
      
         try:
             copyfile(file_G3_IrisFixMap, destination_G3_IrisFixMap)
