@@ -1852,6 +1852,7 @@
 		var sContentType = oAssetMgr.getTypeForNode( oNode );
 		
 		oDtuJson["Asset Name"] = oNode.getLabel();
+		oDtuJson["Import Name"] = oNode.getName();
 		oDtuJson["Asset Type"] = sContentType;
 		oDtuJson["FBX File"] = s_sFbxPath;
 		oDtuJson["Materials"] = [];
@@ -1898,14 +1899,13 @@
 	/*********************************************************************/
 	// String : Writes Texture and returns new Path
 	// TODO: Find a better method to get the paths
-	function writeTexture( sDir, sOrigTexture )
+	function writeTexture( sDir, sOrigTexture, sAssetName )
 	{
 		var oOrigFile = new DzFile( sOrigTexture );
 		var sOrgImageName = oOrigFile.fileName();
 		var sAbsPath = oOrigFile.absolutePath();
 		var aSplitPath = sAbsPath.split("Textures");
-		var sSubDir = aSplitPath[aSplitPath.length - 1];
-		var sPath = String( "%1/%2%3" ).arg( sDir ).arg( "Textures" ).arg( sSubDir );
+		var sPath = String( "%1/%2/%3" ).arg( sDir ).arg( "Textures" ).arg( sAssetName );
 
 		var oDir = new DzDir( "" );
 		oDir.setPath( sPath );
@@ -1990,7 +1990,9 @@
 							aProperties.push( oPropertyInfo );
 							if ( sTextureName != "" ){
 								if(s_bCollectTextures){
-									sNewTexture = writeTexture( sDir, sTextureName );
+									sNewTexture = writeTexture( sDir, 
+																sTextureName,
+																oMaterialInfo["Asset Label"]);
 									oPropertyInfo["Texture"] = sNewTexture;
 								}
 							}
