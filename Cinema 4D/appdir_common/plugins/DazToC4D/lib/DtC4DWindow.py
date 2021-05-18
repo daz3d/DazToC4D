@@ -307,6 +307,11 @@ class guiDazToC4DMain(gui.GeDialog):
             CustomImports().auto_import_genesis()
             self.buttonsChangeState(True)
 
+        if id == self.BUTTON_AUTO_IMPORT_PROP:
+            self.buttonsChangeState(False)
+            CustomImports().auto_import_prop()
+            self.buttonsChangeState(True)
+
         if id == self.BUTTON_AUTO_IK:
 
             try:

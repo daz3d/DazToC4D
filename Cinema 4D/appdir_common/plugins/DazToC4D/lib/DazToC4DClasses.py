@@ -674,58 +674,6 @@ class DazToC4D():
         protectTag(dazName + 'Head_ctrl', 'position')
 
 
-    def dazMorphsFix(self):
-        doc = documents.GetActiveDocument()
-
-        def detectRIGmorph(obj):
-            pmTag = obj.GetTag(c4d.Tposemorph)  # Gets the pm tag
-            pmTag.ExitEdit(doc, True)
-            count = 0
-            for x in range(pmTag.GetMorphCount()):
-                pmTag.SetActiveMorphIndex(x)
-                morphName = pmTag.GetActiveMorph().GetName()
-                if 'RIG' in morphName:
-                    count = count + 1
-            return count
-
-        def morphsRename(obj):
-            pmTag = obj.GetTag(c4d.Tposemorph)  # Gets the pm tag
-            pmTag.ExitEdit(doc, True)
-
-            for x in range(pmTag.GetMorphCount()):
-                try:
-                    pmTag.SetActiveMorphIndex(x)
-                    morphName = pmTag.GetActiveMorph().GetName()
-                    newMorphName = morphName.replace('head__', '')
-                    newMorphName = newMorphName.replace('eCTRLM7', '')
-                    newMorphName = newMorphName.replace('eCTRL', '')
-                    newMorphName = newMorphName.replace('3duTG2_10yo_', '')
-                    newMorphName = newMorphName.replace('PBMSTEDIM7', '')
-                    newMorphName = newMorphName.replace('PHM', '')
-                    newMorphName = newMorphName.replace('CTRLB', '')
-                    newMorphName = newMorphName.replace('CTRL', '')
-                    newMorphName = newMorphName.replace('_', '')
-                    pmTag.GetActiveMorph().SetName(newMorphName)
-                    if 'RIG' in newMorphName:
-                        try:
-                            pmTag.RemoveMorph(x)
-                        except:
-                            print('skip')
-                except:
-                    pass
-
-            c4d.EventAdd()
-
-        caca = doc.GetFirstObject()
-        while caca.GetNext():
-            caca = caca.GetNext()
-            fTag = None
-            if caca.GetFirstTag():
-                if self.tagsIterator(caca):
-                    for x in self.tagsIterator(caca):
-                        if 'Pose Morph' in x.GetName():
-                            morphsRename(caca)
-
     def unhideProps(self):
         doc = documents.GetActiveDocument()
         obj = doc.SearchObject('hip')
@@ -856,8 +804,7 @@ class DazToC4D():
 
             #DONE-AUTOIMPORT
 
-            DazToC4D().cleanMorphsGeoRemove()
-            DazToC4D().dazMorphsFix()
+            # DazToC4D().cleanMorphsGeoRemove()
             DazToC4D().protectIKMControls()
 
 
