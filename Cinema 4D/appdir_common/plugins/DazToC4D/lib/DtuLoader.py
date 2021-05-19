@@ -13,6 +13,7 @@ class DtuLoader:
     pose_data_dict = dict()
     bone_head_tail_dict = dict()
     morph_links_dict = dict()
+    joint_orientation_dict = dict()
     asset_name = ""
     fbx_path = ""
     materials_list = []
@@ -68,6 +69,15 @@ class DtuLoader:
         if len(self.bone_head_tail_dict.keys()) == 0:
             self.load_bone_head_tail_dict()
         return self.bone_head_tail_dict
+
+    def load_joint_orientation_dict(self):
+        dtu_dict = self.get_dtu_dict()
+        self.joint_orientation_dict = dtu_dict["JointOrientation"]
+
+    def get_joint_orientation_dict(self):
+        if len(self.joint_orientation_dict.keys()) == 0:
+            self.load_joint_orientation_dict()
+        return self.joint_orientation_dict
 
     def load_bone_limits_dict(self):
         dtu_dict = self.get_dtu_dict()

@@ -4,9 +4,9 @@ from c4d import gui, documents
 from c4d import utils
 from c4d import plugins
 from random import randint
+
 import webbrowser
 import json
-
 
 from . import DtuLoader
 from . import Materials

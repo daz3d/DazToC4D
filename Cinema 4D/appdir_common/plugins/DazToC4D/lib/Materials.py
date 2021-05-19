@@ -26,7 +26,8 @@ class Materials:
             self.material_dict[asset_name][mat_name] = mat
 
     def update_materials(self, children):
-        
+        pass
+
     def checkStdMats(self):
         doc = c4d.documents.GetActiveDocument()
         docMaterials = doc.GetMaterials()

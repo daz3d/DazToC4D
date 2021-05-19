@@ -1,9 +1,10 @@
-import c4d
 import os
+import webbrowser
+
+import c4d
 from c4d import gui, documents
 
 from .Utilities import hideEyePolys
-
 from .DazToC4DClasses import DazToC4D
 from .Materials import Materials, convertToRedshift, convertMaterials
 from .CustomIterators import ObjectIterator, TagIterator

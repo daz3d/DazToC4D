@@ -9,6 +9,7 @@ from . import DtuLoader
 from . import Materials
 from . import Utilities
 from . import Morphs
+from . import DazRig
 from .DtC4DPosing import Poses
 from .DtC4DDialogs import guiASKtoSave
 from .Definitions import EXPORT_DIR
@@ -17,6 +18,10 @@ dazReduceSimilar = True
 
 
 class CustomImports:
+    """
+    Import Logic for Importing in the DTU File (JSON)
+    """
+
     # Hidden
     def manual_import_genesis(self, path):
         """
@@ -48,19 +53,21 @@ class CustomImports:
             fbx_path = dtu.get_fbx_path()
             self.prop_import(fbx_path, dtu)
 
-    def genesis_import(self, filePath, dtu):
+    def genesis_import(self, file_path, dtu):
         mat = Materials.Materials()
         util = Utils()
         morph = Morphs.Morphs()
         var = Utilities.Variables()
-        if os.path.exists(filePath) == False:
+        jnt_fixes = DazRig.JointFixes()
+
+        if os.path.exists(file_path) == False:
             gui.MessageDialog(
                 "Nothing to import.\nYou have to export from DAZ Studio first",
                 c4d.GEMB_OK,
             )
             return 0
-        print("Import FBX from : {0}".format(os.path.dirname(filePath)))
-        self.import_daz_fbx(filePath)
+        print("Import FBX from : {0}".format(os.path.dirname(file_path)))
+        self.import_daz_fbx(file_path)
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
             | c4d.DRAWFLAGS_NO_THREAD
@@ -78,6 +85,10 @@ class CustomImports:
 
         var.store_asset_name(dtu)
         if var.prepare_variables():
+            gui.MessageDialog(
+                "Import Failed.\nYou can check the console for more info (Shift + F10)",
+                c4d.GEMB_OK,
+            )
             print("Import Failed")
             return
         print("Import Done")
@@ -107,13 +118,16 @@ class CustomImports:
         print("Starting Morph Updates")
 
         morph.store_morph_links(dtu)
-        morph.rename_morphs(var.skeleton)
-        morph.connect_morphs_to_parents(var.body, var.children)
+        morph.delete_morphs(var.c_meshes)
+        morph.rename_morphs(var.c_meshes)
+        morph.connect_morphs_to_parents(var.body, var.c_meshes)
 
         print("Morph Corrections Done")
 
         isPosed = Poses().checkIfPosed()
         if isPosed == False:
+            jnt_fixes.store_joint_orientations(dtu)
+            jnt_fixes.fix_joints(var.c_skin_data, var.c_joints, var.c_meshes)
             Poses().preAutoIK()  # Only if T pose detected...
 
         c4d.EventAdd()
@@ -134,14 +148,14 @@ class CustomImports:
         )
 
     def prop_import(self, file_path, dtu):
-        if os.path.exists(filePath) == False:
+        if os.path.exists(file_path) == False:
             gui.MessageDialog(
                 "Nothing to import.\nYou have to export from DAZ Studio first",
                 c4d.GEMB_OK,
             )
             return 0
-        print("Import FBX from : {0}".format(os.path.dirname(filePath)))
-        self.import_daz_fbx(filePath)
+        print("Import FBX from : {0}".format(os.path.dirname(file_path)))
+        self.import_daz_fbx(file_path)
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
             | c4d.DRAWFLAGS_NO_THREAD
@@ -175,8 +189,7 @@ class CustomImports:
         )
 
     def import_daz_fbx(self, file_path):
-        """
-        """
+        """ """
         flags = (
             c4d.SCENEFILTER_OBJECTS
             | c4d.SCENEFILTER_MATERIALS
@@ -197,7 +210,7 @@ class CustomImports:
         for i in os.listdir(os.path.join(EXPORT_DIR, "FIG")):
             import_list.append(os.path.join(EXPORT_DIR, "FIG", i))
         return import_list
-    
+
     def get_prop_list(self):
         """
         Returns the Absolute Paths of the Exports from Daz for Environments and Props

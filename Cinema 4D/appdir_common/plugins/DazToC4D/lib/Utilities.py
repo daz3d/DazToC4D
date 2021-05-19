@@ -46,10 +46,25 @@ class Variables:
             return []
 
         res = []
+        self.c_meshes = []
+        self.c_poses = []
+        self.c_joints = []
+        self.c_skin_data = []
 
         for child in obj.GetChildren():
             res.append(child)
             res += self.find_children(child)  # recursion happens here
+
+        for child in res:
+            if child.GetType() == 5100:  # Meshes
+                self.c_meshes.append(child)
+            if child.GetType() == 5140:  # Poses
+                self.c_poses.append(child)
+            if child.GetType() == 1019362:  # Joints
+                self.c_joints.append(child)
+            if child.GetType() == 1019363:  # Skinning Data
+                self.c_skin_data.append(child)
+
         self.children = res
         return res
 
