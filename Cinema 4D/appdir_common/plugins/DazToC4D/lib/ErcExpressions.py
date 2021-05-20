@@ -1,8 +1,13 @@
+def erc_start():
+    erc_start = """
+    import math
+    def main():
+        global Output1
+    """
+
+
 def erc_keyed(dist, maximum, minimum, norm_dist):
     erc_keyed = """
-import math
-def main():
-    global Output1
     global var
     var = math.degrees(var)
     if {0} < 0:
@@ -27,9 +32,6 @@ def main():
 
 def erc_delta_add(scalar, addend):
     erc_delta_add = """
-import math
-def main():
-    global Output1
     global var
     var = math.degrees(var)
     delta_add = scalar + addend
@@ -42,11 +44,7 @@ def main():
 
 def erc_divide_into(scalar):
     erc_divide_into = """
-import math
-def main():
-    global Output1
     global var
-    global current
     var = math.degrees(var)
     Output1 = var / current + addend 
                 """.format(
@@ -57,11 +55,7 @@ def main():
 
 def erc_divide_by(addend):
     erc_divide_by = """
-import math
-def main():
-    global Output1
     global var
-    global current
     var = math.degrees(var)
     Output1 = current / var + addend 
                 """.format(
@@ -72,11 +66,7 @@ def main():
 
 def erc_multiply(addend):
     erc_multiply = """
-import math
-def main():
-    global Output1
     global var
-    global current
     var = math.degrees(var)
     if current > 0:
         Output1 = var * current + addend 
@@ -90,11 +80,7 @@ def main():
 
 def erc_subtract(addend):
     erc_multiply = """
-import math
-def main():
-    global Output1
     global var
-    global current
     var = math.degrees(var)
     Output1 = current - var + addend 
                 """.format(
@@ -105,11 +91,7 @@ def main():
 
 def erc_add(addend):
     erc_multiply = """
-import math
-def main():
-    global Output1
     global var
-    global current
     var = math.degrees(var)
     Output1 = var + current + addend 
                 """.format(

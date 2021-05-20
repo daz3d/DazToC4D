@@ -8,12 +8,18 @@ from . import ErcExpressions as erc
 class Morphs:
     morph_links = dict()
     stored_outputs = dict()
+    nodes = dict()
 
     def store_morph_links(self, dtu):
         """
         Pass the Morph Links to be used for the current import
         """
         self.morph_links = dtu.get_morph_links_dict()
+
+    def store_variables(self, body, children, joints):
+        self.body = body
+        self.children = children
+        self.joints = joints
 
     def find_morph_link(self, morph_name):
         split = morph_name.split("__")
@@ -79,6 +85,16 @@ class Morphs:
                     morph_label = morph_link["Label"]
                     pmTag.GetActiveMorph().SetName(morph_label)
 
+    def store_node(self, obj, value, key):
+        if not obj.GetName() in self.nodes.keys():
+            self.nodes[obj.GetName()] = {}
+        self.nodes[obj.GetName()][key] = value
+
+    def store_morph(self, obj, value, key, morph):
+        if not morph.GetName() in self.nodes.keys():
+            self.store_node(obj, {}, morph.GetName())
+        self.nodes[obj.GetName()][morph.GetName()][key] = value
+
     def connect_morphs_to_parents(self, body, c_meshes):
         par_tag = self.find_objects_morph_tag(body)
         xtag = self.find_daz_xpresso_tag(body)
@@ -87,9 +103,9 @@ class Morphs:
             xtag = self.find_daz_xpresso_tag(body)
         node_master = xtag.GetNodeMaster()
         self.morph_master_node = self.create_node(node_master, par_tag, 50, 50)
-
+        self.store_node(body, self.morph_master_node, "Node")
+        self.store_node(body, par_tag, "Pose Tag")
         options = self.prepare_pos(len(c_meshes) - 1)
-        self.stored_outputs = {}
         for index, obj in enumerate(c_meshes):
             if obj.GetName() == body.GetName():
                 continue
@@ -97,6 +113,7 @@ class Morphs:
             child_node = self.create_node(
                 node_master, child_tag, 400, options[index - 1]
             )
+            self.store_node(obj, child_node, "Node")
             if not child_tag == None:
                 self.connect_morphs_xpresso(
                     par_tag, child_tag, node_master, self.morph_master_node, child_node
@@ -111,10 +128,17 @@ class Morphs:
                 continue
             par_output = par_node.AddPort(c4d.GV_PORT_OUTPUT, parent_id)
             if par_output is None:
-                par_output = self.stored_outputs[x]
+                par_output = self.nodes[self.body][par_tag.GetMorph(x).GetName()][
+                    "Output"
+                ]
             self.connect_morph_nodes(node_master, par_output, child_node, child_id)
-            self.stored_outputs[x] = par_output
+            self.store_morph(self.body, par_output, "Output", par_tag.GetMorph(x))
         c4d.EventAdd()
+
+    def connect_morph_nodes(self, node_master, par_output, child_node, child_id):
+        child_input = child_node.AddPort(c4d.GV_PORT_INPUT, child_id)
+        c4d.modules.graphview.RedrawMaster(node_master)
+        par_output.Connect(child_input)
 
     def find_objects_morph_tag(self, obj):
         obj_tags = TagIterator(obj)
@@ -153,9 +177,8 @@ class Morphs:
         node[c4d.GV_OBJECT_OBJECT_ID] = tag
         return node
 
-    def create_xpresso_node(self, node_parent, type, x, y, exp):
+    def create_xpresso_node(self, node_parent, type, x, y):
         node = node_parent.CreateNode(node_parent.GetRoot(), type, None, x, y)
-        node[c4d.GV_PYTHON_CODE] = exp
         return node
 
     def find_morph_id(self, morph_tag_main, morph_tag_slave, x):
@@ -167,18 +190,15 @@ class Morphs:
                 return morph_num, morph_tag_slave.GetMorphID(index)
         return 0, 0
 
-    def connect_morph_nodes(self, node_master, par_output, child_node, child_id):
-        child_input = child_node.AddPort(c4d.GV_PORT_INPUT, child_id)
-        c4d.modules.graphview.RedrawMaster(node_master)
-        par_output.Connect(child_input)
-
     def add_drivers(self, body, joints):
         pm_tag = body.GetTag(c4d.Tposemorph)
         if pm_tag:
             morph_amount = pm_tag.GetMorphCount()
             xtag = self.find_daz_xpresso_tag(body)
+            if xtag is None:
+                xtag = self.create_daz_xpresso_tag(body)
             node_master = xtag.GetNodeMaster()
-
+            pos = self.prepare_pos(morph_amount)
             for x in range(morph_amount):
                 pm_tag.SetActiveMorphIndex(x)
                 morph = pm_tag.GetActiveMorph()
@@ -187,60 +207,99 @@ class Morphs:
                     continue
                 morph_link = self.find_morph_link(morph_name)
                 links = morph_link["Links"]
+                python_node = self.create_xpresso_node(
+                    node_master,
+                    1022471,
+                    -100,
+                    pos[x],
+                )
+                morph_num = pm_tag.GetMorphID(x)
+                morph_input = self.morph_master_node.AddPort(
+                    c4d.GV_PORT_INPUT, morph_num
+                )
+                expression = erc.erc_start()
                 for link in links:
                     joint_name = link["Bone"]
                     erc_type = link["Type"]
                     prop = link["Property"]
-                    if erc_type == 6:
-                        keyed = link["Keys"]
-                        # Currently Skip the 3rd Key if Key 0 has two
-                        for i in range(len(keyed)):
-                            key = list(keyed)[i]
-                            if keyed[key]["Value"] == 0:
-                                if len(keyed) > (i + 1):
-                                    next_key = list(keyed)[i + 1]
-                                    if (
-                                        (len(keyed) != 2)
-                                        and (keyed[next_key]["Value"] == 0)
-                                        and (keyed[next_key]["Rotate"] == 0)
-                                    ):
-                                        continue
-                                key_0 = str(keyed[key]["Rotate"])
-                            if keyed[key]["Value"] == 1:
-                                key_1 = str(keyed[key]["Rotate"])
-                        dist = str((float(key_1) - float(key_0)))
-                        norm_dist = str((1 - 0))
-                        expression = erc.erc_keyed(dist, key_1, key_0, norm_dist)
+                    expression += self.get_expression(link)
+                    driver_output = self.get_driver_output(
+                        link, node_master, -150, pos[x]
+                    )
+                    for python_input in python_node.GetInPorts():
+                        python_input.SetName("var")
+                        driver_output.Connect(python_input)
+                        break
+                    for python_output in python_node.GetOutPorts():
+                        python_output.Connect(morph_input)
+                # Add Expresiion
+                python_node[c4d.GV_PYTHON_CODE] = expression
 
-                        if joint_name != "None":
-                            # Create Joint
-                            vector = self.find_vector(prop)
-                            joint = self.find_joint(joint_name, joints)
-                            descid = c4d.DescID(
-                                c4d.DescLevel(c4d.ID_BASEOBJECT_ROTATION, 0, 0),
-                                c4d.DescLevel(vector, 0, 0),
-                            )
-                            joint_node = self.create_node(node_master, joint, -150, 50)
-                            joint_input = joint_node.AddPort(c4d.GV_PORT_OUTPUT, descid)
+    def get_expression(self, link):
+        erc_type = link["Type"]
+        scalar = link["Scalar"]
+        addend = link["Addend"]
+        expression = ""
+        if erc_type == 0:
+            # ERCDeltaAdd
+            expression = erc.erc_delta_add(scalar, addend)
+        elif erc_type == 1:
+            # ERCDivideInto
+            expression = erc.erc_divide_into(scalar)
+        elif erc_type == 2:
+            # ERCDivideBy
+            expression = erc.erc_divide_by(addend)
+        elif erc_type == 3:
+            # ERCMultiply
+            expression = erc.erc_multiply(addend)
+        elif erc_type == 4:
+            # ERCSubtract
+            expression - erc.erc_subtract(addend)
+        elif erc_type == 5:
+            # ERCAdd
+            expression = erc.erc_add(addend)
+        elif erc_type == 6:
+            # ERCKeyed
+            keyed = link["Keys"]
+            # Currently Skip the 3rd Key if Key 0 has two
+            for i in range(len(keyed)):
+                key = list(keyed)[i]
+                if keyed[key]["Value"] == 0:
+                    if len(keyed) > (i + 1):
+                        next_key = list(keyed)[i + 1]
+                        if (
+                            (len(keyed) != 2)
+                            and (keyed[next_key]["Value"] == 0)
+                            and (keyed[next_key]["Rotate"] == 0)
+                        ):
+                            continue
+                    key_0 = str(keyed[key]["Rotate"])
+                if keyed[key]["Value"] == 1:
+                    key_1 = str(keyed[key]["Rotate"])
+            dist = str((float(key_1) - float(key_0)))
+            norm_dist = str((1 - 0))
+            expression = erc.erc_keyed(dist, key_1, key_0, norm_dist)
 
-                            python_node = self.create_xpresso_node(
-                                node_master,
-                                1022471,
-                                -100,
-                                50,
-                                expression,
-                            )
+        return expression
 
-                            morph_num = pm_tag.GetMorphID(x)
-                            morph_input = self.morph_master_node.AddPort(
-                                c4d.GV_PORT_INPUT, morph_num
-                            )
-                            for form_input in python_node.GetInPorts():
-                                form_input.SetName("var")
-                                joint_input.Connect(form_input)
-                                break
-                            for form_output in python_node.GetOutPorts():
-                                form_output.Connect(morph_input)
+    def get_driver_output(self, link, node_master, x, y):
+        joint_name = link["Bone"]
+        prop = link["Property"]
+        if joint_name != "None":
+            # Create Joint Driver
+            vector = self.find_vector(prop)
+            joint = self.find_joint(joint_name, self.joints)
+            descid = c4d.DescID(
+                c4d.DescLevel(c4d.ID_BASEOBJECT_ROTATION, 0, 0),
+                c4d.DescLevel(vector, 0, 0),
+            )
+            driver_node = self.create_node(node_master, joint, x, y)
+            driver_output = driver_node.AddPort(c4d.GV_PORT_OUTPUT, descid)
+        else:
+            # Create Morph Driver
+            print(prop)
+
+        return driver_output
 
     def find_vector(self, prop):
         if "YRotate" == prop:

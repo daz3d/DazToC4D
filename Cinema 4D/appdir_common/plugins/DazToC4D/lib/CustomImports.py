@@ -126,6 +126,7 @@ class CustomImports:
         print("Starting Morph Updates")
 
         morph.store_morph_links(dtu)
+        morph.store_variables(var.body, var.c_meshes, var.c_joints)
         morph.delete_morphs(var.c_meshes, var.c_morphs)
         morph.rename_morphs(var.c_meshes)
         morph.connect_morphs_to_parents(var.body, var.c_meshes)
