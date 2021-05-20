@@ -47,6 +47,7 @@ class Variables:
 
         res = []
         self.c_meshes = []
+        self.c_morphs = []
         self.c_poses = []
         self.c_joints = []
         self.c_skin_data = []
@@ -57,7 +58,11 @@ class Variables:
 
         for child in res:
             if child.GetType() == 5100:  # Meshes
-                self.c_meshes.append(child)
+                parent = child.GetUp()
+                if parent.GetType() == 5140:
+                    self.c_morphs.append(child)
+                else:
+                    self.c_meshes.append(child)
             if child.GetType() == 5140:  # Poses
                 self.c_poses.append(child)
             if child.GetType() == 1019362:  # Joints

@@ -114,23 +114,25 @@ class CustomImports:
         mat.fixMaterials()
 
         print("Material Conversion Done")
-
-        print("Starting Morph Updates")
-
-        morph.store_morph_links(dtu)
-        morph.delete_morphs(var.c_meshes)
-        morph.rename_morphs(var.c_meshes)
-        morph.connect_morphs_to_parents(var.body, var.c_meshes)
-
-        print("Morph Corrections Done")
+        c4d.EventAdd()
 
         isPosed = Poses().checkIfPosed()
         if isPosed == False:
             jnt_fixes.store_joint_orientations(dtu)
             jnt_fixes.fix_joints(var.c_skin_data, var.c_joints, var.c_meshes)
-            Poses().preAutoIK()  # Only if T pose detected...
-
+            # Poses().preAutoIK()  # Only if T pose detected...
         c4d.EventAdd()
+
+        print("Starting Morph Updates")
+
+        morph.store_morph_links(dtu)
+        morph.delete_morphs(var.c_meshes, var.c_morphs)
+        morph.rename_morphs(var.c_meshes)
+        morph.connect_morphs_to_parents(var.body, var.c_meshes)
+        morph.add_drivers(var.body, var.c_joints)
+        print("Morph Corrections Done")
+        c4d.EventAdd()
+
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
             | c4d.DRAWFLAGS_NO_THREAD

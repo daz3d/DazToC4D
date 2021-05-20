@@ -2089,7 +2089,7 @@
 				if( !oChildBone ){
 					continue
 				}
-				aControlledMeshes.pushIfNotExists( oChildNode.name );
+				aControlledMeshes.pushIfNotExists( oChildNode.name + ".Shape" );
 			}
 		}
 		return aControlledMeshes
@@ -2107,7 +2107,7 @@
 			var nControllerCount = oMorphProperty.getNumControllers();
 			var aLinks = []
 			var aControlledMeshes = []
-			aControlledMeshes.push(oNode.name)
+			aControlledMeshes.push(oNode.name + ".Shape")
 			for( var j = 0; j < nControllerCount; j += 1 ){
 				var oErcLink = new DzERCLink();
 				oErcLink = oMorphProperty.getController( j );
