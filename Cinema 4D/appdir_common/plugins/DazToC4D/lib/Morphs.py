@@ -330,7 +330,7 @@ class Morphs:
         if joint_name != "None":
             # Create Joint Driver
             vector = self.find_vector(prop)
-            joint = self.find_joint(joint_name, self.joints)
+            joint = self.find_joint(joint_name)
             descid = c4d.DescID(
                 c4d.DescLevel(c4d.ID_BASEOBJECT_ROTATION, 0, 0),
                 c4d.DescLevel(vector, 0, 0),
