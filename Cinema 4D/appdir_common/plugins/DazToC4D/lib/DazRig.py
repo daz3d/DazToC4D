@@ -25,6 +25,7 @@ class JointFixes:
         joint_name = joint.GetName()
         if joint_name in self.joint_orient_dict.keys():
             return self.joint_orient_dict[joint_name]
+        return []
 
     def find_order(self, rotation_order):
         if rotation_order == "XYZ":
@@ -48,6 +49,8 @@ class JointFixes:
 
     def update_axis(self, joint):
         joint_data = self.get_orientation(joint)
+        if len(joint_data) == 0:
+            return
         rotation_order = joint_data[0]
         index = self.find_order(rotation_order)
         x = joint_data[1]

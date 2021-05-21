@@ -766,7 +766,7 @@ class EXTRADialog(c4d.gui.GeDialog):
             return 0
 
         if id == self.BUTTON_MODEL_MIRRORPOSE:
-            Poses.mirrorPose()
+            Poses().mirrorPose()
             return 0
 
         obj = self.LinkBox.GetLink()

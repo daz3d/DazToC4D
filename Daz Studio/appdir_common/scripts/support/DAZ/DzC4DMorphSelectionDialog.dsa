@@ -64,7 +64,7 @@
 
     /*********************************************************************/
     // void : ...
-    function morphInfo( sName, sLabel, sPath, sType, oProperty, sParent, bHidden, nMin, nMax, bDisable, nCurrentValue )
+    function morphInfo( sName, sLabel, sPath, sType, oProperty, sParent, bHidden, nMin, nMax, bDisable, nCurrentValue, oNode )
     {
         this.name = sName;
         this.label = sLabel;
@@ -77,6 +77,7 @@
         this.max = nMax;
         this.disable = bDisable;
         this.value = nCurrentValue;
+        this.node = oNode;
     };
     
     /*********************************************************************/
@@ -400,7 +401,8 @@
                     oProperty.getMin(),
 					oProperty.getMax(),
                     false,
-                    oProperty.getValue()
+                    oProperty.getValue(),
+                    oNode
                 );
                 
                 if( !( oMorphInfo.name in s_oMorphs ) ){
@@ -439,7 +441,8 @@
                                 oProperty.getMin(),
                                 oProperty.getMax(),
                                 false,
-                                oProperty.getValue()
+                                oProperty.getValue(),
+                                oNode
                             );
                             if( !( oMorphInfo.name in s_oMorphs ) ){
                                 s_oMorphs[oMorphInfo.name] = oMorphInfo;
@@ -1120,7 +1123,6 @@
         aMorphsToAdd.push( "facs_ctrl_EyeLookUp-Down" );
         aMorphsToAdd.push( "facs_ctrl_EyeLookSide-SideRight" );
         aMorphsToAdd.push( "facs_ctrl_EyeLookSide-Side" );
-        aMorphsToAdd.push( "facs_ctrl_EyeLookAuto" );
         aMorphsToAdd.push( "facs_ctrl_EyeBlink" );
         aMorphsToAdd.push( "facs_ctrl_EyeLookSide-SideLeft" );
         aMorphsToAdd.push( "facs_bs_EyeSquintRight_div2" );
@@ -1216,14 +1218,15 @@
         aMorphsToAdd.push( "facs_cbs_EBL_ELOL_div2" );
         aMorphsToAdd.push( "facs_cbs_EBL_ELIL_div2" );
         aMorphsToAdd.push( "eCTRLEyesClosedL" );
-        aMorphsToAdd.push( "facs_ctrl_EyeLookUpRight" );
-        aMorphsToAdd.push( "facs_ctrl_EyeLookUpLeft" );
-        aMorphsToAdd.push( "facs_ctrl_EyeLookOutRight" );
-        aMorphsToAdd.push( "facs_ctrl_EyeLookOutLeft" );
-        aMorphsToAdd.push( "facs_ctrl_EyeLookInRight" );
-        aMorphsToAdd.push( "facs_ctrl_EyeLookInLeft" );
-        aMorphsToAdd.push( "facs_ctrl_EyeLookDownRight" );
-        aMorphsToAdd.push( "facs_ctrl_EyeLookDownLeft" );
+        // aMorphsToAdd.push( "facs_ctrl_EyeLookUpRight" );
+        // aMorphsToAdd.push( "facs_ctrl_EyeLookUpLeft" );
+        // aMorphsToAdd.push( "facs_ctrl_EyeLookOutRight" );
+        // aMorphsToAdd.push( "facs_ctrl_EyeLookOutLeft" );
+        // aMorphsToAdd.push( "facs_ctrl_EyeLookInRight" );
+        // aMorphsToAdd.push( "facs_ctrl_EyeLookInLeft" );
+        // aMorphsToAdd.push( "facs_ctrl_EyeLookDownRight" );
+        // aMorphsToAdd.push( "facs_ctrl_EyeLookDownLeft" );
+        // aMorphsToAdd.push( "facs_ctrl_EyeLookAuto" );
         aMorphsToAdd.push( "facs_cbs_MSR_MDR_div2" );
         aMorphsToAdd.push( "facs_cbs_MSL_MDL_div2" );
         aMorphsToAdd.push( "facs_cbs_MP_MF_div2" );

@@ -2150,6 +2150,11 @@
 					aControlledMeshes = checkForBoneInChild( oNode, sBoneName, aControlledMeshes );
 				}
 			}
+			// Keep for the Children Nodes' Morphs
+			if( oMorphInfo.node.name != oNode.name ){
+				aControlledMeshes.pushIfNotExists( oMorphInfo.node.name + ".Shape" );
+			} 
+			
 
 			var oMorphLinkObj = {
 					"Label": oMorphProperty.getLabel(),
