@@ -432,7 +432,7 @@ class Morphs:
         """Find DescID for parent and child
 
         Args:
-            morph_tag_main (CAPoseMorphTag): Morph Tag for Main Body
+            morph_tag_main (CAPoseMorphTag): Morph Tag for Main Body-
             morph_tag_slave (CAPoseMorphTag): Morph Tag for Children Shapes
             x (int):
 

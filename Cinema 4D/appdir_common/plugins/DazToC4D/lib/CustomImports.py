@@ -3,8 +3,7 @@ import os
 import sys
 from c4d import documents, gui
 
-from .Utilities import dazToC4Dutils, Utils
-from .DazToC4DClasses import DazToC4D
+from .CustomCmd import Cinema4DCommands as dzc4d
 from . import DtuLoader
 from . import Materials
 from . import Utilities
@@ -41,10 +40,12 @@ class CustomImports:
 
     def auto_import_genesis(self):
         import_list = self.get_genesis_list()
+        import_vars = []
         for imported_dir in import_list:
             dtu = DtuLoader.DtuLoader(imported_dir)
             fbx_path = dtu.get_fbx_path()
-            self.genesis_import(fbx_path, dtu)
+            import_vars.append(self.genesis_import(fbx_path, dtu))
+        return import_vars
 
     def auto_import_prop(self):
         import_list = self.get_prop_list()
@@ -55,7 +56,6 @@ class CustomImports:
 
     def genesis_import(self, file_path, dtu):
         mat = Materials.Materials()
-        util = Utils()
         morph = Morphs.Morphs()
         var = Utilities.Variables()
         jnt_fixes = DazRig.JointFixes()
@@ -73,14 +73,14 @@ class CustomImports:
             | c4d.DRAWFLAGS_NO_THREAD
             | c4d.DRAWFLAGS_STATICBREAK
         )
-        c4d.CallCommand(12113, 12113)  # Deselect All
+        dzc4d.deselect_all()  # Deselect All
 
         screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
 
         c4d.EventAdd()
-        util.update_viewport()
+        dzc4d.update_viewport()
         c4d.CallCommand(300001026, 300001026)  # Deselect All
-        c4d.CallCommand(12168, 12168)  # Remove Unused Materials
+        dzc4d.del_unused_mats()
         c4d.EventAdd()
 
         var.store_asset_name(dtu)
@@ -107,7 +107,7 @@ class CustomImports:
         )
         c4d.EventAdd()
         c4d.CallCommand(300001026, 300001026)  # Deselect All
-        c4d.CallCommand(12168, 12168)  # Remove Unused Materials
+        dzc4d.del_unused_mats()
 
         mat.stdMatExtrafixes()
         mat.specificFiguresFixes()
@@ -120,7 +120,12 @@ class CustomImports:
         if isPosed == False:
             jnt_fixes.store_joint_orientations(dtu)
             jnt_fixes.fix_joints(var.c_skin_data, var.c_joints, var.c_meshes)
-            Poses().preAutoIK()  # Only if T pose detected...
+            dzc4d.deselect_all()
+            make_tpose = gui.QuestionDialog(
+                "Would you like to use\nAUTO-IK with a T-POSE?",
+            )
+            if make_tpose:
+                Poses().preAutoIK()
         c4d.EventAdd()
 
         print("Starting Morph Updates")
@@ -149,9 +154,11 @@ class CustomImports:
             defaultw=200,
             defaulth=150,
         )
+        return var
 
     def prop_import(self, file_path, dtu):
-        util = Utils()
+
+        mat = Materials.Materials()
         if os.path.exists(file_path) == False:
             gui.MessageDialog(
                 "Nothing to import.\nYou have to export from DAZ Studio first",
@@ -165,16 +172,34 @@ class CustomImports:
             | c4d.DRAWFLAGS_NO_THREAD
             | c4d.DRAWFLAGS_STATICBREAK
         )
-        c4d.CallCommand(12113, 12113)  # Deselect All
+        dzc4d.deselect_all()  # Deselect All
 
         screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
 
         c4d.EventAdd()
-        util.update_viewport()
+        dzc4d.update_viewport()
         c4d.CallCommand(300001026, 300001026)  # Deselect All
-        c4d.CallCommand(12168, 12168)  # Remove Unused Materials
+        dzc4d.del_unused_mats()
         c4d.EventAdd()
         print("Import Done")
+
+        print("Starting Material Updates")
+        c4d.EventAdd()
+        c4d.DrawViews(
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
+            | c4d.DRAWFLAGS_NO_THREAD
+            | c4d.DRAWFLAGS_STATICBREAK
+        )
+        c4d.EventAdd()
+        c4d.CallCommand(300001026, 300001026)  # Deselect All
+        dzc4d.del_unused_mats()
+
+        mat.stdMatExtrafixes()
+        mat.specificFiguresFixes()
+        mat.fixMaterials()
+
+        print("Material Conversion Done")
+        c4d.EventAdd()
 
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW

@@ -4,6 +4,7 @@ from c4d import documents, utils
 from xml.etree import ElementTree
 
 from .Definitions import ROOT_DIR
+from .CustomIterators import TagIterator, ObjectIterator
 
 
 class Variables:
@@ -134,82 +135,6 @@ def getJointFromConstraint(jointName):
             return t[10001]
 
     return None
-
-
-class ObjectIterator:
-    def __init__(self, baseObject):
-        self.baseObject = baseObject
-        self.currentObject = baseObject
-        self.objectStack = []
-        self.depth = 0
-        self.nextDepth = 0
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.currentObject == None:
-            raise StopIteration
-
-        obj = self.currentObject
-        self.depth = self.nextDepth
-
-        child = self.currentObject.GetDown()
-        if child:
-            self.nextDepth = self.depth + 1
-            self.objectStack.append(self.currentObject.GetNext())
-            self.currentObject = child
-        else:
-            self.currentObject = self.currentObject.GetNext()
-            while self.currentObject == None and len(self.objectStack) > 0:
-                self.currentObject = self.objectStack.pop()
-                self.nextDepth = self.nextDepth - 1
-        return obj
-
-    next = __next__  # To Support Python 2.0
-
-
-class TagIterator:
-    def __init__(self, obj):
-        currentTag = None
-        if obj:
-            self.currentTag = obj.GetFirstTag()
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-
-        tag = self.currentTag
-        if tag == None:
-            raise StopIteration
-
-        self.currentTag = tag.GetNext()
-
-        return tag
-
-    next = __next__  # To Support Python 2.0
-
-
-def findIK():
-    doc = documents.GetActiveDocument()
-    obj = doc.GetFirstObject()
-    scene = ObjectIterator(obj)
-    ikfound = 0
-    for obj in scene:
-        if "Foot_PlatformBase" in obj.GetName():
-            ikfound = 1
-    return ikfound
-
-
-class Utils:
-    def update_viewport(self):
-        c4d.CallCommand(12148)  # Frame Geometry
-        c4d.DrawViews(
-            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
-            | c4d.DRAWFLAGS_NO_THREAD
-            | c4d.DRAWFLAGS_STATICBREAK
-        )
 
 
 class dazToC4Dutils:
@@ -355,27 +280,6 @@ class dazToC4Dutils:
 
         objTarget[c4d.ID_BASEOBJECT_ROTATION_ORDER] = 6
         c4d.EventAdd()
-
-    def protectTwist(self):
-        doc = c4d.documents.GetActiveDocument()
-        dazName = get_daz_name() + "_"
-
-        def addProtTag(obj):
-            xtag = c4d.BaseTag(c4d.Tprotection)
-            xtag[c4d.PROTECTION_P] = 1
-            xtag[c4d.PROTECTION_S] = False
-            xtag[c4d.PROTECTION_R] = 1
-            xtag[c4d.PROTECTION_R_X] = True
-            xtag[c4d.PROTECTION_R_Y] = False
-            xtag[c4d.PROTECTION_R_Z] = True
-
-            obj.InsertTag(xtag)
-            c4d.EventAdd()
-
-        nullForeArm = doc.SearchObject(dazName + "ForearmTwist_ctrl")
-        nullForeArmR = doc.SearchObject(dazName + "ForearmTwist_ctrl___R")
-        addProtTag(nullForeArm)
-        addProtTag(nullForeArmR)
 
     def fixMoisure(self):
         def removeMoisureTag(obj):
@@ -754,22 +658,6 @@ class dazToC4Dutils:
         protectObj(dazName + "Toe_Rot___R")
         protectObj(dazName + "Foot_Roll")
         protectObj(dazName + "Foot_Roll___R")
-
-    def ungroupDazGeo(self):
-        doc = documents.GetActiveDocument()
-        obj = doc.SearchObject("hip")
-        children = obj.GetUp().GetChildren()
-        c4d.CallCommand(12113, 12113)  # Deselect All
-        geoDetected = False
-        for c in children:
-            if c.GetType() == 5100:
-                geoDetected = True
-                c.SetBit(c4d.BIT_ACTIVE)
-        if geoDetected == True:
-            c4d.CallCommand(12106, 12106)  # Cut
-            c4d.CallCommand(12108, 12108)  # Paste
-        c4d.CallCommand(12113, 12113)  # Deselect All
-        c4d.EventAdd()
 
     def addHeadEndBone(self):
         doc = documents.GetActiveDocument()

@@ -3,7 +3,9 @@ import sys
 import c4d
 from c4d import documents
 
+from .CustomCmd import Cinema4DCommands as dzc4d
 from .CustomIterators import ObjectIterator
+
 
 class AllSceneToZero:
     doc = documents.GetActiveDocument()
@@ -23,14 +25,14 @@ class AllSceneToZero:
 
     def rasterizeObj(self, obj):
         doc = documents.GetActiveDocument()
-        collapsedName = obj.GetName() + '_Collapsed'
+        collapsedName = obj.GetName() + "_Collapsed"
         c4d.CallCommand(100004767, 100004767)  # Deselect All
         obj.SetBit(c4d.BIT_ACTIVE)
         c4d.CallCommand(100004820)  # Copy
         c4d.CallCommand(100004821)  # Paste
         objPasted = doc.GetFirstObject()
         if objPasted.GetDown():
-            if 'Poses' in objPasted.GetDown().GetName():
+            if "Poses" in objPasted.GetDown().GetName():
                 objPasted.GetDown().Remove()
 
         c4d.CallCommand(100004772)  # Group Objects
@@ -53,13 +55,13 @@ class AllSceneToZero:
         dictYvalues = {}
         for obj in scene:
             if obj.GetUp() == None and obj.GetType() == 5100:
-                    objPos = obj.GetAbsPos()  # The absolute object position.
-                    objCenterOffset = obj.GetMp()  # The bounding box center.
-                    boundBox = obj.GetRad()  # The bounding box width, height and depth.
-                    realPos = objPos[1] + objCenterOffset[1]
-                    lowestY = realPos - boundBox[1]
-                    sceneYvalues.append(lowestY)
-                    dictYvalues[lowestY] = obj
+                objPos = obj.GetAbsPos()  # The absolute object position.
+                objCenterOffset = obj.GetMp()  # The bounding box center.
+                boundBox = obj.GetRad()  # The bounding box width, height and depth.
+                realPos = objPos[1] + objCenterOffset[1]
+                lowestY = realPos - boundBox[1]
+                sceneYvalues.append(lowestY)
+                dictYvalues[lowestY] = obj
 
         sceneLowestObj = 0
         if len(sceneYvalues) > 0:
@@ -70,7 +72,11 @@ class AllSceneToZero:
 
     def moveAllToZero(self, baseObjs, posY):
         c4d.EventAdd()
-        c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD | c4d.DRAWFLAGS_STATICBREAK)
+        c4d.DrawViews(
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
+            | c4d.DRAWFLAGS_NO_THREAD
+            | c4d.DRAWFLAGS_STATICBREAK
+        )
         c4d.EventAdd()
         doc = documents.GetActiveDocument()
         baseObjs = []
@@ -93,7 +99,7 @@ class AllSceneToZero:
 
         c4d.EventAdd()
         newNull[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Y] = 0
-        c4d.CallCommand(12113, 12113)  # Deselect All
+        dzc4d.deselect_all()  # Deselect All
         newNull.SetBit(c4d.BIT_ACTIVE)
         c4d.CallCommand(100004773, 100004773)  # Expand Object Group
         newNull.Remove()
@@ -115,16 +121,20 @@ class AllSceneToZero:
                     objMesh = obj.GetDown()
                     c4d.CallCommand(100004767, 100004767)  # Deselect All
                     objSub.SetBit(c4d.BIT_ACTIVE)
-                    c4d.CallCommand(100004773) # Expand Object Group
+                    c4d.CallCommand(100004773)  # Expand Object Group
                     objSub.Remove()
                     c4d.EventAdd()
                     if objMesh:
                         if objMesh.GetType() == 5100:
                             baseObjs.append(objMesh)
 
-        if len(baseObjs) >0:
+        if len(baseObjs) > 0:
             if errorDetected == False:
                 getLowestY = self.rasterizeObj(self.sceneLowestYobj())
                 self.moveAllToZero(baseObjs, getLowestY)
-                c4d.DrawViews(c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW | c4d.DRAWFLAGS_NO_THREAD| c4d.DRAWFLAGS_STATICBREAK)
+                c4d.DrawViews(
+                    c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
+                    | c4d.DRAWFLAGS_NO_THREAD
+                    | c4d.DRAWFLAGS_STATICBREAK
+                )
                 c4d.EventAdd()

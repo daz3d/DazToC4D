@@ -2,12 +2,10 @@ import os
 import webbrowser
 
 import c4d
-from c4d import gui, documents
+from c4d import gui
 
 from .Utilities import hideEyePolys
-from .DazToC4DClasses import DazToC4D
 from .Materials import Materials, convertToRedshift, convertMaterials
-from .CustomIterators import ObjectIterator, TagIterator
 from .CustomImports import CustomImports
 from .DtC4DDialogs import EXTRADialog
 from .DtC4DPosing import Poses
@@ -17,14 +15,13 @@ from .Definitions import RES_DIR
 class guiDazToC4DMain(gui.GeDialog):
 
     dialog = None
-    extraDialog = None
+    import_vars = []
 
     BUTTON_CONFIG = 923123
     BUTTON_AUTO_IMPORT_FIG = 923124
     BUTTON_AUTO_IMPORT_PROP = 923131
     BUTTON_CONVERT_MATERIALS = 923126
     BUTTON_CONFIG = 923127
-    BUTTON_TEMP = 923128
     BUTTON_HELP = 923129
     BUTTON_AUTO_IK = 923130
 
@@ -49,6 +46,8 @@ class guiDazToC4DMain(gui.GeDialog):
     def __init__(self):
         try:
             self.AddGadget(c4d.DIALOG_NOMENUBAR, 0)  # disable menubar
+            self.AddGadget(c4d.DIALOG_PIN, 0)
+            self.config_dialog = EXTRADialog()
         except:
             pass
 
@@ -223,9 +222,7 @@ class guiDazToC4DMain(gui.GeDialog):
             0,
             self.buttonBC("", "Preset0"),
         )
-        self.convert_mat_but.SetImage(
-            self.img_btnConvertMaterials, True
-        )  # Add the image to the button
+        self.convert_mat_but.SetImage(self.img_btnConvertMaterials, True)
         self.AddSeparatorV(0, c4d.BFV_SCALEFIT)  # Separator V
         self.AddComboBox(2001, c4d.BFH_SCALEFIT, 100, 15, False)
         self.AddChild(2001, 0, " - Select -")
@@ -305,7 +302,7 @@ class guiDazToC4DMain(gui.GeDialog):
 
         if id == self.BUTTON_AUTO_IMPORT_FIG:
             self.buttonsChangeState(False)
-            CustomImports().auto_import_genesis()
+            self.import_vars = CustomImports().auto_import_genesis()
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_AUTO_IMPORT_PROP:
@@ -314,55 +311,31 @@ class guiDazToC4DMain(gui.GeDialog):
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_AUTO_IK:
+            self.buttonsChangeState(False)
+            if self.config_dialog.IsOpen():
+                self.config_dialog.Close()
 
-            try:
-                self.extraDialog.Close()
-            except:
-                print("Extra Dialog Close Error...")
-
-            doc = documents.GetActiveDocument()
-            obj = doc.GetFirstObject()
-            scene = ObjectIterator(obj)
-            hipFound = False
-            IKFound = False
-
-            for obj in scene:
-                if "hip" in obj.GetName():
-                    hipFound = True
-                if "Foot_PlatformBase" in obj.GetName():
-                    IKFound = True
-
-            if hipFound == False:
-                gui.MessageDialog(
-                    "No rig found to apply IK, Auto-Import a Figure and try again.",
-                    c4d.GEMB_OK,
+            if len(self.import_vars) == 0:
+                error = gui.MessageDialog(
+                    "Error has occured\n please re-import Character",
+                    c4d.GEMB_RETRYCANCEL,
                 )
-                return 0
-            else:
-                if IKFound == True:
-                    gui.MessageDialog(
-                        "IK Already Found, Auto-Import and try again.", c4d.GEMB_OK
-                    )
-                    return 0
+                if error == c4d.GEMB_R_RETRY:
+                    self.import_vars = CustomImports().auto_import_genesis()
+            for var in self.import_vars:
+                if "Genesis" in var.skeleton.GetName():
+                    Poses().checkIfPosedResetPose()  # THIS RUNS AUTO-IK !
                 else:
-                    if DazToC4D().findMesh() == False:
-                        gui.MessageDialog(
-                            "No Figure found, Auto-Import a Figure and try again.",
-                            c4d.GEMB_OK,
-                        )
-                    else:
-                        Poses().checkIfPosedResetPose()  # THIS RUNS AUTO-IK !
-
+                    gui.MessageDialog(
+                        "No Character found, Auto-Import a Character and try again.",
+                        c4d.GEMB_OK,
+                    )
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_CONFIG:
-            if self.extraDialog != None:
-                self.extraDialog.Close()
-            if self.extraDialog == None:
-                self.extraDialog = EXTRADialog()
-            self.extraDialog = EXTRADialog()
-
-            self.extraDialog.Open(
+            if self.config_dialog.IsOpen():
+                self.config_dialog.Close()
+            self.config_dialog.Open(
                 dlgtype=c4d.DLG_TYPE_ASYNC, xpos=-1, ypos=-1, defaultw=200, defaulth=150
             )
 
@@ -383,7 +356,7 @@ class guiDazToC4DMain(gui.GeDialog):
                         "::: WARNING :::\n\nNo Undo for this.\nSave your scene first, in case you want to revert changes.\n\nProceed and Convert Materials now?",
                         c4d.GEMB_YESNO,
                     )
-                    if answer == 6:
+                    if answer == c4d.GEMB_R_YES:
                         if comboRender == 1:
                             convertMaterials().convertTo("Vray")
                             c4d.CallCommand(1026375)  # Reload Python Plugins
@@ -401,19 +374,6 @@ class guiDazToC4DMain(gui.GeDialog):
                             hideEyePolys()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             c4d.CallCommand(100004767, 100004767)  # Deselect All
-
-        if id == self.BUTTON_TEMP:
-            if self.dialog == None:
-                self.dialog = EXTRADialog()
-            self.dialog = EXTRADialog()
-            self.dialog.Open(
-                dlgtype=c4d.DLG_TYPE_ASYNC,
-                xpos=-1,
-                ypos=-1,
-                pluginid=103299851,
-                defaultw=200,
-                defaulth=150,
-            )
 
         if id == self.BUTTON_HELP:
             new = 2  # open in a new tab, if possible

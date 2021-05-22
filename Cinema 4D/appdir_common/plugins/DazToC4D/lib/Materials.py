@@ -8,6 +8,12 @@ from .Utilities import dazToC4Dutils
 from .CustomIterators import ObjectIterator, TagIterator
 from .Definitions import RES_DIR
 
+try:
+    import redshift
+
+except:
+    pass
+
 
 class Materials:
     material_dict = {}
@@ -1224,7 +1230,7 @@ class convertMaterials:
                 if slotName == "alpha":
                     mat[c4d.OCT_MATERIAL_OPACITY_LINK] = bmpShader
                     mat[c4d.OCT_MATERIAL_OPACITY_LINK][c4d.IMAGETEXTURE_GAMMA] = 0.5
-                    # mat[c4d.OCT_MATERIAL_OPACITY_LINK][c4d.IMAGETEXTURE_INVERT] = True
+
                 if slotName == "glossy":
                     mat[c4d.OCT_MATERIAL_ROUGHNESS_LINK] = bmpShader
                 mat[c4d.OCT_MATERIAL_TYPE] = 2511  # Glossy
@@ -1331,7 +1337,7 @@ class convertMaterials:
             c4d.gui.MessageDialog("A problem has occurred or no mats to convert.")
 
         if matType == "Octane":
-            c4d.CallCommand(12168, 12168)  # Remove Unused Materials
+            dzc4d.del_unused_mats()
             c4d.CallCommand(100004766, 100004766)  # Select All
             c4d.CallCommand(100004819, 100004819)  # Cut
             c4d.CallCommand(100004821, 100004821)  # Paste

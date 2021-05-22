@@ -2,6 +2,7 @@ import c4d
 from c4d import documents
 import math
 
+from .CustomCmd import Cinema4DCommands as dzc4d
 from .CustomIterators import TagIterator
 
 
@@ -219,7 +220,6 @@ class DazRig:
         obj2 = makeNull("Eye2", ojo2)
         objParent = ojo1.GetUp()
         eyesParentNull = makeNull("EyesParent", headJoint)
-        # eyesGroup = makeNull('EyesParent', headJoint)
 
         obj1.SetName(self.dazName + "rEye_ctrl")
         obj2.SetName(self.dazName + "lEye_ctrl")
@@ -227,9 +227,6 @@ class DazRig:
         obj2.SetAbsScale(c4d.Vector(1, 1, 1))
 
         eyesParentNull.SetName(self.dazName + "Eyes-LookAt")
-        # eyesGroup.SetName('EyesGroup')
-
-        # masterSize = IKMAXDialog.MASTERSIZE  # ikmaxUtils().getObjHeight(characterMesh)
         masterSize = 100  # ??????
 
         obj1[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z] -= masterSize / 4
@@ -281,7 +278,7 @@ class DazRig:
             obj.InsertTag(tagProtec)
             c4d.EventAdd()
 
-        c4d.CallCommand(12113, 12113)  # Deselect All
+        dzc4d.deselect_all()  # Deselect All
         doc.SetActiveObject(obj1, c4d.SELECTION_NEW)
         doc.SetActiveObject(obj2, c4d.SELECTION_ADD)
         c4d.CallCommand(100004772, 100004772)  # Group Objects
@@ -315,7 +312,4 @@ class DazRig:
         freezeChilds(self.dazName + "Eyes-LookAt")
         freezeChilds(self.dazName + "EyesLookAtGroup")
         protectTag(objMasterEyes, "Rotation")
-
-        # freezeChilds("EyesGroup")
-
         c4d.EventAdd()
