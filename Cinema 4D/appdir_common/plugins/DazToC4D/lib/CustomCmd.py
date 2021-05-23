@@ -24,19 +24,21 @@ class Cinema4DCommands:
         )
 
     @staticmethod
-    def ungroupDazGeo():
+    def add_obj_to_new_group():
         doc = documents.GetActiveDocument()
         obj = doc.SearchObject("hip")
         children = obj.GetUp().GetChildren()
         Cinema4DCommands.deselect_all()  # Deselect All
-        geoDetected = False
+        null = c4d.BaseObject(c4d.Onull)  # Create new null
+        doc.InsertObject(null)
+        null.SetName("Daz Character Geometry")
         for c in children:
             if c.GetType() == 5100:
-                geoDetected = True
-                c.SetBit(c4d.BIT_ACTIVE)
-        if geoDetected == True:
-            c4d.CallCommand(12106, 12106)  # Cut
-            c4d.CallCommand(12108, 12108)  # Paste
+                mat = c.GetMg()
+                doc.AddUndo(c4d.UNDOTYPE_CHANGE, c)
+                c.InsertUnder(null)
+                c.SetMg(mat)
+
         Cinema4DCommands.deselect_all()  # Deselect All
         c4d.EventAdd()
 

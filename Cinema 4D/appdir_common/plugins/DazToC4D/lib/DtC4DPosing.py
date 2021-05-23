@@ -221,7 +221,7 @@ class Poses:
         doc = documents.GetActiveDocument()
         if checkAndReset == False:
             return checkIfPosed()
-        jointHip = doc.SearchObject("hip")  # CAMBIIIIIIIIIIIIIIIAAARRR
+        jointHip = doc.SearchObject("hip")
         jointRig = ObjectIterator(jointHip)
         if checkIfPosed():
             answer = gui.QuestionDialog(
@@ -261,13 +261,12 @@ class Poses:
                     "Would You Like to Run\nAUTO-IK", c4d.GEMB_YESNO
                 )
                 if answer:
-                    DazToC4D().autoIK()
-                    return False
-                else:
                     return True
+                else:
+                    return False
 
         else:
-            DazToC4D().autoIK()
+            return True
 
     def checkIfPosed(self):
         doc = documents.GetActiveDocument()

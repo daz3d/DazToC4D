@@ -2,8 +2,13 @@ import c4d
 from c4d import documents
 import math
 
+from c4d import utils
+from c4d import Vector as V
+
 from .CustomCmd import Cinema4DCommands as dzc4d
 from .CustomIterators import TagIterator
+from . import Database
+from . import Utilities
 
 
 class JointFixes:
@@ -48,6 +53,22 @@ class JointFixes:
             child.SetMl(matrix * child.GetMl())
         obj.SetMl(new_axis)
 
+    def update_rig_axis(self, joint, rig_joint):
+        joint_data = self.get_orientation(joint)
+        if len(joint_data) == 0:
+            return
+        rotation_order = joint_data[0]
+        index = self.find_order(rotation_order)
+        x = joint_data[1]
+        y = joint_data[2]
+        z = joint_data[3]
+        rig_joint[c4d.ID_BASEOBJECT_ROTATION_ORDER] = index
+        matrix = rig_joint.GetMl() * c4d.utils.MatrixRotX(c4d.utils.Rad(x))
+        matrix = matrix * c4d.utils.MatrixRotY(c4d.utils.Rad(y))
+        matrix = matrix * c4d.utils.MatrixRotZ(c4d.utils.Rad(-z))
+        self.move_axis(rig_joint, matrix)
+        c4d.CallButton(rig_joint, c4d.ID_BASEOBJECT_FREEZE_R)
+
     def update_axis(self, joint):
         joint_data = self.get_orientation(joint)
         if len(joint_data) == 0:
@@ -89,6 +110,42 @@ class JointFixes:
 
         self.reset_bind_pose(c_meshes)
         self.enable_skin_data(c_skin_data)
+        c4d.CallCommand(12102)
+        c4d.EventAdd()
+
+    def find_matching_joint(self, joint):
+        doc = documents.GetActiveDocument()
+        dz_jnt_name = joint.GetName()
+        prefix = dz_jnt_name[0:1]
+        post_prefix = dz_jnt_name[1:2]
+        if prefix == "l" and post_prefix.isupper():
+            dz_jnt_name = dz_jnt_name[1:]
+            suffix = ""
+        elif prefix == "r" and post_prefix.isupper():
+            dz_jnt_name = dz_jnt_name[1:]
+            suffix = "___R"
+        else:
+            suffix = ""
+
+        mesh_name = Utilities.get_daz_name() + "_"
+        constraints = Database.constraint_joints
+        for joints in constraints:
+            if dz_jnt_name == joints[0]:
+                return doc.SearchObject(mesh_name + joints[1] + suffix)
+
+    def fix_rig_joints(self, c_joints):
+        doc = documents.GetActiveDocument()
+        c4d.CallCommand(12102)
+        c4d.EventAdd()
+
+        for joint in c_joints:
+            doc.SetActiveObject(joint, c4d.SELECTION_NEW)
+            doc.AddUndo(c4d.UNDOTYPE_CHANGE, joint)
+            rig_joint = self.find_matching_joint(joint)
+            if rig_joint:
+                self.update_rig_axis(joint, rig_joint)
+            c4d.EventAdd()
+
         c4d.CallCommand(12102)
         c4d.EventAdd()
 

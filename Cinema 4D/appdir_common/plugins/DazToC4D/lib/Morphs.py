@@ -1,15 +1,30 @@
 from ntpath import join
 import c4d
-from c4d import utils
+from c4d import utils, documents
 
 from .CustomIterators import TagIterator
 from . import ErcExpressions as erc
 
 
 class Morphs:
-    morph_links = dict()
-    stored_outputs = dict()
-    nodes = dict()
+    def __init__(self):
+        self.morph_links = dict()
+        self.stored_outputs = dict()
+        self.nodes = dict()
+
+    @staticmethod
+    def create_null_for_morphs(body):
+        doc = documents.GetActiveDocument()
+        null = c4d.BaseObject(c4d.Onull)  # Create new null
+        doc.InsertObject(null)
+        c4d.EventAdd()
+        null.SetName("Daz Morphs Controller")
+        morph_tag = body.GetTag(c4d.Tposemorph)
+        xpresso_tag = body.GetTag(c4d.Texpresso)
+        null.InsertTag(morph_tag)
+        null.InsertTag(xpresso_tag)
+        c4d.EventAdd()
+        return null
 
     def store_morph_links(self, dtu):
         """

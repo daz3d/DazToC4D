@@ -5,11 +5,13 @@ from xml.etree import ElementTree
 
 from .Definitions import ROOT_DIR
 from .CustomIterators import TagIterator, ObjectIterator
+from . import Database
 
 
 class Variables:
     def store_asset_name(self, dtu):
         self.import_name = dtu.get_import_name()
+        self.dtu = dtu
 
     def check_if_valid(self):
         """
@@ -816,90 +818,15 @@ class dazToC4Dutils:
         doc = documents.GetActiveDocument()
         meshName = dazName + "_"
         self.addHeadEndBone()
+        guides = Database.guides_for_rig
+        for objs in guides:
+            guide_suffix = objs[0]
+            joint = objs[1]
+            if doc.SearchObject(joint):
+                self.moveToObj(meshName + guide_suffix, joint)
+            elif len(objs) == 3:
+                self.moveToObj(meshName + guide_suffix, objs[2])
 
-        if doc.SearchObject("lCollar"):
-            self.moveToObj(meshName + "Collar", "lCollar")
-            self.moveToObj(meshName + "Collar___R", "rCollar")
-        else:
-            self.moveToObj(meshName + "Collar", "chest")
-            self.moveToObj(meshName + "Collar___R", "chest")
-
-        if doc.SearchObject("abdomenUpper"):
-            self.moveToObj(meshName + "AbdomenUpper", "abdomenUpper")
-            self.moveToObj(meshName + "ChestUpper", "chestUpper")
-
-        if doc.SearchObject("lShldr"):
-            self.moveToObj(meshName + "Shoulder", "lShldr")
-            self.moveToObj(meshName + "Elbow", "lForeArm")
-
-        if doc.SearchObject("lShldrBend"):
-            self.moveToObj(meshName + "Shoulder", "lShldrBend")
-            self.moveToObj(meshName + "Elbow", "lForearmBend")
-
-        self.moveToObj(meshName + "Hand", "lHand")
-        self.moveToObj(meshName + "Index1", "lIndex1")
-        self.moveToObj(meshName + "Index2", "lIndex2")
-        if doc.SearchObject("lIndex3"):
-            self.moveToObj(meshName + "Index3", "lIndex3")
-            self.moveToObj(meshName + "Index_end", "lIndex3")
-        self.moveToObj(meshName + "Middle1", "lMid1")
-        self.moveToObj(meshName + "Middle2", "lMid2")
-        if doc.SearchObject("lMid3"):
-            self.moveToObj(meshName + "Middle3", "lMid3")
-            self.moveToObj(meshName + "Middle_end", "lMid3")
-        self.moveToObj(meshName + "Ring1", "lRing1")
-        self.moveToObj(meshName + "Ring2", "lRing2")
-        if doc.SearchObject("lRing3"):
-            self.moveToObj(meshName + "Ring3", "lRing3")
-            self.moveToObj(meshName + "Ring_end", "lRing3")
-        self.moveToObj(meshName + "Pinky1", "lPinky1")
-        self.moveToObj(meshName + "Pinky2", "lPinky2")
-        if doc.SearchObject("lPinky3"):
-            self.moveToObj(meshName + "Pinky3", "lPinky3")
-            self.moveToObj(meshName + "Pinky_end", "lPinky3")
-        self.moveToObj(meshName + "Thumb1", "lThumb1")
-        self.moveToObj(meshName + "Thumb2", "lThumb2")
-        if doc.SearchObject("lThumb3"):
-            self.moveToObj(meshName + "Thumb3", "lThumb3")
-            self.moveToObj(meshName + "Thumb_end", "lThumb3")
-
-        if doc.SearchObject("lThighBend"):
-            self.moveToObj(meshName + "LegUpper", "lThighBend")
-
-        if doc.SearchObject("lThigh"):
-            self.moveToObj(meshName + "LegUpper", "lThigh")
-
-        self.moveToObj(meshName + "Knee", "lShin")
-        self.moveToObj(meshName + "Foot", "lFoot")
-        self.moveToObj(meshName + "Toes", "lToe")
-
-        if doc.SearchObject("lSmallToe2_2"):
-            self.moveToObj(meshName + "Toes_end", "lSmallToe2_2")
-        else:
-            if doc.SearchObject("lSmallToe2"):
-                self.moveToObj(meshName + "Toes_end", "lSmallToe2")
-
-        self.moveToObj(meshName + "Pelvis", "hip")
-
-        if doc.SearchObject("abdomenLower"):
-            self.moveToObj(meshName + "Spine_Start", "abdomenLower")
-            self.moveToObj(meshName + "Chest_Start", "chestLower")
-            self.moveToObj(meshName + "Neck_Start", "neckLower")
-            self.moveToObj(meshName + "Neck_End", "head")
-
-        if doc.SearchObject("abdomen"):
-            self.moveToObj(meshName + "Spine_Start", "abdomen")
-            self.moveToObj(meshName + "Chest_Start", "chest")
-            self.moveToObj(meshName + "Neck_Start", "neck")
-            self.moveToObj(meshName + "Neck_End", "head")
-
-        self.moveToObj(meshName + "Head_End", "head_end")  # TEMPPP
-
-        self.extend3Dline("Index2", "Index3", "Index_end")
-        self.extend3Dline("Middle2", "Middle3", "Middle_end")
-        self.extend3Dline("Ring2", "Ring3", "Ring_end")
-        self.extend3Dline("Pinky2", "Pinky3", "Pinky_end")
-        self.extend3Dline("Thumb2", "Thumb3", "Thumb_end")
 
     def cleanJointsDaz(self, side="Left"):
         doc = documents.GetActiveDocument()
@@ -929,54 +856,16 @@ class dazToC4Dutils:
         if side == "Right":
             prefix = "r"
             suffix = "___R"
-        # Constraints
-        self.addConstraint(prefix + "Collar", meshName + "jCollar" + suffix)
 
-        if doc.SearchObject(prefix + "ShldrBend"):
-            self.addConstraint(prefix + "ShldrBend", meshName + "jArm" + suffix)
-            self.addConstraint(prefix + "ForearmBend", meshName + "jForeArm" + suffix)
-        if doc.SearchObject(prefix + "Shldr"):
-            self.addConstraint(prefix + "Shldr", meshName + "jArm" + suffix)
-            self.addConstraint(prefix + "ForeArm", meshName + "jForeArm" + suffix)
-
-        self.addConstraint(prefix + "Hand", meshName + "jHand" + suffix)
-        self.addConstraint("hip", meshName + "jPelvis")
-        if doc.SearchObject("pelvis"):
-            self.addConstraint("pelvis", meshName + "jPelvis")
-        if doc.SearchObject("abdomenLower"):
-            self.addConstraint("abdomenLower", meshName + "jSpine")
-            self.addConstraint("abdomenUpper", meshName + "jAbdomenUpper")
-            self.addConstraint("chestLower", meshName + "jChest")
-            self.addConstraint("chestUpper", meshName + "jChestUpper")
-            self.addConstraint("neckLower", meshName + "jNeck")
-        if doc.SearchObject("abdomen"):
-            self.addConstraint("abdomen", meshName + "jSpine")
-            self.addConstraint("chest", meshName + "jChest")
-            self.addConstraint("neck", meshName + "jNeck")
-
-        self.addConstraint("head", meshName + "jHead")
-
-        if doc.SearchObject(prefix + "ThighBend"):
-            self.addConstraint(prefix + "ThighBend", meshName + "jUpLeg" + suffix)
-        if doc.SearchObject(prefix + "Thigh"):
-            self.addConstraint(prefix + "Thigh", meshName + "jUpLeg" + suffix)
-
-        self.addConstraint(prefix + "Shin", meshName + "jLeg" + suffix)
-        self.addConstraint(prefix + "Foot", meshName + "jFoot" + suffix)
-        self.addConstraint(prefix + "Toe", meshName + "jToes" + suffix)
-        self.addConstraint(prefix + "Index1", meshName + "jIndex1" + suffix)
-        self.addConstraint(prefix + "Index2", meshName + "jIndex2" + suffix)
-        self.addConstraint(prefix + "Index3", meshName + "jIndex3" + suffix)
-        self.addConstraint(prefix + "Mid1", meshName + "jMiddle1" + suffix)
-        self.addConstraint(prefix + "Mid2", meshName + "jMiddle2" + suffix)
-        self.addConstraint(prefix + "Mid3", meshName + "jMiddle3" + suffix)
-        self.addConstraint(prefix + "Ring1", meshName + "jRing1" + suffix)
-        self.addConstraint(prefix + "Ring2", meshName + "jRing2" + suffix)
-        self.addConstraint(prefix + "Ring3", meshName + "jRing3" + suffix)
-        self.addConstraint(prefix + "Pinky1", meshName + "jPink1" + suffix)
-        self.addConstraint(prefix + "Pinky2", meshName + "jPink2" + suffix)
-        self.addConstraint(prefix + "Pinky3", meshName + "jPink3" + suffix)
-
-        self.addConstraint(prefix + "Thumb1", meshName + "jThumb1" + suffix)
-        self.addConstraint(prefix + "Thumb2", meshName + "jThumb2" + suffix)
-        self.addConstraint(prefix + "Thumb3", meshName + "jThumb3" + suffix)
+        joints = Database.constraint_joints
+        for joint in joints:
+            dz_joint = joint[0]
+            ctrl_joint = joint[1]
+            if doc.SearchObject(dz_joint):
+                if doc.SearchObject(meshName + ctrl_joint):
+                    self.addConstraint(dz_joint, meshName + ctrl_joint)
+            elif doc.SearchObject(prefix + dz_joint):
+                if doc.SearchObject(meshName + ctrl_joint + suffix):
+                    self.addConstraint(
+                        prefix + dz_joint, meshName + ctrl_joint + suffix
+                    )

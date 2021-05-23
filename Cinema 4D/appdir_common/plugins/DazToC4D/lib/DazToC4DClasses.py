@@ -210,13 +210,13 @@ class DazToC4D:
                 o[c4d.ID_BASEOBJECT_VISIBILITY_RENDER] = 0
         c4d.EventAdd()
 
-    def autoIK(self):
+    def autoIK(self, var):
         doc = c4d.documents.GetActiveDocument()
         obj = doc.SearchObject("hip")
         if obj:
             AllSceneToZero().sceneToZero()
-            applyDazIK()
-            #dazToC4Dutils().changeSkinType()
+            applyDazIK(var)
+            dazToC4Dutils().changeSkinType()
             self.unhideProps()
             c4d.EventAdd()
             c4d.DrawViews(
@@ -230,4 +230,3 @@ class DazToC4D:
             self.freezeTwistBones()
             self.figureFixBrute()
             self.protectTwist()
-            return True

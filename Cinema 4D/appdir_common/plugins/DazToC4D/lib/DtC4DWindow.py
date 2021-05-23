@@ -10,6 +10,9 @@ from .CustomImports import CustomImports
 from .DtC4DDialogs import EXTRADialog
 from .DtC4DPosing import Poses
 from .Definitions import RES_DIR
+from .Morphs import Morphs
+from .DazToC4DClasses import DazToC4D
+from .DazRig import JointFixes
 
 
 class guiDazToC4DMain(gui.GeDialog):
@@ -324,7 +327,10 @@ class guiDazToC4DMain(gui.GeDialog):
                     self.import_vars = CustomImports().auto_import_genesis()
             for var in self.import_vars:
                 if "Genesis" in var.skeleton.GetName():
-                    Poses().checkIfPosedResetPose()  # THIS RUNS AUTO-IK !
+                    Morphs.create_null_for_morphs(var.body)
+                    if Poses().checkIfPosedResetPose():  # Removes Pose if Needed
+                        DazToC4D().autoIK(var)
+
                 else:
                     gui.MessageDialog(
                         "No Character found, Auto-Import a Character and try again.",

@@ -1,3 +1,4 @@
+from ntpath import join
 import sys
 import os
 import c4d
@@ -6,23 +7,29 @@ from c4d import gui, documents
 from .CustomCmd import Cinema4DCommands as dzc4d
 from .Utilities import dazToC4Dutils
 from .CustomIterators import TagIterator
-from .DazRig import DazRig
+from .DazRig import DazRig, JointFixes
+from . import Utilities
+from . import Database
 
 
-def applyDazIK():
+def applyDazIK(var):
     doc = documents.GetActiveDocument()
 
-    dzc4d.ungroupDazGeo()
-
-    meshName = dazToC4Dutils().getDazMesh().GetName()
-    meshName = meshName.replace(".Shape", "")
+    dzc4d.add_obj_to_new_group()
     global dazName
+    meshName = Utilities.get_daz_name()
     dazName = meshName + "_"
 
     dazToC4Dutils().guidesToDaz()  # Auto Generate Guides
     dazToC4Dutils().cleanJointsDaz()  # Some adjustments to Daz Rig...
     # Ikmax stuff...----------------------
     ikmGenerator().makeRig()
+
+    # Need to refactor before using.
+    # jnt = JointFixes()
+    # jnt.store_joint_orientations(var.dtu)
+    # jnt.fix_rig_joints(var.c_joints)
+
     suffix = "___R"
     objArm = doc.SearchObject(dazName + "jCollar")
     objLeg = doc.SearchObject(dazName + "jUpLeg")
@@ -42,6 +49,7 @@ def applyDazIK():
     # ------------------------------------
 
     dazToC4Dutils().cleanJointsDaz("Right")
+
     dazToC4Dutils().constraintJointsToDaz()
     dazToC4Dutils().constraintJointsToDaz("Right")
     if doc.SearchObject(dazName + "ForearmTwist_ctrl"):
@@ -234,98 +242,6 @@ class ikmaxUtils:
         c4d.EventAdd()
 
         return objNull
-
-    def checkIfAllGuides(self, preset="guidesALL"):
-        doc = c4d.documents.GetActiveDocument()
-        objGuide = doc.SearchObject(dazName + "_IKM-StartGuides")
-        if preset == "guidesALL":
-            objList = [
-                "Pinky_end",
-                "Pinky3",
-                "Pinky2",
-                "Pinky1",
-                "Ring_end",
-                "Ring3",
-                "Ring2",
-                "Ring1",
-                "Middle_end",
-                "Middle3",
-                "Middle2",
-                "Middle1",
-                "Index_end",
-                "Index3",
-                "Index2",
-                "Index1",
-                "Thumb_end",
-                "Thumb2",
-                "Thumb1",
-                "Hand",
-                "Elbow",
-                "Shoulder",
-                "Toes_end",
-                "Toes",
-                "Foot",
-                "Knee",
-                "LegUpper",
-                "Head_End",
-                "Neck_End",
-                "Neck_Start",
-                "Chest_Start",
-                "Spine_Start",
-                "Pelvis",
-            ]
-        if preset == "guidesNoFingers":
-            objList = [
-                "Hand",
-                "Elbow",
-                "Shoulder",
-                "Toes_end",
-                "Toes",
-                "Foot",
-                "Knee",
-                "LegUpper",
-                "Head_End",
-                "Neck_End",
-                "Neck_Start",
-                "Chest_Start",
-                "Spine_Start",
-                "Pelvis",
-            ]
-        if preset == "jointsNoFingers":
-            objList = [
-                "jPelvis",
-                "jUpLeg",
-                "jLeg",
-                "jFoot",
-                "jToes",
-                "jToes_end",
-                "jUpLeg___R",
-                "jLeg___R",
-                "jFoot___R",
-                "jToes___R",
-                "jToes_end___R",
-                "jSpine",
-                "jChest",
-                "jCollar",
-                "jArm",
-                "jForeArm",
-                "jHand",
-            ]
-
-        checkList = 1
-        for obj in objList:
-            if doc.SearchObject(dazName + obj) is None:
-                checkList = 0
-                return 0
-
-        if checkList == 0:
-            print("List is NOT complete...")
-        if checkList == 1:
-            print("List Complete")
-            dzc4d.object_mode()  # Model
-            dzc4d.deselect_all()  # Deselect All
-
-        return checkList
 
     def removeStuff(self):
         doc = documents.GetActiveDocument()
@@ -670,46 +586,6 @@ class ikmaxUtils:
 
         return result
 
-    def checkManualGuides(self, objCharName):
-        doc = documents.GetActiveDocument()
-        manualGuidesList = [
-            "LegUpper",
-            "Knee",
-            "Foot",
-            "Toes",
-            "Toes_end",
-            "Shoulder",
-            "Elbow",
-            "Hand",
-            "Thumb1",
-            "Thumb2",
-            "Thumb_end",
-            "Index1",
-            "Index2",
-            "Index3",
-            "Index_end",
-            "Middle1",
-            "Middle2",
-            "Middle3",
-            "Middle_end",
-            "Ring1",
-            "Ring2",
-            "Ring3",
-            "Ring_end",
-            "Pinky1",
-            "Pinky2",
-            "Pinky3",
-            "Pinky_end",
-        ]
-        mainObj = objCharName
-        lastNull = "Complete"
-        for null in manualGuidesList:
-            find = doc.SearchObject(mainObj + "_" + null)
-            if find == None:
-                lastNull = null
-                return lastNull
-        return lastNull
-
 
 class ikmGenerator:
     def GetGlobalPosition(self, obj):
@@ -892,7 +768,7 @@ class ikmGenerator:
     def makeJoint(self, jointName, jointParentName, globalPosName):
         doc = documents.GetActiveDocument()
         try:
-            obj = c4d.BaseObject(c4d.Ojoint)  # Create new cube
+            obj = c4d.BaseObject(c4d.Ojoint)
             obj.SetName(dazName + jointName)
             obj[c4d.ID_CA_JOINT_OBJECT_BONE_DISPLAY] = 2
             obj[c4d.ID_BASEOBJECT_USECOLOR] = True
@@ -1056,7 +932,7 @@ class ikmGenerator:
         dzc4d.deselect_all()  # Deselect All
         joint = doc.SearchObject(rootBone)
         doc.SetActiveObject(joint, c4d.SELECTION_NEW)
-        # c4d.CallCommand(1021334, 1021334)
+        c4d.CallCommand(1021334, 1021334)
         c4d.CallCommand(1021334)  # Joint Align Tool
         tool = c4d.plugins.FindPlugin(doc.GetAction(), c4d.PLUGINTYPE_TOOL)
         if tool is not None:
@@ -1103,7 +979,6 @@ class ikmGenerator:
             self.alignFingers("V", "Pinky", sideName)
         c4d.EventAdd()
 
-        # self.alignOnePoint("X", dazName + "Thumb1" + sideName, dazName + "Thumb_end" + sideName, dazName + "Thumb2" + sideName)
         self.makeJoint("jThumb1" + sideName, "", "Thumb1" + sideName)
         self.makeJoint("jThumb2" + sideName, "jThumb1" + sideName, "Thumb2" + sideName)
         self.makeJoint("jThumb3" + sideName, "jThumb2" + sideName, "Thumb3" + sideName)
@@ -1338,7 +1213,7 @@ class ikmGenerator:
                 poleGoal[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z] -= MASTERSIZE / 4
                 pass
             IKTag[c4d.ID_CA_IK_TAG_POLE] = poleGoal
-            # IKTag[c4d.ID_CA_IK_TAG_POLE_TWIST] = -1.571 #TEMP
+
         if "Hand" in jTarget:
             IKTag[c4d.ID_CA_IK_TAG_GOAL_CONSTRAIN] = True
             pass
@@ -1604,42 +1479,13 @@ class ikmGenerator:
         self.AlignBoneChain(dazName + "jUpLeg" + sideName, 2)
         self.AlignBoneChain(dazName + "jFoot" + sideName, 1, 0, 0, 1)
 
-    def mirrorGuides(self):
-        parentMirrorName = dazName + "_IKM-Guides"
-        guidesToMirror = [
-            "Pinky_end",
-            "Pinky3",
-            "Pinky2",
-            "Pinky1",
-            "Ring_end",
-            "Ring3",
-            "Ring2",
-            "Ring1",
-            "Middle_end",
-            "Middle3",
-            "Middle2",
-            "Middle1",
-            "Index_end",
-            "Index3",
-            "Index2",
-            "Index1",
-            "Thumb_end",
-            "Thumb3",
-            "Thumb2",
-            "Thumb1",
-            "Hand",
-            "Elbow",
-            "Shoulder",
-            "Toes_end",
-            "Toes",
-            "Foot",
-            "Knee",
-            "LegUpper",
-        ]
+    def mirrorGuides(self, guides_to_mirror):
+        daz_name = Utilities.get_daz_name()
+        parentMirrorName = daz_name + "_IKM-Guides"
         addToName = "___R"
-        for g in guidesToMirror:
+        for g in guides_to_mirror:
             try:
-                self.mirrorNulls(dazName + g, addToName, parentMirrorName)
+                self.mirrorNulls(daz_name + g, addToName, parentMirrorName)
             except:
                 print("skip mirror guide", g)
 
@@ -1694,58 +1540,16 @@ class ikmGenerator:
 
     def makeRig(self):
         doc = documents.GetActiveDocument()
-
-        guidesToMirror = [
-            "Pinky_end",
-            "Pinky3",
-            "Pinky2",
-            "Pinky1",
-            "Ring_end",
-            "Ring3",
-            "Ring2",
-            "Ring1",
-            "Middle_end",
-            "Middle3",
-            "Middle2",
-            "Middle1",
-            "Index_end",
-            "Index3",
-            "Index2",
-            "Index1",
-            "Thumb_end",
-            "Thumb2",
-            "Thumb3",
-            "Thumb1",
-            "Hand",
-            "Elbow",
-            "Shoulder",
-            "Toes_end",
-            "Toes",
-            "Foot",
-            "Knee",
-            "LegUpper",
-        ]
-        sideNameR = "___R"
-        for g in guidesToMirror:
-            ikmGenerator().removeObj(dazName + g + sideNameR)
-        ikmGenerator().removeObj(dazName + "Collar" + sideNameR)
-
+        guides_to_mirror = Database.guides_to_mirror
+        center_joints = Database.center_joints
         sideName = "___R"
+
         # --- CENTER BONES -------------------------------------
 
-        # if 4 spines...
-        self.makeJoint("jPelvis", "", "Pelvis")
+        for joints in center_joints:
+            self.makeJoint(joints[0], joints[1], joints[2])
 
-        self.makeJoint("jSpine", "jPelvis", "Spine_Start")
-        self.makeJoint("jAbdomenUpper", "jSpine", "AbdomenUpper")
-        self.makeJoint("jChest", "jAbdomenUpper", "Chest_Start")
-        self.makeJoint("jChestUpper", "jChest", "ChestUpper")
-
-        self.makeJoint("jNeck", "jChestUpper", "Neck_Start")
-        self.makeJoint("jHead", "jNeck", "Neck_End")
-        self.makeJoint("jHeadEnd", "jHead", "Head_End")
-
-        self.mirrorGuides()
+        self.mirrorGuides(guides_to_mirror)
 
         self.generateRig()
         self.generateRig(sideName)
@@ -1788,8 +1592,8 @@ class ikmGenerator:
         self.makeChildKeepPos(dazName + "jThumb1", dazName + "jHand")
         c4d.CallCommand(100004749)  # Fold All
 
-        for g in guidesToMirror:
-            self.removeObj(g + sideNameR)
+        for g in guides_to_mirror:
+            self.removeObj(g + sideName)
 
         # ALIGN FINGERS AND MIRROR RESULT
         lastFinger = self.checkFingersAmount(dazName)
@@ -1999,7 +1803,7 @@ class alignFingersFull:
             normalNull = doc.SearchObject("normalNull")  # Normal Null ...!!..
 
             doc.SetActiveObject(joint, c4d.SELECTION_NEW)
-            # c4d.CallCommand(1021334, 1021334)
+            c4d.CallCommand(1021334, 1021334)
             c4d.CallCommand(1021334)  # Joint Align Tool
             tool = c4d.plugins.FindPlugin(doc.GetAction(), c4d.PLUGINTYPE_TOOL)
             if tool is not None:
