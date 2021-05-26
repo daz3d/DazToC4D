@@ -12,7 +12,7 @@ from .DtC4DPosing import Poses
 from .Definitions import RES_DIR
 from .Morphs import Morphs
 from .DazToC4DClasses import DazToC4D
-from .DazRig import JointFixes
+from .CustomCmd import Cinema4DCommands as dzc4d
 
 
 class guiDazToC4DMain(gui.GeDialog):
@@ -327,9 +327,11 @@ class guiDazToC4DMain(gui.GeDialog):
                     self.import_vars = CustomImports().auto_import_genesis()
             for var in self.import_vars:
                 if "Genesis" in var.skeleton.GetName():
-                    Morphs.create_null_for_morphs(var.body)
+                    morph_grp = Morphs.create_null_for_morphs(var.body)
+                    Morphs.move_poses_under_morphs(morph_grp, var.c_poses)
                     if Poses().checkIfPosedResetPose():  # Removes Pose if Needed
                         DazToC4D().autoIK(var)
+                        dzc4d.move_obj_to_top(morph_grp)
 
                 else:
                     gui.MessageDialog(

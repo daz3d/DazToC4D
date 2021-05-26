@@ -45,6 +45,49 @@ constraint_joints = [
     ["Thumb3", "jThumb3"],
 ]
 
+
+rig_joints = [
+    ["Collar", "jCollar"],
+    ["ShldrBend", "jArm"],
+    ["ForearmBend", "jForeArm"],
+    ["Shldr", "jArm"],  # Genesis 2
+    ["ForeArm", "jForeArm"],  # Genesis 2
+    ["Hand", "jHand"],
+    ["hip", "jPelvis"],
+    ["pelvis", "jPelvis"],
+    ["abdomenLower", "jSpine"],
+    ["abdomenUpper", "jAbdomenUpper"],
+    ["chestLower", "jChest"],
+    ["chestUpper", "jChestUpper"],
+    ["neckLower", "jNeck"],
+    ["abdomen", "jSpine"],  # Genesis 2
+    ["chest", "jChest"],  # Genesis 2
+    ["neck", "jNeck"],  # Genesis 2
+    ["head", "jHead"],
+    ["ThighBend", "jUpLeg"],
+    ["Thigh", "jUpLeg"],  # Genesis 2
+    ["Foot", "jFoot"],
+    ["Shin", "jLeg"],
+    ["Toe", "jToes"],
+    ["SmallToe2_2", "jToes_end"],
+    ["Index1", "jIndex1"],
+    ["Index2", "jIndex2"],
+    ["Index3", "jIndex3"],
+    ["Mid1", "jMiddle1"],
+    ["Mid2", "jMiddle2"],
+    ["Mid3", "jMiddle3"],
+    ["Ring1", "jRing1"],
+    ["Ring2", "jRing2"],
+    ["Ring3", "jRing3"],
+    ["Pinky1", "jPink1"],
+    ["Pinky2", "jPink2"],
+    ["Pinky3", "jPink3"],
+    ["Thumb1", "jThumb1"],
+    ["Thumb2", "jThumb2"],
+    ["Thumb3", "jThumb3"],
+]
+
+
 """ [ Guide, joint ]
 """
 guides_for_rig = [
@@ -138,11 +181,14 @@ center_joints = [
     ["jHeadEnd", "jHead", "Head_End"],
 ]
 
-side_joints = [
+arm_joints = [
     ["jCollar", "jChestUpper", "Collar"],
     ["jArm", "jCollar", "Shoulder"],
     ["jForeArm", "jArm", "Elbow"],
     ["jHand", "jForeArm", "Hand"],
+]
+
+leg_joints = [
     ["jUpLeg", "jPelvis", "LegUpper"],
     ["jLeg", "jUpLeg", "Knee"],
     ["jFoot", "jLeg", "Foot"],
@@ -151,9 +197,62 @@ side_joints = [
     ["jToes_end", "jToes", "Toes_end"],
 ]
 
-finger_joints = [
+thumb_joints = [
     ["jThumb1", "", "Thumb1"],
     ["jThumb2", "jThumb1", "Thumb2"],
     ["jThumb3", "jThumb2", "Thumb3"],
     ["jThumb_end", "jThumb3", "Thumb_end"],
+]
+
+
+""" [ ctrl_shape, joint, preset, constraint, parent ]
+"""
+ik_controls = [
+    ["IK_Foot", "jFoot", "zeroRotInvisible"],
+    ["Toe_Rot", "jToes", "sphereToe"],
+    ["Foot_Roll", "jToes", "cube"],
+    ["IK_Hand", "jHand", "cube"],
+    ["Collar_ctrl", "jCollar", "collar"],
+    ["Foot_Platform", "IK_Foot", "Foot_Platform"],
+    ["ToesEnd", "jToes_end", "none"],
+    ["Pelvis_ctrl", "jPelvis", "pelvis"],
+    ["ForearmTwist_ctrl", "lForearmTwist", "twist"],
+    ["ForearmTwist_ctrl___R", "rForearmTwist", "twist"],
+    ["Spine_ctrl", "jSpine", "spine"],
+    ["AbdomenUpper_ctrl", "jAbdomenUpper", "spine"],
+    ["ChestUpper_ctrl", "jChestUpper", "spine"],
+    ["Foot_PlatformBase", "jFoot", "Foot_PlatformNEW"],
+    ["Foot_PlatformBase___R", "jFoot___R", "Foot_PlatformNEW"],
+    ["Chest_ctrl", "jChest", "spine"],
+    ["Neck_ctrl", "jNeck", "neck"],
+    ["Head_ctrl", "jHead", "head"],
+]
+
+ik_tags = [
+    ["jUpLeg", "jFoot", "IK_Foot", "jUpLeg.Pole", "LegUpper", "Negative"],
+    ["jArm", "jHand", "IK_Hand", "jArm.Pole", "Shoulder", ""],
+]
+
+daz_controls = [
+    ["IK_Foot", "Foot", "zeroRotInvisible", "None"],
+    ["Toe_Rot", "Toe", "sphereToe", "None"],
+    ["Foot_Roll", "Toe", "cube", "None"],
+    ["IK_Hand", "Hand", "cube", "None"],
+    ["Collar_ctrl", "Collar", "collar", ""],
+    ["Foot_Platform", "IK_Foot", "Foot_Platform", "UPVECTOR"],
+    ["Pelvis_ctrl", "hip", "pelvis"],
+    ["ForearmTwist_ctrl", "lForearmTwist", "twist"],
+    ["ForearmTwist_ctrl___R", "rForearmTwist", "twist"],
+    ["Spine_ctrl", "abdomenLower", "spine"],
+    ["AbdomenUpper_ctrl", "abdomenUppe", "spine"],
+    ["ChestUpper_ctrl", "chestUpper", "spine"],
+    ["Foot_PlatformBase", "Foot", "Foot_PlatformNEW"],
+    ["Chest_ctrl", "chest", "spine"],
+    ["Neck_ctrl", "neck", "neck"],
+    ["Head_ctrl", "head", "head"],
+]
+
+daz_tags = [
+    ["Shin", "Foot", "IK_Foot", "Shin.Pole", "ThighBend", "Negative"],
+    ["ShldrBend", "Hand", "IK_Hand", "ShldrBend.Pole", "ForeArm", ""],
 ]

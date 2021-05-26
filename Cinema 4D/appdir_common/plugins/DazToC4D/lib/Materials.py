@@ -1,3 +1,4 @@
+from xml.etree.ElementTree import TreeBuilder
 import c4d
 import os
 import sys
@@ -15,8 +16,153 @@ except:
     pass
 
 
+# region top-level methods
+def srgb_to_linear_rgb(srgb):
+    if srgb < 0:
+        return 0
+    elif srgb < 0.04045:
+        return srgb / 12.92
+    else:
+        return ((srgb + 0.055) / 1.055) ** 2.4
+
+
+def hex_to_col(hex, normalize=True, precision=6):
+    col = []
+    it = iter(hex)
+    for char in it:
+        col.append(int(char + it.__next__(), 16))
+    if normalize:
+        col = map(lambda x: x / 255, col)
+        col = map(lambda x: round(x, precision), col)
+    return list(c for c in col)
+
+
+def convert_color(color):
+    color_hex = color.lstrip("#")
+    color_rgb = hex_to_col(color_hex)
+    return color_rgb
+
+
 class Materials:
     material_dict = {}
+    texture_library = {
+        "normal": {
+            "Name": [
+                "Normal Map",
+            ],
+        },
+        "color": {
+            "Name": [
+                "Base Color",
+                "Diffuse Color",
+            ],
+        },
+        "bump": {
+            "Name": [
+                "Bump Strength",
+            ],
+        },
+        "opacity": {
+            "Name": [
+                "Cutout Opacity",
+                "Opacity Strength",
+            ],
+        },
+        "roughness": {
+            "Name": [
+                "Glossy Roughness",
+                "Specular Lobe 1 Roughness",
+            ],
+        },
+        "metalness": {
+            "Name": [
+                "Metallic Weight",
+            ],
+        },
+        "relection": {
+            "Name": [
+                "Glossy Color",
+            ],
+        },
+        "relection-strength": {
+            "Name": [
+                "Glossy Reflectivity",
+            ],
+        },
+        "specular": {
+            "Name": [
+                "Dual Lobe Specular Reflectivity",
+                "Specular 2 Color",
+                "Specular Color",
+                "Glossy Layered Weight",
+            ],
+        },
+        "transparency": {
+            "Name": [
+                "Refraction Weight",
+            ]
+        },
+        "ior": {
+            "Name": [
+                "Refraction Index",
+            ]
+        },
+        "sss": {
+            "Name": [
+                "Translucency Color",
+            ]
+        },
+        "sss-color": {
+            "Name": [
+                "SSS Color",
+            ]
+        },
+        "sss-strength": {
+            "Name": [
+                "Scattering Measurement Distance",
+            ]
+        },
+        "sss-enable": {
+            "Name": [
+                "Sub Surface Enable",
+            ]
+        },
+        "transmitted-color": {
+            "Name": [
+                "Transmitted Color",
+            ]
+        },
+        "transmitted-strength": {
+            "Name": [
+                "Transmitted Measurement Distance",
+            ]
+        },
+        "metallic-flakes-color": {
+            "Name": [
+                "Metallic Flakes Color",
+            ]
+        },
+        "metallic-flakes-mask": {
+            "Name": [
+                "Metallic Flakes Weight",
+            ]
+        },
+        "metallic-flakes-roughness": {
+            "Name": [
+                "Metallic Flakes Roughness",
+            ]
+        },
+        "displacement": {
+            "Name": [
+                "Displacement Strength",
+            ]
+        },
+        "displacement-height": {
+            "Name": [
+                "Maximum Displacement",
+            ]
+        },
+    }
 
     def store_materials(self, dtu):
         """
@@ -31,10 +177,286 @@ class Materials:
                 self.material_dict[asset_name] = {}
             self.material_dict[asset_name][mat_name] = mat
 
+    def find_mat_properties(self, obj, mat):
+        if obj not in self.material_dict.keys():
+            return
+        if mat not in self.material_dict[obj].keys():
+            return
+        properties = {}
+        for prop in self.material_dict[obj][mat]["Properties"]:
+            properties[prop["Name"]] = prop
+        return properties
+
+    @staticmethod
+    def create_texture(mat, path):
+        texture = c4d.BaseList2D(c4d.Xbitmap)
+        texture[c4d.BITMAPSHADER_FILENAME] = path
+        mat.InsertShader(texture)
+        return texture
+
+    def find_maps_temp(self, mat, prop):
+        """Method is to find Maps on Standard Materials before Conversions"""
+        tex = self.texture_library
+        for maps in tex:
+            for prop_name in tex[maps]["Name"]:
+                if prop_name in prop.keys():
+                    if prop[prop_name]["Texture"] != "":
+                        path = prop[prop_name]["Texture"]
+                        texture = Materials.create_texture(mat, path)
+                        mat[tex[maps]["stdshader"]] = texture
+                        mat[tex[maps]["stdenable"]] = True
+
+    def clean_up_layers(self, mat):
+        mat[c4d.MATERIAL_USE_COLOR] = False
+        mat.RemoveReflectionAllLayers()
+
+    def set_up_diffuse(self, mat, prop):
+        lib = self.texture_library
+        if self.is_diffuse(prop):
+            diffuse = mat.AddReflectionLayer()
+            diffuse.SetName("Diffuse Layer")
+            mat[
+                diffuse.GetDataID() + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION
+            ] = c4d.REFLECTION_DISTRIBUTION_LAMBERTIAN
+            for prop_name in lib["color"]["Name"]:
+                if prop_name in prop.keys():
+                    if prop[prop_name]["Texture"] != "":
+                        path = prop[prop_name]["Texture"]
+                        texture = Materials.create_texture(mat, path)
+                        mat[
+                            diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
+                        ] = texture
+                        hex_str = prop[prop_name]["Value"]
+                        color = convert_color(hex_str)
+                        vector = c4d.Vector(color[0], color[1], color[2])
+                        mat[
+                            diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_COLOR
+                        ] = vector
+                        mat[
+                            diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
+                        ] = 3
+
+    def is_diffuse(self, prop):
+        lib = self.texture_library
+        for prop_name in lib["color"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    return True
+
+    def set_up_daz_mat(self, mat, prop):
+        lib = self.texture_library
+        daz_mat = mat.AddReflectionLayer()
+        daz_mat.SetName("Daz Material Layer")
+        mat[
+            daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION
+        ] = c4d.REFLECTION_DISTRIBUTION_GGX
+
+        if self.is_metal(prop):
+            mat[
+                daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_ADDITIVE
+            ] = c4d.REFLECTION_ADDITIVE_MODE_METAL
+            mat[
+                daz_mat.GetDataID() + c4d.REFLECTION_LAYER_FRESNEL_MODE
+            ] = c4d.REFLECTION_FRESNEL_CONDUCTOR
+        else:
+            mat[
+                daz_mat.GetDataID() + c4d.REFLECTION_LAYER_FRESNEL_MODE
+            ] = c4d.REFLECTION_FRESNEL_DIELECTRIC
+
+        for prop_name in lib["color"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    path = prop[prop_name]["Texture"]
+                    texture = Materials.create_texture(mat, path)
+                    mat[
+                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
+                    ] = texture
+        for prop_name in lib["roughness"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    path = prop[prop_name]["Texture"]
+                    texture = Materials.create_texture(mat, path)
+                    mat[
+                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_SHADER_ROUGHNESS
+                    ] = texture
+                    mat[
+                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS
+                    ] = prop[prop_name]["Value"]
+                if prop[prop_name]["Value"] > 0:
+                    mat[
+                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS
+                    ] = prop[prop_name]["Value"]
+
+        for prop_name in lib["relection"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    path = prop[prop_name]["Texture"]
+                    texture = Materials.create_texture(mat, path)
+                    mat[
+                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_SHADER_REFLECTION
+                    ] = texture
+                    
+        for prop_name in lib["relection-strength"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Value"] > 0:
+                    mat[
+                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_REFLECTION
+                    ] = prop[prop_name]["Value"]
+
+        for prop_name in lib["specular"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    path = prop[prop_name]["Texture"]
+                    texture = Materials.create_texture(mat, path)
+                    mat[
+                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_SHADER_SPECULAR
+                    ] = texture
+                    mat[
+                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR
+                    ] = prop[prop_name]["Value"]
+
+        for prop_name in lib["metalness"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    path = prop[prop_name]["Texture"]
+                    texture = Materials.create_texture(mat, path)
+                    mat[
+                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_TRANS_TEXTURE
+                    ] = texture
+
+    def is_metal(self, prop):
+        lib = self.texture_library
+        for prop_name in lib["metalness"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Value"] > 0:
+                    return True
+
+    def set_up_bump_normal(self, mat, prop):
+        lib = self.texture_library
+        for prop_name in lib["bump"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    path = prop[prop_name]["Texture"]
+                    texture = Materials.create_texture(mat, path)
+                    mat[c4d.MATERIAL_USE_BUMP] = True
+                    mat[c4d.MATERIAL_BUMP_SHADER] = texture
+
+        for prop_name in lib["normal"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    path = prop[prop_name]["Texture"]
+                    strength = prop[prop_name]["Value"]
+                    texture = Materials.create_texture(mat, path)
+                    mat[c4d.MATERIAL_USE_NORMAL] = True
+                    mat[c4d.MATERIAL_NORMAL_SHADER] = texture
+                    mat[c4d.MATERIAL_NORMAL_STRENGTH] = strength * 0.5
+
+    def set_up_alpha(self, mat, prop):
+        lib = self.texture_library
+        for prop_name in lib["opacity"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    path = prop[prop_name]["Texture"]
+                    texture = Materials.create_texture(mat, path)
+                    mat[c4d.MATERIAL_USE_ALPHA] = True
+                    mat[c4d.MATERIAL_ALPHA_SHADER] = texture
+
+    def set_up_transmission(self, mat, prop):
+        lib = self.texture_library
+        if self.is_trans(prop):
+            mat[c4d.MATERIAL_USE_TRANSPARENCY] = True
+            for prop_name in lib["transparency"]["Name"]:
+                if prop_name in prop.keys():
+                    vector = self.convert_to_vector(prop[prop_name]["Value"])
+                    mat[c4d.MATERIAL_TRANSPARENCY_COLOR] = vector
+            for prop_name in lib["ior"]["Name"]:
+                if prop_name in prop.keys():
+                    mat[c4d.MATERIAL_TRANSPARENCY_REFRACTION] = prop[prop_name]["Value"]
+
+    def is_trans(self, prop):
+        lib = self.texture_library
+        for prop_name in lib["transparency"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Value"] > 0:
+                    return True
+
+    def set_up_translucency(self, mat, prop):
+        lib = self.texture_library
+        if self.is_sss(prop):
+            doc = c4d.documents.GetActiveDocument()
+            sss = c4d.BaseList2D(c4d.Xxmbsubsurface)
+            mat[c4d.MATERIAL_USE_LUMINANCE] = True
+            mat[c4d.MATERIAL_LUMINANCE_SHADER] = sss
+            doc.InsertShader(sss)
+            for prop_name in lib["sss"]["Name"]:
+                if prop_name in prop.keys():
+                    if prop[prop_name]["Texture"] != "":
+                        path = prop[prop_name]["Texture"]
+                        texture = Materials.create_texture(mat, path)
+                        sss[c4d.XMBSUBSURFACESHADER_SHADER] = texture
+
+            for prop_name in lib["sss-color"]["Name"]:
+                if prop_name in prop.keys():
+                    hex_str = prop[prop_name]["Value"]
+                    color = convert_color(hex_str)
+                    vector = c4d.Vector(color[0], color[1], color[2])
+                    sss[c4d.XMBSUBSURFACESHADER_DIFFUSE] = vector
+
+            for prop_name in lib["sss-strength"]["Name"]:
+                if prop_name in prop.keys():
+                    strength = prop[prop_name]["Value"]
+                    sss[c4d.XMBSUBSURFACESHADER_STRENGTH] = strength * 5
+
+            for prop_name in lib["transmitted-color"]["Name"]:
+                if prop_name in prop.keys():
+                    hex_str = prop[prop_name]["Value"]
+                    color = convert_color(hex_str)
+                    vector = c4d.Vector(color[0], color[1], color[2])
+                    mat[c4d.MATERIAL_LUMINANCE_COLOR] = vector
+
+            for prop_name in lib["transmitted-strength"]["Name"]:
+                if prop_name in prop.keys():
+                    strength = prop[prop_name]["Value"]
+                    mat[c4d.MATERIAL_LUMINANCE_BRIGHTNESS] = strength
+
+    def is_sss(self, prop):
+        lib = self.texture_library
+        for prop_name in lib["sss-enable"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Value"] > 0:
+                    return True
+
+    def convert_to_vector(self, value):
+        num = 1
+        num *= value
+        return c4d.Vector(num, num, num)
+
+    def viewport_settings(self, mat):
+        mat[c4d.MATERIAL_DISPLAY_USE_LUMINANCE] = False
+
     def update_materials(self):
         doc = c4d.documents.GetActiveDocument()
         doc_mat = doc.GetMaterials()
-        pass
+        for mat in doc_mat:
+            mat_name = mat.GetName()
+            mat_link = mat[c4d.ID_MATERIALASSIGNMENTS]
+            mat_count = mat_link.GetObjectCount()
+            for i in range(mat_count):
+                link = mat_link.ObjectFromIndex(doc, i)
+                mat_obj = link.GetObject()
+                obj_name = mat_obj.GetName().replace(".Shape", "")
+                prop = self.find_mat_properties(obj_name, mat_name)
+                if not prop:
+                    continue
+                self.clean_up_layers(mat)
+                self.set_up_transmission(mat, prop)
+                self.set_up_diffuse(mat, prop)
+                self.set_up_daz_mat(mat, prop)
+                self.set_up_bump_normal(mat, prop)
+                self.set_up_alpha(mat, prop)
+                self.set_up_translucency(mat, prop)
+                self.viewport_settings(mat)
+                # self.find_maps_temp(mat, prop)
 
     def checkStdMats(self):
         doc = c4d.documents.GetActiveDocument()
@@ -245,15 +667,6 @@ class Materials:
         c4d.EventAdd()
 
     def stdMatExtrafixes(self):
-        doc = c4d.documents.GetActiveDocument()
-
-        # --- Fix duplicated Moisture material...??
-        myMaterials = doc.GetMaterials()
-        for mat in myMaterials:
-            if "EyeMoisture" in mat.GetName():
-                mat.SetName("EyeMoisture2")
-                return True
-
         def setRenderToPhysical():
             try:
                 rdata = doc.GetActiveRenderData()
@@ -273,9 +686,6 @@ class Materials:
             except:
                 pass
 
-        setRenderToPhysical()
-        figureModel = "Genesis8"
-
         def findMatName(matToFind):
             matFound = None
             sceneMats = doc.GetMaterials()
@@ -286,11 +696,20 @@ class Materials:
                     return matFound
             return matFound
 
+        doc = c4d.documents.GetActiveDocument()
+
+        # --- Fix duplicated Moisture material...??
+        myMaterials = doc.GetMaterials()
+        for mat in myMaterials:
+            if "EyeMoisture" in mat.GetName():
+                mat.SetName("EyeMoisture2")
+                return TreeBuilder
+        setRenderToPhysical()
+        figureModel = "Genesis8"
         if findMatName("EyeReflection"):
             figureModel = "Genesis2"
         if findMatName("Fingernails"):
             figureModel = "Genesis3"
-
         # FIX MATERIAL NAMES etc... USE THIS FOR ALL CONVERTIONS NOT JUST OCTANE!
         if findMatName("1_SkinFace") == None and findMatName("1_Nostril") != None:
             try:
@@ -302,10 +721,8 @@ class Materials:
                 findMatName("3_SkinFoot").SetName("3_ArmsLegs")
             except:
                 pass
-        # ////
-        doc = documents.GetActiveDocument()
-        sceneMats = doc.GetMaterials()
 
+        sceneMats = doc.GetMaterials()
         for mat in sceneMats:
             matName = mat.GetName()
             try:
@@ -350,7 +767,6 @@ class Materials:
                         ] = 0.8
                     except:
                         pass
-
         c4d.EventAdd()
 
     def addLipsMaterial(self):

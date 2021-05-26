@@ -65,3 +65,9 @@ class Cinema4DCommands:
     @staticmethod
     def del_unused_mats():
         c4d.CallCommand(12168, 12168)
+
+    @staticmethod
+    def move_obj_to_top(obj):
+        doc = documents.GetActiveDocument()
+        fobj = doc.GetFirstObject()
+        obj.InsertBefore(fobj)

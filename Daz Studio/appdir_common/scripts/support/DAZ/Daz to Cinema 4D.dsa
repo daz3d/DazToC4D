@@ -1,12 +1,12 @@
 // DAZ Studio version 4.12.0.86 filetype DAZ Script
 
 (function(){
-	var s_sBridge = "C4D"
+	var s_sBridge = "Cinema 4D"
 	var s_sDazBridgeName = String( "Daz To %1" ).arg( s_sBridge )
 	var s_oFileInfo = new DzFileInfo( getScriptFileName() );
 	var s_sScriptPath = s_oFileInfo.path();
 	// To be able to use the IDE Input your absolute Path.
-	s_sScriptPath = "D:/GitRepos/DazToC4D/Daz Studio/appdir_common/scripts/support/DAZ"	
+	// s_sScriptPath = "D:/GitRepos/DazToC4D/Daz Studio/appdir_common/scripts/support/DAZ"	
 	var s_sToolName = s_sDazBridgeName;
 	var s_sMorphDialog = String( "Dz%1MorphSelectionDialog" ).arg( s_sBridge )
 	s_oFileInfo.deleteLater();

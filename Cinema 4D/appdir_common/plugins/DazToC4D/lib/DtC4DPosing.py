@@ -225,7 +225,7 @@ class Poses:
         jointRig = ObjectIterator(jointHip)
         if checkIfPosed():
             answer = gui.QuestionDialog(
-                "Reset Pose first before Auto-Ik.\nReset Pose now?\n\nWarning: No Undo",
+                "Reset Pose first before Auto-Ik.\nReset Pose now?\n\nWarning: No Undo"
             )
             if answer:
                 for x in jointRig:
@@ -258,7 +258,7 @@ class Poses:
 
                 AllSceneToZero().sceneToZero()
                 answer = gui.QuestionDialog(
-                    "Would You Like to Run\nAUTO-IK", c4d.GEMB_YESNO
+                    "Would You Like to Run\nAUTO-IK"
                 )
                 if answer:
                     return True

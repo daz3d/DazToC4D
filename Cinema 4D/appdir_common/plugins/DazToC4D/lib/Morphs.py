@@ -15,16 +15,25 @@ class Morphs:
     @staticmethod
     def create_null_for_morphs(body):
         doc = documents.GetActiveDocument()
-        null = c4d.BaseObject(c4d.Onull)  # Create new null
-        doc.InsertObject(null)
-        c4d.EventAdd()
-        null.SetName("Daz Morphs Controller")
         morph_tag = body.GetTag(c4d.Tposemorph)
         xpresso_tag = body.GetTag(c4d.Texpresso)
-        null.InsertTag(morph_tag)
-        null.InsertTag(xpresso_tag)
-        c4d.EventAdd()
-        return null
+        if morph_tag:
+            null = c4d.BaseObject(c4d.Onull)  # Create new null
+            doc.InsertObject(null)
+            c4d.EventAdd()
+            null.SetName("Daz Morphs Controller")
+            null.InsertTag(morph_tag)
+            null.InsertTag(xpresso_tag)
+            c4d.EventAdd()
+            return null
+
+    @staticmethod
+    def move_poses_under_morphs(group, poses):
+        for pose in poses:
+            print(pose)
+            if pose and group:
+                pose.InsertUnder(group)
+                c4d.EventAdd()
 
     def store_morph_links(self, dtu):
         """
@@ -212,6 +221,9 @@ class Morphs:
                 if "Default:" in morph_name:
                     continue
                 morph_link = self.find_morph_link(morph_name)
+                if not morph_link:
+                    print("{0} Connections Could not be found ...".format(morph_name))
+                    continue
                 links = morph_link["Links"]
                 new_links = self.check_links(links)
                 if len(new_links) == 0:

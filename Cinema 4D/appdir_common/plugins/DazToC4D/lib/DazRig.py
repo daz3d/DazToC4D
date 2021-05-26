@@ -1,9 +1,7 @@
+from ntpath import join
 import c4d
 from c4d import documents
 import math
-
-from c4d import utils
-from c4d import Vector as V
 
 from .CustomCmd import Cinema4DCommands as dzc4d
 from .CustomIterators import TagIterator
@@ -14,8 +12,16 @@ from . import Utilities
 class JointFixes:
     joint_orient_dict = dict()
 
+    @staticmethod
+    def update_rotation_order(ctrl_name, rig_name):
+        doc = documents.GetActiveDocument()
+        ctrl = doc.SearchObject(ctrl_name)
+        rig = doc.SearchObject(rig_name)
+        ctrl[c4d.ID_BASEOBJECT_ROTATION_ORDER] = rig[c4d.ID_BASEOBJECT_ROTATION_ORDER]
+
     def store_joint_orientations(self, dtu):
         self.joint_orient_dict = dtu.get_joint_orientation_dict()
+        self.head_tail_dict = dtu.get_bone_head_tail_dict()
 
     def disable_skin_data(self, c_skin_data):
         for obj in c_skin_data:
@@ -49,7 +55,8 @@ class JointFixes:
 
     def move_axis(self, obj, new_axis):
         matrix = ~new_axis * obj.GetMl()
-        for child in obj.GetChildren():
+        children = obj.GetChildren()
+        for child in children:
             child.SetMl(matrix * child.GetMl())
         obj.SetMl(new_axis)
 
@@ -63,6 +70,24 @@ class JointFixes:
         y = joint_data[2]
         z = joint_data[3]
         rig_joint[c4d.ID_BASEOBJECT_ROTATION_ORDER] = index
+        rig_m = rig_joint.GetMl()
+        zero_matrix = c4d.Matrix(
+            off=rig_m.off,
+            v1=c4d.Vector(1, 0, 0),
+            v2=c4d.Vector(0, 1, 0),
+            v3=c4d.Vector(0, 0, 1),
+        )
+        self.move_axis(rig_joint, zero_matrix)
+        c4d.CallButton(rig_joint, c4d.ID_BASEOBJECT_FREEZE_R)
+        rig_m = rig_joint.GetMl()
+        joint_matrix = c4d.Matrix(
+            off=rig_m.off,
+            v1=joint[c4d.ID_USERDATA, 1],  # Original V1
+            v2=joint[c4d.ID_USERDATA, 2],  # Original V2
+            v3=joint[c4d.ID_USERDATA, 3],  # Original V3
+        )
+        self.move_axis(rig_joint, joint_matrix)
+        c4d.CallButton(rig_joint, c4d.ID_BASEOBJECT_FREEZE_R)
         matrix = rig_joint.GetMl() * c4d.utils.MatrixRotX(c4d.utils.Rad(x))
         matrix = matrix * c4d.utils.MatrixRotY(c4d.utils.Rad(y))
         matrix = matrix * c4d.utils.MatrixRotZ(c4d.utils.Rad(-z))
@@ -79,6 +104,19 @@ class JointFixes:
         y = joint_data[2]
         z = joint_data[3]
         joint[c4d.ID_BASEOBJECT_ROTATION_ORDER] = index
+        current_m = joint.GetMl()
+        v1 = c4d.GetCustomDataTypeDefault(c4d.DTYPE_VECTOR)
+        v1[c4d.DESC_NAME] = "V1 at Import"
+        descId = joint.AddUserData(v1)
+        joint[descId] = current_m.v1
+        v2 = c4d.GetCustomDataTypeDefault(c4d.DTYPE_VECTOR)
+        v2[c4d.DESC_NAME] = "V2 at Import"
+        descId = joint.AddUserData(v2)
+        joint[descId] = current_m.v2
+        v3 = c4d.GetCustomDataTypeDefault(c4d.DTYPE_VECTOR)
+        v3[c4d.DESC_NAME] = "V3 at Import"
+        descId = joint.AddUserData(v3)
+        joint[descId] = current_m.v3
         matrix = joint.GetMl() * c4d.utils.MatrixRotX(c4d.utils.Rad(x))
         matrix = matrix * c4d.utils.MatrixRotY(c4d.utils.Rad(y))
         matrix = matrix * c4d.utils.MatrixRotZ(c4d.utils.Rad(-z))
@@ -128,7 +166,7 @@ class JointFixes:
             suffix = ""
 
         mesh_name = Utilities.get_daz_name() + "_"
-        constraints = Database.constraint_joints
+        constraints = Database.rig_joints
         for joints in constraints:
             if dz_jnt_name == joints[0]:
                 return doc.SearchObject(mesh_name + joints[1] + suffix)

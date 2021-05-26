@@ -26,9 +26,9 @@ def applyDazIK(var):
     ikmGenerator().makeRig()
 
     # Need to refactor before using.
-    # jnt = JointFixes()
-    # jnt.store_joint_orientations(var.dtu)
-    # jnt.fix_rig_joints(var.c_joints)
+    jnt = JointFixes()
+    jnt.store_joint_orientations(var.dtu)
+    jnt.fix_rig_joints(var.c_joints)
 
     suffix = "___R"
     objArm = doc.SearchObject(dazName + "jCollar")
@@ -786,7 +786,8 @@ class ikmGenerator:
             if globalPosName != "":
                 globalPos = doc.SearchObject(dazName + globalPosName)
                 obj.SetMg(globalPos.GetMg())
-        except:
+        except Exception as e:
+            print(e)
             print("Joint skipped...", jointName)
 
         c4d.EventAdd()  # Send global event message
@@ -1118,8 +1119,8 @@ class ikmGenerator:
         if preset == "collar":
             obj[c4d.NULLOBJECT_DISPLAY] = 2
             obj[c4d.NULLOBJECT_ORIENTATION] = 2
-            obj[c4d.NULLOBJECT_ASPECTRATIO] = 0.5
-            obj[c4d.NULLOBJECT_RADIUS] = mastersize / 20
+            obj[c4d.NULLOBJECT_ASPECTRATIO] = 1
+            obj[c4d.NULLOBJECT_RADIUS] = mastersize / 20 - 2
             obj[c4d.ID_BASEOBJECT_USECOLOR] = 2
             # obj[c4d.NULLOBJECT_ICONCOL] = True
             obj[c4d.ID_BASEOBJECT_COLOR] = c4d.Vector(0, 1, 1)
@@ -1236,8 +1237,9 @@ class ikmGenerator:
             constraintTAG[10001] = masterObj
         if mode == "UPVECTOR":
             constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_UP] = True
-            constraintTAG[40004] = 4
-            constraintTAG[40005] = 3
+            constraintTAG[40004] = 0
+            constraintTAG[40005] = 5
+            constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_UP_MAINTAIN] = True
             # c4d.gui.MessageDialog(masterObj.GetName())
             constraintTAG[40001] = masterObj
 
@@ -1480,7 +1482,7 @@ class ikmGenerator:
         self.AlignBoneChain(dazName + "jFoot" + sideName, 1, 0, 0, 1)
 
     def mirrorGuides(self, guides_to_mirror):
-        daz_name = Utilities.get_daz_name()
+        daz_name = Utilities.get_daz_name() + "_"
         parentMirrorName = daz_name + "_IKM-Guides"
         addToName = "___R"
         for g in guides_to_mirror:
@@ -1611,7 +1613,6 @@ class ikmGenerator:
 
     def makeIKcontrols(self, sideName=""):
         doc = documents.GetActiveDocument()
-
         self.makeNull(
             dazName + "IK_Foot" + sideName,
             dazName + "jFoot" + sideName,
@@ -1620,15 +1621,24 @@ class ikmGenerator:
         self.makeNull(
             dazName + "Toe_Rot" + sideName, dazName + "jToes" + sideName, "sphereToe"
         )
+        JointFixes.update_rotation_order(
+            dazName + "Toe_Rot" + sideName, dazName + "jToes"
+        )
         self.makeNull(
             dazName + "Foot_Roll" + sideName, dazName + "jToes" + sideName, "cube"
+        )
+        JointFixes.update_rotation_order(
+            dazName + "Foot_Roll" + sideName, dazName + "jToes"
         )
         self.makeNull(
             dazName + "IK_Hand" + sideName, dazName + "jHand" + sideName, "cube"
         )
-
+        JointFixes.update_rotation_order(
+            dazName + "IK_Hand" + sideName, dazName + "jHand" + sideName
+        )
         # Extra Controls
         self.makeNull(dazName + "Collar_ctrl", dazName + "jCollar", "collar")
+        JointFixes.update_rotation_order(dazName + "Collar_ctrl", dazName + "jCollar")
         self.constraintObj(dazName + "jCollar", dazName + "Collar_ctrl")
 
         self.makeIKtag(
@@ -1653,7 +1663,9 @@ class ikmGenerator:
             dazName + "IK_Foot" + sideName,
             "Foot_Platform",
         )
-
+        JointFixes.update_rotation_order(
+            dazName + "Foot_Platform" + sideName, dazName + "IK_Foot" + sideName
+        )
         self.makeChildKeepPos(
             dazName + "IK_Foot" + sideName, dazName + "Foot_Platform" + sideName
         )
@@ -1669,6 +1681,9 @@ class ikmGenerator:
 
         self.makeNull(
             dazName + "ToesEnd" + sideName, dazName + "jToes_end" + sideName, "none"
+        )
+        JointFixes.update_rotation_order(
+            dazName + "ToesEnd" + sideName, dazName + "jToes_end" + sideName
         )
         self.makeIKtag("jFoot" + sideName, "jToes" + sideName, "Toe_Rot" + sideName)
         self.makeIKtag("jToes" + sideName, "jToes_end" + sideName, "ToesEnd" + sideName)
@@ -1697,7 +1712,6 @@ class ikmGenerator:
                 self.makeNull(
                     dazName + "ForearmTwist_ctrl___R", "rForearmTwist", "twist"
                 )
-
         if sideName == "":
             self.makeNull(dazName + "Spine_ctrl", dazName + "jSpine", "spine")
             self.constraintObj(dazName + "jSpine", dazName + "Spine_ctrl")
@@ -1705,6 +1719,9 @@ class ikmGenerator:
         if sideName == "":  # Extra Controls
             newNull = self.makeNull(
                 dazName + "AbdomenUpper_ctrl", dazName + "jAbdomenUpper", "spine"
+            )
+            JointFixes.update_rotation_order(
+                dazName + "AbdomenUpper_ctrl", dazName + "jAbdomenUpper"
             )
             self.constraintObj(dazName + "jAbdomenUpper", dazName + "AbdomenUpper_ctrl")
             newNull[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR] = 1
@@ -1725,7 +1742,6 @@ class ikmGenerator:
                 dazName + "jFoot___R",
                 "Foot_PlatformNEW",
             )
-
         if sideName == "":
             self.makeNull(dazName + "Chest_ctrl", dazName + "jChest", "spine")
             self.constraintObj(dazName + "jChest", dazName + "Chest_ctrl")
@@ -1762,7 +1778,6 @@ class ikmGenerator:
         self.makeChildKeepPos(
             dazName + "Collar_ctrl___R" + sideName, dazName + "ChestUpper_ctrl"
         )
-
         if sideName == "":
             self.makeNull(dazName + "IKM_Controls", dazName + "jPelvis", "ROOT")
             self.makeChildKeepPos(dazName + "Pelvis_ctrl", dazName + "IKM_Controls")

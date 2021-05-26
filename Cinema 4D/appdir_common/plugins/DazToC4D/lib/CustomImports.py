@@ -95,9 +95,9 @@ class CustomImports:
 
         print("Starting Material Updates")
 
-        mat.eyeLashAndOtherFixes()
-        c4d.EventAdd()
-        mat.addLipsMaterial()  # Add Lips Material
+        # mat.eyeLashAndOtherFixes()
+        # c4d.EventAdd()
+        # mat.addLipsMaterial()  # Add Lips Material
 
         c4d.EventAdd()
         c4d.DrawViews(
@@ -108,15 +108,17 @@ class CustomImports:
         c4d.EventAdd()
         c4d.CallCommand(300001026, 300001026)  # Deselect All
         dzc4d.del_unused_mats()
-
-        mat.stdMatExtrafixes()
-        mat.specificFiguresFixes()
-        mat.fixMaterials()
+        mat.store_materials(dtu)
+        mat.update_materials()
+        # mat.stdMatExtrafixes()
+        # mat.specificFiguresFixes()
+        # mat.fixMaterials()
 
         print("Material Conversion Done")
         c4d.EventAdd()
 
         isPosed = Poses().checkIfPosed()
+        print(isPosed)
         if isPosed == False:
             jnt_fixes.store_joint_orientations(dtu)
             jnt_fixes.fix_joints(var.c_skin_data, var.c_joints, var.c_meshes)
@@ -193,7 +195,8 @@ class CustomImports:
         c4d.EventAdd()
         c4d.CallCommand(300001026, 300001026)  # Deselect All
         dzc4d.del_unused_mats()
-
+        mat.store_materials(dtu)
+        mat.update_materials()
         mat.stdMatExtrafixes()
         mat.specificFiguresFixes()
         mat.fixMaterials()
