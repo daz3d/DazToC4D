@@ -1815,6 +1815,7 @@
 			nXOrientation = oNode.getOrientXControl().getValue();
 			nYOrientation = oNode.getOrientYControl().getValue();
 			nZOrientation = oNode.getOrientZControl().getValue();
+			quatOrientation = oNode.getOrientation();
 
 			s_oLimitsData[oNode.getName()] = [
 				oNode.getName(),
@@ -1853,7 +1854,11 @@
 				sRotOrder,
 				nXOrientation,
 				nYOrientation,
-				nZOrientation
+				nZOrientation,
+				quatOrientation.w,
+				quatOrientation.x,
+				quatOrientation.y,
+				quatOrientation.z
 			]
 			
 		}
@@ -1929,7 +1934,7 @@
 		var sAbsPath = oOrigFile.absolutePath();
 		var aSplitPath = sAbsPath.split("Textures");
 		var sPath = String( "%1/%2/%3" ).arg( sDir ).arg( "Textures" ).arg( sAssetName );
-
+		
 		var oDir = new DzDir( "" );
 		oDir.setPath( sPath );
 		if( !oDir.exists() ){
