@@ -30,7 +30,6 @@ class Morphs:
     @staticmethod
     def move_poses_under_morphs(group, poses):
         for pose in poses:
-            print(pose)
             if pose and group:
                 pose.InsertUnder(group)
                 c4d.EventAdd()

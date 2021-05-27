@@ -14,8 +14,6 @@ from . import Database
 
 def applyDazIK(var):
     doc = documents.GetActiveDocument()
-
-    dzc4d.add_obj_to_new_group()
     global dazName
     meshName = Utilities.get_daz_name()
     dazName = meshName + "_"

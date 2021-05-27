@@ -305,16 +305,19 @@ class guiDazToC4DMain(gui.GeDialog):
 
         if id == self.BUTTON_AUTO_IMPORT_FIG:
             self.buttonsChangeState(False)
+            c4d.EventAdd()
             self.import_vars = CustomImports().auto_import_genesis()
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_AUTO_IMPORT_PROP:
             self.buttonsChangeState(False)
+            c4d.EventAdd()
             CustomImports().auto_import_prop()
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_AUTO_IK:
             self.buttonsChangeState(False)
+            c4d.EventAdd()
             if self.config_dialog.IsOpen():
                 self.config_dialog.Close()
 
@@ -330,7 +333,10 @@ class guiDazToC4DMain(gui.GeDialog):
                     morph_grp = Morphs.create_null_for_morphs(var.body)
                     Morphs.move_poses_under_morphs(morph_grp, var.c_poses)
                     if Poses().checkIfPosedResetPose():  # Removes Pose if Needed
+                        daz_geo = dzc4d.add_obj_to_new_group(var.c_meshes)
                         DazToC4D().autoIK(var)
+                        dzc4d.add_sub_div(daz_geo)
+                        DazToC4D().lockAllModels()
                         dzc4d.move_obj_to_top(morph_grp)
 
                 else:

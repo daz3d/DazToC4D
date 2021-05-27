@@ -125,6 +125,7 @@ class Materials:
         "sss-enable": {
             "Name": [
                 "Sub Surface Enable",
+                "SSS Mode",
             ]
         },
         "transmitted-color": {
@@ -293,9 +294,10 @@ class Materials:
                     path = prop[prop_name]["Texture"]
                     texture = Materials.create_texture(mat, path)
                     mat[
-                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_SHADER_REFLECTION
+                        daz_mat.GetDataID()
+                        + c4d.REFLECTION_LAYER_MAIN_SHADER_REFLECTION
                     ] = texture
-                    
+
         for prop_name in lib["relection-strength"]["Name"]:
             if prop_name in prop.keys():
                 if prop[prop_name]["Value"] > 0:
@@ -337,9 +339,11 @@ class Materials:
             if prop_name in prop.keys():
                 if prop[prop_name]["Texture"] != "":
                     path = prop[prop_name]["Texture"]
+                    strength = prop[prop_name]["Value"]
                     texture = Materials.create_texture(mat, path)
                     mat[c4d.MATERIAL_USE_BUMP] = True
                     mat[c4d.MATERIAL_BUMP_SHADER] = texture
+                    mat[c4d.MATERIAL_BUMP_STRENGTH] = strength / 10
 
         for prop_name in lib["normal"]["Name"]:
             if prop_name in prop.keys():

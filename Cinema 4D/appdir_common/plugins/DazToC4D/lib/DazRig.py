@@ -66,32 +66,8 @@ class JointFixes:
             return
         rotation_order = joint_data[0]
         index = self.find_order(rotation_order)
-        x = joint_data[1]
-        y = joint_data[2]
-        z = joint_data[3]
         rig_joint[c4d.ID_BASEOBJECT_ROTATION_ORDER] = index
-        rig_m = rig_joint.GetMl()
-        zero_matrix = c4d.Matrix(
-            off=rig_m.off,
-            v1=c4d.Vector(1, 0, 0),
-            v2=c4d.Vector(0, 1, 0),
-            v3=c4d.Vector(0, 0, 1),
-        )
-        self.move_axis(rig_joint, zero_matrix)
-        c4d.CallButton(rig_joint, c4d.ID_BASEOBJECT_FREEZE_R)
-        rig_m = rig_joint.GetMl()
-        joint_matrix = c4d.Matrix(
-            off=rig_m.off,
-            v1=joint[c4d.ID_USERDATA, 1],  # Original V1
-            v2=joint[c4d.ID_USERDATA, 2],  # Original V2
-            v3=joint[c4d.ID_USERDATA, 3],  # Original V3
-        )
-        self.move_axis(rig_joint, joint_matrix)
-        c4d.CallButton(rig_joint, c4d.ID_BASEOBJECT_FREEZE_R)
-        matrix = rig_joint.GetMl() * c4d.utils.MatrixRotX(c4d.utils.Rad(x))
-        matrix = matrix * c4d.utils.MatrixRotY(c4d.utils.Rad(y))
-        matrix = matrix * c4d.utils.MatrixRotZ(c4d.utils.Rad(-z))
-        self.move_axis(rig_joint, matrix)
+        rig_joint.SetMg(joint.GetMg())
         c4d.CallButton(rig_joint, c4d.ID_BASEOBJECT_FREEZE_R)
 
     def update_axis(self, joint):
@@ -193,13 +169,6 @@ class DazRig:
         self.dazName = add
 
     def dazEyesLookAtControls(self):
-        doc = c4d.documents.GetActiveDocument()
-        ojo1 = doc.SearchObject("rEye")  # Genesis2
-        ojo2 = doc.SearchObject("lEye")  # Genesis2
-
-        if ojo1 is None or ojo2 is None:
-            return
-
         def constraintObj(slave, master, mode="", searchObj=1):
             doc = documents.GetActiveDocument()
             if searchObj == 1:
@@ -227,6 +196,7 @@ class DazRig:
             if mode == "AIM":
                 constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_AIM] = True
                 constraintTAG[c4d.ID_CA_CONSTRAINT_TAG_AIM_MAINTAIN] = True
+                constraintTAG[20004] = 5
                 constraintTAG[20001] = masterObj
             if mode == "PARENT":
                 nullSlave = c4d.BaseObject(c4d.Onull)
@@ -278,54 +248,22 @@ class DazRig:
         def makeNull(nullName, target):
             doc = c4d.documents.GetActiveDocument()
             objNull = c4d.BaseObject(c4d.Onull)
-            objNull.SetName("_IKM-StartGuides")
+            objNull.SetName(nullName + "_IKM-StartGuides")
             objNull.SetMg(target.GetMg())
             doc.InsertObject(objNull)
             c4d.EventAdd()
 
             return objNull
 
-        def freezeChilds(self, parentObj=""):
+        def freezeChilds(parentObj=""):
             doc = c4d.documents.GetActiveDocument()
             obj = doc.SearchObject(parentObj)
+            if obj:
+                for x in obj.GetChildren():
+                    c4d.CallButton(x, c4d.ID_BASEOBJECT_FREEZE_R)
+                    c4d.CallButton(x, c4d.ID_BASEOBJECT_FREEZE_P)
 
-            try:
-
-                for x in self.iterateObjChilds(obj):
-                    # Transfer coords info to freeze info
-                    x.SetFrozenPos(x.GetAbsPos())
-                    x.SetFrozenRot(x.GetAbsRot())
-                    # x.SetFrozenScale(x.GetRelRot())
-
-                    # Zero coords...
-                    x.SetRelPos(c4d.Vector(0, 0, 0))
-                    x.SetRelRot(c4d.Vector(0, 0, 0))
-                    # x.SetRelScale(c4d.Vector(1, 1, 1))
-            except:
-                pass
-
-            c4d.EventAdd()
-
-        headJoint = doc.SearchObject("head")  # Genesis2
-        joints = doc.SearchObject("pelvis")  # Genesis2
-        ikControls = doc.SearchObject(self.dazName + "IKM_Controls")
-        ikHeadCtrl = doc.SearchObject(self.dazName + "Head_ctrl")
-
-        obj1 = makeNull("Eye1", ojo1)
-        obj2 = makeNull("Eye2", ojo2)
-        objParent = ojo1.GetUp()
-        eyesParentNull = makeNull("EyesParent", headJoint)
-
-        obj1.SetName(self.dazName + "rEye_ctrl")
-        obj2.SetName(self.dazName + "lEye_ctrl")
-        obj1.SetAbsScale(c4d.Vector(1, 1, 1))
-        obj2.SetAbsScale(c4d.Vector(1, 1, 1))
-
-        eyesParentNull.SetName(self.dazName + "Eyes-LookAt")
-        masterSize = 100  # ??????
-
-        obj1[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z] -= masterSize / 4
-        obj2[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z] -= masterSize / 4
+                c4d.EventAdd()
 
         def nullStyle(obj):
             obj[c4d.ID_BASEOBJECT_USECOLOR] = True
@@ -373,9 +311,36 @@ class DazRig:
             obj.InsertTag(tagProtec)
             c4d.EventAdd()
 
+        doc = c4d.documents.GetActiveDocument()
+        r_eye = doc.SearchObject("rEye")  # Genesis2
+        l_eye = doc.SearchObject("lEye")  # Genesis2
+
+        if r_eye is None or l_eye is None:
+            return
+        headJoint = doc.SearchObject("head")  # Genesis2
+        joints = doc.SearchObject("pelvis")  # Genesis2
+        ikControls = doc.SearchObject(self.dazName + "IKM_Controls")
+        ikHeadCtrl = doc.SearchObject(self.dazName + "Head_ctrl")
+
+        eye_r_ctrl = makeNull("Eye_R", r_eye)
+        eye_l_ctrl = makeNull("Eye_L", l_eye)
+        objParent = doc.SearchObject("head")
+        eyesParentNull = makeNull("EyesParent", headJoint)
+
+        eye_r_ctrl.SetName(self.dazName + "rEye_ctrl")
+        eye_l_ctrl.SetName(self.dazName + "lEye_ctrl")
+        eye_r_ctrl.SetAbsScale(c4d.Vector(1, 1, 1))
+        eye_l_ctrl.SetAbsScale(c4d.Vector(1, 1, 1))
+
+        eyesParentNull.SetName(self.dazName + "Eyes-LookAt")
+        masterSize = 100  # ??????
+
+        eye_r_ctrl[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z] -= masterSize / 4
+        eye_l_ctrl[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z] -= masterSize / 4
+
         dzc4d.deselect_all()  # Deselect All
-        doc.SetActiveObject(obj1, c4d.SELECTION_NEW)
-        doc.SetActiveObject(obj2, c4d.SELECTION_ADD)
+        doc.SetActiveObject(eye_r_ctrl, c4d.SELECTION_NEW)
+        doc.SetActiveObject(eye_l_ctrl, c4d.SELECTION_ADD)
         c4d.CallCommand(100004772, 100004772)  # Group Objects
         c4d.CallCommand(100004773, 100004773)  # Expand Object
 
@@ -383,28 +348,24 @@ class DazRig:
         objMasterEyes.SetName(self.dazName + "EyesLookAtGroup")
         objMasterEyes.SetAbsScale(c4d.Vector(1, 1, 1))
 
-        nullStyle(obj1)
-        nullStyle(obj2)
+        nullStyle(eye_r_ctrl)
+        nullStyle(eye_l_ctrl)
         nullStyleMaster(objMasterEyes)
-        try:
-            obj1[c4d.NULLOBJECT_DISPLAY] = 14
-            obj2[c4d.NULLOBJECT_DISPLAY] = 14
-        except:
-            pass
-        constraintObj(ojo1, obj1, "AIM", 0)
-        constraintObj(ojo2, obj2, "AIM", 0)
 
-        makeChild(obj1, objMasterEyes)
-        makeChild(obj2, objMasterEyes)
+        constraintObj(r_eye, eye_r_ctrl, "AIM", 0)
+        constraintObj(l_eye, eye_l_ctrl, "AIM", 0)
+
+        makeChild(eye_r_ctrl, objMasterEyes)
+        makeChild(eye_l_ctrl, objMasterEyes)
         makeChild(objMasterEyes, ikHeadCtrl)
 
-        obj1.SetAbsRot(c4d.Vector(0))
-        obj2.SetAbsRot(c4d.Vector(0))
+        eye_r_ctrl.SetAbsRot(c4d.Vector(0))
+        eye_l_ctrl.SetAbsRot(c4d.Vector(0))
 
         constraintObj(eyesParentNull, headJoint, "", 0)
         eyesParentNull.InsertAfter(joints)
 
         freezeChilds(self.dazName + "Eyes-LookAt")
         freezeChilds(self.dazName + "EyesLookAtGroup")
-        protectTag(objMasterEyes, "Rotation")
+        # protectTag(objMasterEyes, "Rotation")
         c4d.EventAdd()

@@ -24,10 +24,8 @@ class Cinema4DCommands:
         )
 
     @staticmethod
-    def add_obj_to_new_group():
+    def add_obj_to_new_group(children):
         doc = documents.GetActiveDocument()
-        obj = doc.SearchObject("hip")
-        children = obj.GetUp().GetChildren()
         Cinema4DCommands.deselect_all()  # Deselect All
         null = c4d.BaseObject(c4d.Onull)  # Create new null
         doc.InsertObject(null)
@@ -41,6 +39,7 @@ class Cinema4DCommands:
 
         Cinema4DCommands.deselect_all()  # Deselect All
         c4d.EventAdd()
+        return null
 
     @staticmethod
     def findIK():
@@ -71,3 +70,31 @@ class Cinema4DCommands:
         doc = documents.GetActiveDocument()
         fobj = doc.GetFirstObject()
         obj.InsertBefore(fobj)
+
+    @staticmethod
+    def move_obj_to_top(obj):
+        doc = documents.GetActiveDocument()
+        fobj = doc.GetFirstObject()
+        if obj:
+            obj.InsertBefore(fobj)
+
+    @staticmethod
+    def add_sub_div(obj):
+        doc = documents.GetActiveDocument()
+        Cinema4DCommands.deselect_all()  # Deselect All
+        subdiv = c4d.BaseObject(c4d.Osds)  # Create new null
+        doc.InsertObject(subdiv)
+        subdiv.SetName("Daz Character SubDiv")
+        subdiv[c4d.SDSOBJECT_SUBEDITOR_CM] = 0
+        if obj:
+            children = obj.GetChildren()
+            subdiv.InsertUnder(obj)
+            for child in children:
+                mat = child.GetMg()
+                child.InsertUnder(subdiv)
+                child.SetMg(mat)
+                phong_tag = c4d.BaseTag(c4d.Tphong)
+                child.InsertTag(phong_tag)
+
+        Cinema4DCommands.deselect_all()  # Deselect All
+        c4d.EventAdd()

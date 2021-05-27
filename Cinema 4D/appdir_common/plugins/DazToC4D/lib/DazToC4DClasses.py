@@ -75,7 +75,7 @@ class DazToC4D:
         obj = doc.GetFirstObject()
         scene = ObjectIterator(obj)
         for obj in scene:
-            if obj.GetType() == 5100:
+            if (obj.GetType() == 5100) or (obj.GetType() == 1007455):
                 lockLayer = ikmaxUtils().layerSettings(obj, 1, 1)
 
     def limitFloorContact(self):
@@ -168,37 +168,37 @@ class DazToC4D:
 
         dazName = util.get_daz_name() + "_"
         # LEFT
-        protectTag(dazName + "jMiddle2", "finger")
-        protectTag(dazName + "jMiddle3", "finger")
-        protectTag(dazName + "jMiddle4", "finger")
-        protectTag(dazName + "jRing2", "finger")
-        protectTag(dazName + "jRing3", "finger")
-        protectTag(dazName + "jRing4", "finger")
-        protectTag(dazName + "jPink2", "finger")
-        protectTag(dazName + "jPink3", "finger")
-        protectTag(dazName + "jPink4", "finger")
-        protectTag(dazName + "jIndex2", "finger")
-        protectTag(dazName + "jIndex3", "finger")
-        protectTag(dazName + "jIndex4", "finger")
-        # RIGHT
-        protectTag(dazName + "jMiddle2___R", "finger")
-        protectTag(dazName + "jMiddle3___R", "finger")
-        protectTag(dazName + "jMiddle4___R", "finger")
-        protectTag(dazName + "jRing2___R", "finger")
-        protectTag(dazName + "jRing3___R", "finger")
-        protectTag(dazName + "jRing4___R", "finger")
-        protectTag(dazName + "jPink2___R", "finger")
-        protectTag(dazName + "jPink3___R", "finger")
-        protectTag(dazName + "jPink4___R", "finger")
-        protectTag(dazName + "jIndex2___R", "finger")
-        protectTag(dazName + "jIndex3___R", "finger")
-        protectTag(dazName + "jIndex4___R", "finger")
+        # protectTag(dazName + "jMiddle2", "finger")
+        # protectTag(dazName + "jMiddle3", "finger")
+        # protectTag(dazName + "jMiddle4", "finger")
+        # protectTag(dazName + "jRing2", "finger")
+        # protectTag(dazName + "jRing3", "finger")
+        # protectTag(dazName + "jRing4", "finger")
+        # protectTag(dazName + "jPink2", "finger")
+        # protectTag(dazName + "jPink3", "finger")
+        # protectTag(dazName + "jPink4", "finger")
+        # protectTag(dazName + "jIndex2", "finger")
+        # protectTag(dazName + "jIndex3", "finger")
+        # protectTag(dazName + "jIndex4", "finger")
+        # # RIGHT
+        # protectTag(dazName + "jMiddle2___R", "finger")
+        # protectTag(dazName + "jMiddle3___R", "finger")
+        # protectTag(dazName + "jMiddle4___R", "finger")
+        # protectTag(dazName + "jRing2___R", "finger")
+        # protectTag(dazName + "jRing3___R", "finger")
+        # protectTag(dazName + "jRing4___R", "finger")
+        # protectTag(dazName + "jPink2___R", "finger")
+        # protectTag(dazName + "jPink3___R", "finger")
+        # protectTag(dazName + "jPink4___R", "finger")
+        # protectTag(dazName + "jIndex2___R", "finger")
+        # protectTag(dazName + "jIndex3___R", "finger")
+        # protectTag(dazName + "jIndex4___R", "finger")
 
         # MIDDLE
-        protectTag(dazName + "Spine_ctrl", "position")
-        protectTag(dazName + "Chest_ctrl", "position")
-        protectTag(dazName + "Neck_ctrl", "position")
-        protectTag(dazName + "Head_ctrl", "position")
+        # protectTag(dazName + "Spine_ctrl", "position")
+        # protectTag(dazName + "Chest_ctrl", "position")
+        # protectTag(dazName + "Neck_ctrl", "position")
+        # protectTag(dazName + "Head_ctrl", "position")
 
     def unhideProps(self):
         doc = documents.GetActiveDocument()
@@ -226,7 +226,6 @@ class DazToC4D:
             )
             self.protectIKMControls()
             self.limitFloorContact()
-            self.lockAllModels()
             self.freezeTwistBones()
             self.figureFixBrute()
             self.protectTwist()
