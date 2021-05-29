@@ -29,8 +29,14 @@ def srgb_to_linear_rgb(srgb):
 def hex_to_col(hex, normalize=True, precision=6):
     col = []
     it = iter(hex)
+    if c4d.GetC4DVersion() >= 22123:
+        iterator = it.next()
+    else:
+        iterator = it.__next__()
+
     for char in it:
-        col.append(int(char + it.__next__(), 16))
+        col.append(int(char + iterator, 16))
+
     if normalize:
         col = map(lambda x: x / 255, col)
         col = map(lambda x: round(x, precision), col)
@@ -190,6 +196,7 @@ class Materials:
 
     @staticmethod
     def create_texture(mat, path):
+        path = str(path)
         texture = c4d.BaseList2D(c4d.Xbitmap)
         texture[c4d.BITMAPSHADER_FILENAME] = path
         mat.InsertShader(texture)

@@ -231,7 +231,7 @@ class CustomImports:
         )
 
         file = c4d.documents.LoadDocument(
-            file_path,
+            str(file_path),
             flags,
         )
         c4d.documents.InsertBaseDocument(file)

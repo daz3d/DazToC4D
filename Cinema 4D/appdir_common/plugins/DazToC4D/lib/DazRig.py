@@ -1,7 +1,7 @@
 from ntpath import join
 import c4d
 from c4d import documents
-import math
+import sys
 
 from .CustomCmd import Cinema4DCommands as dzc4d
 from .CustomIterators import TagIterator
@@ -105,10 +105,16 @@ class JointFixes:
             for tag in tags:
                 tag_type = tag.GetTypeName()
                 if tag_type == "Weight":
-                    tag[c4d.ID_CA_WEIGHT_TAG_SET_BUTTON] = 2005
-                    c4d.CallButton(tag, c4d.ID_CA_WEIGHT_TAG_SET_BUTTON)
-                    c4d.EventAdd()
-                    break
+                    if sys.version_info > (3,0):
+                        tag[c4d.ID_CA_WEIGHT_TAG_SET_BUTTON] = 2005
+                        c4d.CallButton(tag, c4d.ID_CA_WEIGHT_TAG_SET_BUTTON)
+                        c4d.EventAdd()
+                        break
+                    else:
+                        tag[c4d.ID_CA_WEIGHT_TAG_SET] = 2005
+                        c4d.CallButton(tag, c4d.ID_CA_WEIGHT_TAG_SET)
+                        c4d.EventAdd()
+                        break
 
     def fix_joints(self, c_skin_data, c_joints, c_meshes):
         self.disable_skin_data(c_skin_data)

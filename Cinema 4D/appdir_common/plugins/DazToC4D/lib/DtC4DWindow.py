@@ -4,7 +4,6 @@ import webbrowser
 import c4d
 from c4d import gui
 
-from .Utilities import hideEyePolys
 from .Materials import Materials, convertToRedshift, convertMaterials
 from .CustomImports import CustomImports
 from .DtC4DDialogs import EXTRADialog
@@ -395,13 +394,11 @@ class guiDazToC4DMain(gui.GeDialog):
                             convert_to_redshift = convertToRedshift()
                             convert_to_redshift.getBumpType(redshiftBumpType)
                             convert_to_redshift.execute()
-                            hideEyePolys()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             c4d.CallCommand(100004767, 100004767)  # Deselect All
 
                         if comboRender == 3:
                             mat.convertToOctane()
-                            hideEyePolys()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             c4d.CallCommand(100004767, 100004767)  # Deselect All
 

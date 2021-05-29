@@ -51,13 +51,17 @@ del blob, b, t, z, m
 
 import importlib
 import os
+import sys
 
-check = importlib.util.find_spec("ptvsd") is not None
-if check:
-    import ptvsd
+print("Python Version is {0}".format(sys.version_info))
 
-    ptvsd.enable_attach(address=("127.0.0.1", 3000))
-    ptvsd.wait_for_attach()
+if sys.version_info > (3,0):
+    check = importlib.util.find_spec("ptvsd") is not None
+    if check:
+        import ptvsd
+
+        ptvsd.enable_attach(address=("127.0.0.1", 3000))
+        ptvsd.wait_for_attach()
 
 import c4d
 

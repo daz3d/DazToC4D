@@ -111,15 +111,6 @@ def get_daz_name():
     return ""
 
 
-def hideEyePolys(self):
-    doc = documents.GetActiveDocument()
-    obj = doc.GetFirstObject()
-    scene = ObjectIterator(obj)
-    for obj in scene:
-        self.hidePolyTagByName(obj, "EyeMoisture")
-        self.hidePolyTagByName(obj, "Cornea")
-
-
 def getJointFromSkin(obj, jointName):
     objTags = TagIterator(obj)
     for t in objTags:
