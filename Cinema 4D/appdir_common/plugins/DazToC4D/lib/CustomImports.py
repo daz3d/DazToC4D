@@ -38,23 +38,25 @@ class CustomImports:
         fbx_path = dtu.get_fbx_path()
         self.prop_import(fbx_path, dtu)
 
-    def auto_import_genesis(self):
+    def auto_import_genesis(self, sss_value, normal_value, bump_value):
         import_list = self.get_genesis_list()
         import_vars = []
         for imported_dir in import_list:
             dtu = DtuLoader.DtuLoader(imported_dir)
             fbx_path = dtu.get_fbx_path()
-            import_vars.append(self.genesis_import(fbx_path, dtu))
+            import_vars.append(
+                self.genesis_import(fbx_path, dtu, sss_value, normal_value, bump_value)
+            )
         return import_vars
 
-    def auto_import_prop(self):
+    def auto_import_prop(self, sss_value, normal_value, bump_value):
         import_list = self.get_prop_list()
         for imported_dir in import_list:
             dtu = DtuLoader.DtuLoader(imported_dir)
             fbx_path = dtu.get_fbx_path()
-            self.prop_import(fbx_path, dtu)
+            self.prop_import(fbx_path, dtu, sss_value, normal_value, bump_value)
 
-    def genesis_import(self, file_path, dtu):
+    def genesis_import(self, file_path, dtu, sss_value, normal_value, bump_value):
         mat = Materials.Materials()
         morph = Morphs.Morphs()
         var = Utilities.Variables()
@@ -69,6 +71,7 @@ class CustomImports:
         print("Import FBX from : {0}".format(os.path.dirname(file_path)))
         c4d.EventAdd()
         self.import_daz_fbx(file_path)
+        c4d.EventAdd()
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
             | c4d.DRAWFLAGS_NO_THREAD
@@ -106,6 +109,7 @@ class CustomImports:
         c4d.CallCommand(300001026, 300001026)  # Deselect All
         dzc4d.del_unused_mats()
         mat.store_materials(dtu)
+        mat.store_sliders(sss_value, normal_value, bump_value)
         mat.update_materials()
 
         print("Material Conversion Done")
@@ -115,12 +119,19 @@ class CustomImports:
         if isPosed == False:
             jnt_fixes.store_joint_orientations(dtu)
             jnt_fixes.fix_joints(var.c_skin_data, var.c_joints, var.c_meshes)
+            c4d.EventAdd()
             dzc4d.deselect_all()
             make_tpose = gui.QuestionDialog(
-                "Would you like to use\nAUTO-IK with a T-POSE?",
+                "Would you like to Convert\nthe Base Pose to a T-Pose?",
             )
             if make_tpose:
                 Poses().preAutoIK()
+                c4d.EventAdd()
+        else:
+            gui.MessageDialog(
+                "Animation or a Pose was Detected\nJoint Orientation has not been fixed",
+                type=c4d.GEMB_ICONEXCLAMATION,
+            )
         c4d.EventAdd()
 
         print("Starting Morph Updates")
@@ -151,7 +162,7 @@ class CustomImports:
         )
         return var
 
-    def prop_import(self, file_path, dtu):
+    def prop_import(self, file_path, dtu, sss_value, normal_value, bump_value):
 
         mat = Materials.Materials()
         if os.path.exists(file_path) == False:
@@ -189,6 +200,7 @@ class CustomImports:
         c4d.CallCommand(300001026, 300001026)  # Deselect All
         dzc4d.del_unused_mats()
         mat.store_materials(dtu)
+        mat.store_sliders(sss_value, normal_value, bump_value)
         mat.update_materials()
 
         print("Material Conversion Done")

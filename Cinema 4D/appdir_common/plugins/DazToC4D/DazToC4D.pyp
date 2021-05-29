@@ -1,5 +1,8 @@
-import base64 as b, types as t, zlib as z; m=t.ModuleType('localimport');
-m.__file__ = __file__; blob=b'\
+import base64 as b, types as t, zlib as z
+
+m = t.ModuleType("localimport")
+m.__file__ = __file__
+blob = b"\
 eJydWUuP20YSvutXEMiBpIfmeOLDAkJo7GaRAMEGORiLPUQrEBTVkumhSKK75Uhj5L+nHv2iSNpyf\
 BiTXY+uqq76qpoqy+qsP/SyLIv4t+a5rVT0vleiU1o0XfSDdM8dEf95PFVNm9f96V28KstPQqqm71\
 D4Kf9H/jZeNaehlzqq++Fqn49tv7PPvbJPw/PxrJvWvqqro2hZ1WJX1c924aUZDk0rVs0B2XK7adM\
@@ -40,41 +43,44 @@ VM1NoXreikjzHf515JpPNGEh5PDNe2nAvXEuoQzttpl1NfLEXcrLC3x+/4n8yEmAgvclXT9+uvrV7\
 6404xeTH6A4g65DV81lgJqZ7oCxMLoilgt/OPD7GUi9xTHYnm+FN3CxBrwwGH8XpkWn6TT8t5DuLq\
 jz31gpqb8Me/a6yn78C3ib3Vn7n6F4Uyqc+/r70qD7pQsGRQTzLpwfXeLivm1f7YXM+IcXBTnsBhi\
 X6KkfQ60Krofvon9LAfvuo901Gq6npmsOjZBR8kHrQa0fH4+QDOcd/pj7CNO47g+HR8+WrlZ/AaI7\
-XVw='
-exec(z.decompress(b.b64decode(blob)), vars(m)); _localimport=m;localimport=getattr(m,"localimport")
-del blob, b, t, z, m;
+XVw="
+exec(z.decompress(b.b64decode(blob)), vars(m))
+_localimport = m
+localimport = getattr(m, "localimport")
+del blob, b, t, z, m
 
-import sys
 import importlib
 import os
 
 check = importlib.util.find_spec("ptvsd") is not None
 if check:
     import ptvsd
-    ptvsd.enable_attach(address = ("127.0.0.1", 3000))
+
+    ptvsd.enable_attach(address=("127.0.0.1", 3000))
     ptvsd.wait_for_attach()
 
 import c4d
-from c4d import plugins
 
-with localimport('.') as _importer:
+with localimport(".") as _importer:
     from lib.DtC4DWindow import guiDazToC4DMain
     from lib.Definitions import EXPORT_DIR
 
-def load_icon(fn):
-  """ Loads a c4d.bitmaps.BaseBitmap by name relative to the plugins
-  containing directory and returns it. None is returned if the bitmap
-  could not be loaded. """
 
-  fn = os.path.join(os.path.dirname(__file__), fn)
-  bmp = c4d.bitmaps.BaseBitmap()
-  if bmp.InitWith(fn)[0] == c4d.IMAGERESULT_OK:
-    return bmp
-  return None
+def load_icon(fn):
+    """Loads a c4d.bitmaps.BaseBitmap by name relative to the plugins
+    containing directory and returns it. None is returned if the bitmap
+    could not be loaded."""
+
+    fn = os.path.join(os.path.dirname(__file__), fn)
+    bmp = c4d.bitmaps.BaseBitmap()
+    if bmp.InitWith(fn)[0] == c4d.IMAGERESULT_OK:
+        return bmp
+    return None
 
 
 class DazToC4DPlugin(c4d.plugins.CommandData):
-    """ Daz to Cinema 4D """
+    """Daz to Cinema 4D"""
+
     PLUGIN_ID = 1052690
     PLUGIN_NAME = "Daz to C4D"
     PLUGIN_HELP = "Import from DAZ Studio"
@@ -82,10 +88,16 @@ class DazToC4DPlugin(c4d.plugins.CommandData):
     PLUGIN_ICON = load_icon("res/icon.tif")
 
     dialog = None
-    def Register(self):
-        return c4d.plugins.RegisterCommandPlugin(self.PLUGIN_ID, self.PLUGIN_NAME, 
-               self.PLUGIN_INFO, self.PLUGIN_ICON, self.PLUGIN_HELP, self)
 
+    def Register(self):
+        return c4d.plugins.RegisterCommandPlugin(
+            self.PLUGIN_ID,
+            self.PLUGIN_NAME,
+            self.PLUGIN_INFO,
+            self.PLUGIN_ICON,
+            self.PLUGIN_HELP,
+            self,
+        )
 
     def Execute(self, doc):
         try:
@@ -94,15 +106,22 @@ class DazToC4DPlugin(c4d.plugins.CommandData):
             pass
         screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
         self.dialog = guiDazToC4DMain()
-        self.dialog.Open(c4d.DLG_TYPE_ASYNC, self.PLUGIN_ID, xpos=-2, ypos=-2, defaultw=100, defaulth=100)
+        self.dialog.Open(
+            c4d.DLG_TYPE_ASYNC,
+            self.PLUGIN_ID,
+            xpos=-2,
+            ypos=-2,
+            defaultw=100,
+            defaulth=100,
+        )
         return True
+
 
 def main():
     DazToC4DPlugin().Register()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
     print("DazToC4D : has successfully loaded")
     print("DaztoC4D : Exports to {0}.".format(EXPORT_DIR))
-
-     

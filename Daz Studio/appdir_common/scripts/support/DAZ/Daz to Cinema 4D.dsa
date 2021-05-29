@@ -1049,7 +1049,7 @@
 		// Checkbox to include animation data
 		var wIncludeAnimationsCbx = new DzCheckBox( wSettingsDialog );
 		wIncludeAnimationsCbx.text = "Include animation data";
-		wIncludeAnimationsCbx.checked = true;
+		wIncludeAnimationsCbx.checked = false;
 		wSettingsDialog.addWidget( wIncludeAnimationsCbx );
 		
 
@@ -2156,9 +2156,12 @@
 				}
 			}
 			// Keep for the Children Nodes' Morphs
-			if( oMorphInfo.node.name != oNode.name ){
-				aControlledMeshes.pushIfNotExists( oMorphInfo.node.name + ".Shape" );
-			} 
+			var oMorphInfoNode = oMorphInfo.node;
+			if( oMorphInfoNode != undefined ){
+				if( oMorphInfoNode.name != oNode.name ){
+					aControlledMeshes.pushIfNotExists( oMorphInfo.node.name + ".Shape" );
+				}
+			}
 			
 
 			var oMorphLinkObj = {

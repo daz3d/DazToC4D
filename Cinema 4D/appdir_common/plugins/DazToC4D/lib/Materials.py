@@ -122,12 +122,7 @@ class Materials:
                 "Scattering Measurement Distance",
             ]
         },
-        "sss-enable": {
-            "Name": [
-                "Sub Surface Enable",
-                "SSS Mode",
-            ]
-        },
+        "sss-enable": {"Name": ["Sub Surface Enable", "SSS Mode", "SSS Amount"]},
         "transmitted-color": {
             "Name": [
                 "Transmitted Color",
@@ -177,6 +172,11 @@ class Materials:
             if asset_name not in self.material_dict.keys():
                 self.material_dict[asset_name] = {}
             self.material_dict[asset_name][mat_name] = mat
+
+    def store_sliders(self, sss_value, normal_value, bump_value):
+        self.sss_value = sss_value
+        self.normal_value = normal_value
+        self.bump_value = bump_value
 
     def find_mat_properties(self, obj, mat):
         if obj not in self.material_dict.keys():
@@ -228,6 +228,7 @@ class Materials:
                             diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
                         ] = texture
                         hex_str = prop[prop_name]["Value"]
+                        hex_str = self.check_value("hex", hex_str)
                         color = convert_color(hex_str)
                         vector = c4d.Vector(color[0], color[1], color[2])
                         mat[
@@ -274,6 +275,8 @@ class Materials:
                     ] = texture
         for prop_name in lib["roughness"]["Name"]:
             if prop_name in prop.keys():
+                value = prop[prop_name]["Value"]
+                value = self.check_value("float", value)
                 if prop[prop_name]["Texture"] != "":
                     path = prop[prop_name]["Texture"]
                     texture = Materials.create_texture(mat, path)
@@ -282,11 +285,11 @@ class Materials:
                     ] = texture
                     mat[
                         daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS
-                    ] = prop[prop_name]["Value"]
-                if prop[prop_name]["Value"] > 0:
+                    ] = value
+                if value > 0:
                     mat[
                         daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS
-                    ] = prop[prop_name]["Value"]
+                    ] = value
 
         for prop_name in lib["relection"]["Name"]:
             if prop_name in prop.keys():
@@ -300,22 +303,26 @@ class Materials:
 
         for prop_name in lib["relection-strength"]["Name"]:
             if prop_name in prop.keys():
-                if prop[prop_name]["Value"] > 0:
+                value = prop[prop_name]["Value"]
+                value = self.check_value("float", value)
+                if value > 0:
                     mat[
                         daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_REFLECTION
-                    ] = prop[prop_name]["Value"]
+                    ] = value
 
         for prop_name in lib["specular"]["Name"]:
             if prop_name in prop.keys():
                 if prop[prop_name]["Texture"] != "":
                     path = prop[prop_name]["Texture"]
+                    value = prop[prop_name]["Value"]
+                    value = self.check_value("float", value)
                     texture = Materials.create_texture(mat, path)
                     mat[
                         daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_SHADER_SPECULAR
                     ] = texture
                     mat[
                         daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR
-                    ] = prop[prop_name]["Value"]
+                    ] = value
 
         for prop_name in lib["metalness"]["Name"]:
             if prop_name in prop.keys():
@@ -340,20 +347,24 @@ class Materials:
                 if prop[prop_name]["Texture"] != "":
                     path = prop[prop_name]["Texture"]
                     strength = prop[prop_name]["Value"]
+                    strength = self.check_value("float", strength)
                     texture = Materials.create_texture(mat, path)
                     mat[c4d.MATERIAL_USE_BUMP] = True
                     mat[c4d.MATERIAL_BUMP_SHADER] = texture
-                    mat[c4d.MATERIAL_BUMP_STRENGTH] = strength / 10
+                    mat[c4d.MATERIAL_BUMP_STRENGTH] = strength * self.bump_value / 100
 
         for prop_name in lib["normal"]["Name"]:
             if prop_name in prop.keys():
                 if prop[prop_name]["Texture"] != "":
                     path = prop[prop_name]["Texture"]
                     strength = prop[prop_name]["Value"]
+                    strength = self.check_value("float", strength)
                     texture = Materials.create_texture(mat, path)
                     mat[c4d.MATERIAL_USE_NORMAL] = True
                     mat[c4d.MATERIAL_NORMAL_SHADER] = texture
-                    mat[c4d.MATERIAL_NORMAL_STRENGTH] = strength * 0.5
+                    mat[c4d.MATERIAL_NORMAL_STRENGTH] = (
+                        strength * self.normal_value / 100
+                    )
 
     def set_up_alpha(self, mat, prop):
         lib = self.texture_library
@@ -409,7 +420,10 @@ class Materials:
             for prop_name in lib["sss-strength"]["Name"]:
                 if prop_name in prop.keys():
                     strength = prop[prop_name]["Value"]
-                    sss[c4d.XMBSUBSURFACESHADER_STRENGTH] = strength * 5
+                    strength = self.check_value("float", strength)
+                    sss[c4d.XMBSUBSURFACESHADER_STRENGTH] = (
+                        strength * self.sss_value / 10
+                    )
 
             for prop_name in lib["transmitted-color"]["Name"]:
                 if prop_name in prop.keys():
@@ -421,6 +435,7 @@ class Materials:
             for prop_name in lib["transmitted-strength"]["Name"]:
                 if prop_name in prop.keys():
                     strength = prop[prop_name]["Value"]
+                    strength = self.check_value("float", strength)
                     mat[c4d.MATERIAL_LUMINANCE_BRIGHTNESS] = strength
 
     def is_sss(self, prop):
@@ -429,6 +444,19 @@ class Materials:
             if prop_name in prop.keys():
                 if prop[prop_name]["Value"] > 0:
                     return True
+
+    def check_value(self, type, value):
+        if type == "float":
+            if isinstance(value, str):
+                return 1
+            else:
+                return value
+
+        if type == "hex":
+            if isinstance(value, float):
+                return "#FFFFFF"
+            else:
+                return value
 
     def convert_to_vector(self, value):
         num = 1
@@ -461,6 +489,17 @@ class Materials:
                 self.set_up_translucency(mat, prop)
                 self.viewport_settings(mat)
                 # self.find_maps_temp(mat, prop)
+
+    @staticmethod
+    def update_bump(multiply):
+        doc = c4d.documents.GetActiveDocument()
+        doc_mat = doc.GetMaterials()
+        for mat in doc_mat:
+            original = 10
+            if mat[c4d.MATERIAL_BUMP_STRENGTH] == 0:
+                mat[c4d.MATERIAL_BUMP_STRENGTH] = 0.01
+            strength = mat[c4d.MATERIAL_BUMP_STRENGTH] * 100 / original
+            mat[c4d.MATERIAL_BUMP_STRENGTH] = strength * multiply / 100
 
     def checkStdMats(self):
         doc = c4d.documents.GetActiveDocument()

@@ -27,7 +27,9 @@ class guiDazToC4DMain(gui.GeDialog):
     BUTTON_CONFIG = 923127
     BUTTON_HELP = 923129
     BUTTON_AUTO_IK = 923130
-
+    SLIDER_BUMP_MULTIPLIER = 17550
+    SLIDER_NORMAL_MULTIPLIER = 17551
+    SLIDER_SSS_MULTIPLIER = 17552
     MY_BITMAP_BUTTON = 9353535
 
     res_dir = RES_DIR  # Adds the res folder to the path
@@ -37,9 +39,9 @@ class guiDazToC4DMain(gui.GeDialog):
     img_loading = os.path.join(res_dir, "d2c4d_loading.png")
     img_d2c4dHelp = os.path.join(res_dir, "d2c4d_help.png")
     img_btnAutoImport_FIG = os.path.join(res_dir, "btnGenesisImport.png")
-    img_btnAutoImportOff_FIG = os.path.join(res_dir, "btnGenesisImport.png")
+    img_btnAutoImportOff_FIG = os.path.join(res_dir, "btnGenesisImport_off.png")
     img_btnAutoImport_PROP = os.path.join(res_dir, "btnPropImport.png")
-    img_btnAutoImportOff_PROP = os.path.join(res_dir, "btnPropImport.png")
+    img_btnAutoImportOff_PROP = os.path.join(res_dir, "btnPropImport_off.png")
     img_btnConvertMaterials = os.path.join(res_dir, "btnConvertMaterials.png")
     img_btnConvertMaterialsOff = os.path.join(res_dir, "btnConvertMaterials0.png")
     img_btnAutoIK = os.path.join(res_dir, "btnAutoIK.png")
@@ -137,7 +139,7 @@ class guiDazToC4DMain(gui.GeDialog):
         self.main_logo.SetImage(self.img_d2c4dLogo, False)
 
         # Import
-        self.GroupBegin(10000, c4d.BFH_CENTER, 1, title="")
+        self.GroupBegin(10000, c4d.BFH_CENTER, 1)
         self.GroupBorderNoTitle(c4d.BORDER_OUT)
         self.GroupBorderSpace(0, 0, 0, 0)
 
@@ -158,9 +160,9 @@ class guiDazToC4DMain(gui.GeDialog):
 
         self.AddSeparatorV(0, c4d.BFV_SCALEFIT)  # Separator V
 
-        self.GroupBegin(10000, c4d.BFH_CENTER, 1, title="")
-        self.GroupBorderNoTitle(c4d.BORDER_OUT)
+        self.GroupBegin(10000, c4d.BFH_CENTER, 1)
         self.GroupBorderSpace(0, 0, 0, 0)
+
         self.auto_import_fig_but = self.AddCustomGui(
             self.BUTTON_AUTO_IMPORT_FIG,
             c4d.CUSTOMGUI_BITMAPBUTTON,
@@ -170,7 +172,7 @@ class guiDazToC4DMain(gui.GeDialog):
             0,
             self.buttonBC("", "Preset0"),
         )
-        self.auto_import_fig_but.SetImage(self.img_btnAutoImportOff_FIG, True)
+        self.auto_import_fig_but.SetImage(self.img_btnAutoImport_FIG, True)
 
         self.auto_import_prop_but = self.AddCustomGui(
             self.BUTTON_AUTO_IMPORT_PROP,
@@ -181,7 +183,7 @@ class guiDazToC4DMain(gui.GeDialog):
             0,
             self.buttonBC("", "Preset0"),
         )
-        self.auto_import_prop_but.SetImage(self.img_btnAutoImportOff_PROP, True)
+        self.auto_import_prop_but.SetImage(self.img_btnAutoImport_PROP, True)
 
         self.GroupEnd()  # END ///////////////////////////////////////////////
         self.AddSeparatorV(0, c4d.BFV_SCALEFIT)  # Separator V
@@ -236,18 +238,28 @@ class guiDazToC4DMain(gui.GeDialog):
         self.GroupEnd()  # END ///////////////////////////////////////////////
 
         self.GroupBegin(
-            10000, c4d.BFH_SCALEFIT, 2, title="Global Skin Parameters:"
+            10000, c4d.BFH_SCALEFIT, 2, title="Global Material Multipliers:"
         )  # BEGIN ----------------------
         self.GroupBorder(c4d.BORDER_THIN_OUT)
         self.GroupBorderSpace(20, 5, 20, 5)
 
-        self.AddStaticText(99, c4d.BFH_CENTER, 0, 0, name="Specular Weight:")
-        self.AddEditSlider(17524, c4d.BFH_SCALEFIT, initw=40, inith=0)
-        self.SetInt32(17524, value=20, min=0, max=100)
+        self.AddStaticText(99, c4d.BFH_CENTER, 0, 0, name="Bump Multiplier:")
+        self.AddEditSlider(
+            self.SLIDER_BUMP_MULTIPLIER, c4d.BFH_SCALEFIT, initw=40, inith=0
+        )
+        self.SetInt32(self.SLIDER_BUMP_MULTIPLIER, value=10, min=1, max=100)
 
-        self.AddStaticText(99, c4d.BFH_CENTER, 0, 0, name="Specular Roughtness:")
-        self.AddEditSlider(17525, c4d.BFH_SCALEFIT, initw=40, inith=0)
-        self.SetInt32(17525, value=57, min=0, max=100)
+        self.AddStaticText(99, c4d.BFH_CENTER, 0, 0, name="Normal Multiplier:")
+        self.AddEditSlider(
+            self.SLIDER_NORMAL_MULTIPLIER, c4d.BFH_SCALEFIT, initw=40, inith=0
+        )
+        self.SetInt32(self.SLIDER_NORMAL_MULTIPLIER, value=50, min=1, max=100)
+
+        self.AddStaticText(99, c4d.BFH_CENTER, 0, 0, name="Subsurface Multiplier:")
+        self.AddEditSlider(
+            self.SLIDER_SSS_MULTIPLIER, c4d.BFH_SCALEFIT, initw=40, inith=0
+        )
+        self.SetInt32(self.SLIDER_SSS_MULTIPLIER, value=5, min=1, max=100)
 
         self.GroupEnd()  # END ///////////////////////////////////////////////
 
@@ -292,27 +304,27 @@ class guiDazToC4DMain(gui.GeDialog):
         return True
 
     def Command(self, id, msg):
-
-        if id == 17524:
-            slider_value = self.GetFloat(17524)
-            Materials().matSetSpec("Weight", slider_value)
-            c4d.EventAdd()
-
-        if id == 17525:
-            slider_value = self.GetFloat(17525)
-            Materials().matSetSpec("Rough", slider_value)
-            c4d.EventAdd()
-
         if id == self.BUTTON_AUTO_IMPORT_FIG:
             self.buttonsChangeState(False)
+            sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
+            normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
+            bump_value = self.GetFloat(self.SLIDER_BUMP_MULTIPLIER)
             c4d.EventAdd()
-            self.import_vars = CustomImports().auto_import_genesis()
+
+            c4d.EventAdd()
+            self.import_vars = CustomImports().auto_import_genesis(
+                sss_value, normal_value, bump_value
+            )
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_AUTO_IMPORT_PROP:
             self.buttonsChangeState(False)
+            sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
+            normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
+            bump_value = self.GetFloat(self.SLIDER_BUMP_MULTIPLIER)
             c4d.EventAdd()
-            CustomImports().auto_import_prop()
+
+            CustomImports().auto_import_prop(sss_value, normal_value, bump_value)
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_AUTO_IK:
@@ -355,6 +367,10 @@ class guiDazToC4DMain(gui.GeDialog):
 
         if id == self.BUTTON_CONVERT_MATERIALS:
             # CONVERT MATERIAL
+            gui.MessageDialog(
+                "Material Rework is in Progress\nYour results may vary...",
+                type=c4d.GEMB_ICONEXCLAMATION,
+            )
             doc = c4d.documents.GetActiveDocument()
             comboRender = self.GetInt32(2001)
             redshiftBumpType = self.GetInt32(2002)
