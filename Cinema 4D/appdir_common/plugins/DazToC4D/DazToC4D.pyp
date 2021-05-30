@@ -55,7 +55,7 @@ import sys
 
 print("Python Version is {0}".format(sys.version_info))
 
-if sys.version_info > (3,0):
+if sys.version_info > (3, 0):
     check = importlib.util.find_spec("ptvsd") is not None
     if check:
         import ptvsd
@@ -119,6 +119,12 @@ class DazToC4DPlugin(c4d.plugins.CommandData):
             defaulth=100,
         )
         return True
+
+
+"""Plugin has full support for R23 R24 and minor issues with R22
+Cinema 4D R22 == 22123
+Cinema 4D R24 == 24035
+"""
 
 
 def main():

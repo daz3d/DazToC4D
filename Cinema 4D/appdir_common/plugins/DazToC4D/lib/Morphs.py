@@ -126,7 +126,13 @@ class Morphs:
             morph_name = morph
             morph_name = self.clean_name(morph_name)
         else:
-            morph_name = self.clean_name(morph.GetName())
+            try:
+                morph_name = self.clean_name(morph.GetName())
+
+            except AttributeError:  # To deal with string bug in R22
+                morph_name = str(morph)
+                morph_name = self.clean_name(morph_name)
+
         if not morph_name in self.nodes.keys():
             self.store_node(obj, {}, morph_name)
         self.nodes[obj.GetName()][morph_name][key] = value

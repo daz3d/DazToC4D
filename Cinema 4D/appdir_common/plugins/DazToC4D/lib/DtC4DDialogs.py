@@ -869,16 +869,8 @@ class EXTRADialog(c4d.gui.GeDialog):
         webbrowser.open(url, new=new)
         self.Close()
 
-    def checkVer(self):
-        caca = c4d.GetC4DVersion()
-        if caca > 24035:  # Cinema4D R24
-            message = "Cinema4D version not supported by this DazToC4D version.\nVisit Daz3D.com for updates or news."
-            self.open_support(message)
-            return 0
-
     def CreateLayout(self):
         doc = c4d.documents.GetActiveDocument()
-        self.checkVer()
 
         self.SetTitle("DazToC4D: Config")
 
@@ -1160,7 +1152,6 @@ class EXTRADialog(c4d.gui.GeDialog):
 
     def Command(self, id, msg):
 
-        EXTRADialog().checkVer()
         # id is the id number of the object the command was issued from, usually a button
         if id == 208:
             # Reduce Materials on Import

@@ -29,7 +29,7 @@ def srgb_to_linear_rgb(srgb):
 def hex_to_col(hex, normalize=True, precision=6):
     col = []
     it = iter(hex)
-    if c4d.GetC4DVersion() >= 22123:
+    if c4d.GetC4DVersion() <= 22123:
         iterator = it.next()
     else:
         iterator = it.__next__()
