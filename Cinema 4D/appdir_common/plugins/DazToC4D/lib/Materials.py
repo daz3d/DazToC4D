@@ -28,15 +28,13 @@ def srgb_to_linear_rgb(srgb):
 
 def hex_to_col(hex, normalize=True, precision=6):
     col = []
-    it = iter(hex)
+    it = iter(str(hex))
     if c4d.GetC4DVersion() <= 22123:
-        iterator = it.next()
+        for char in it:
+            col.append(int(char + it.next(), 16))
     else:
-        iterator = it.__next__()
-
-    for char in it:
-        col.append(int(char + iterator, 16))
-
+        for char in it:
+            col.append(int(char + it.__next__(), 16))
     if normalize:
         col = map(lambda x: x / 255, col)
         col = map(lambda x: round(x, precision), col)
@@ -44,7 +42,7 @@ def hex_to_col(hex, normalize=True, precision=6):
 
 
 def convert_color(color):
-    color_hex = color.lstrip("#")
+    color_hex = str(color).lstrip("#")
     color_rgb = hex_to_col(color_hex)
     return color_rgb
 
@@ -420,6 +418,7 @@ class Materials:
             for prop_name in lib["sss-color"]["Name"]:
                 if prop_name in prop.keys():
                     hex_str = prop[prop_name]["Value"]
+                    hex_str = self.check_value("hex", hex_str)
                     color = convert_color(hex_str)
                     vector = c4d.Vector(color[0], color[1], color[2])
                     sss[c4d.XMBSUBSURFACESHADER_DIFFUSE] = vector
@@ -435,6 +434,7 @@ class Materials:
             for prop_name in lib["transmitted-color"]["Name"]:
                 if prop_name in prop.keys():
                     hex_str = prop[prop_name]["Value"]
+                    hex_str = self.check_value("hex", hex_str)
                     color = convert_color(hex_str)
                     vector = c4d.Vector(color[0], color[1], color[2])
                     mat[c4d.MATERIAL_LUMINANCE_COLOR] = vector
@@ -460,6 +460,10 @@ class Materials:
                 return value
 
         if type == "hex":
+            if c4d.GetC4DVersion() <= 22123:
+                if not isinstance(value, float):
+                    value = str(value)
+
             if isinstance(value, float):
                 return "#FFFFFF"
             else:
