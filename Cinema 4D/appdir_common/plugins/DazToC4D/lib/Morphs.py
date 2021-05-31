@@ -4,6 +4,7 @@ from c4d import utils, documents
 
 from .CustomIterators import TagIterator
 from . import ErcExpressions as erc
+from .Database import facial_morphs
 
 
 class Morphs:
@@ -26,6 +27,48 @@ class Morphs:
             null.InsertTag(xpresso_tag)
             c4d.EventAdd()
             return null
+
+
+    @staticmethod
+    def find_facial_morph(face_morph_tag, morph_name):
+        morph_amount = face_morph_tag.GetMorphCount()
+        for x in range(morph_amount):
+            face_morph_tag.SetActiveMorphIndex(x)
+            morph = face_morph_tag.GetActiveMorph()
+            face_morph_name = morph.GetName()
+            if set(face_morph_name.split(" ")) == set(morph_name.split(" ")):
+                return face_morph_tag.GetMorphID(x)
+    @staticmethod
+    def connect_face_morphs(face_capture):
+        doc = documents.GetActiveDocument()
+        morph_obj = doc.SearchObject("Daz Morphs Controller")
+        morph_tag = morph_obj.GetTag(c4d.Tposemorph)
+        face_morph_tag = face_capture.GetTag(c4d.Tposemorph)
+        print(face_morph_tag)
+        xpresso_tag = morph_obj.GetTag(c4d.Texpresso)
+        node_master = xpresso_tag.GetNodeMaster()
+        morph_master_output = Morphs().create_node(node_master, morph_tag, -1000, 100)
+        facial_node = Morphs().create_node(node_master, face_morph_tag, -1200, 100)
+        if morph_tag:
+            morph_amount = morph_tag.GetMorphCount()
+            for x in range(morph_amount):
+                morph_tag.SetActiveMorphIndex(x)
+                morph = morph_tag.GetActiveMorph()
+                morph_name = morph.GetName()
+                blend_shape = Morphs.find_facial_morph(face_morph_tag, morph_name)
+                if blend_shape:
+                    morph_num = morph_tag.GetMorphID(x)
+                    morph_input = morph_master_output.AddPort(
+                    c4d.GV_PORT_INPUT, morph_num
+                    )
+                    facial_output = facial_node.AddPort(
+                    c4d.GV_PORT_OUTPUT, blend_shape
+                    )
+                    facial_output.Connect(morph_input)
+
+
+
+
 
     @staticmethod
     def move_poses_under_morphs(group, poses):
