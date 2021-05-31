@@ -2102,7 +2102,7 @@
 	}
 	/*********************************************************************/
 
-	// Array : Find if Bone Exists on Children Objects
+	// Array : Find if Morph Exists on Children, Useful for FACS
 	function checkForMorphOnChild( oNode, aControlledMeshes, sMorphName )
 	{
 		for ( var i = 0; i < oNode.getNumNodeChildren(); i++ ){

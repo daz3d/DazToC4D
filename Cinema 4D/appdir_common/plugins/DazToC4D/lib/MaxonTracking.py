@@ -45,3 +45,50 @@ class Tracking:
                 node_master, c4d.GV_DEGREE_, 400, 0
             )
             degrees_to_rad[c4d.GV_DEGREE_FUNCTION_ID] = c4d.GV_RAD2DEGREE_NODE_FUNCTION
+
+    @staticmethod
+    def find_facial_morph(face_morph_tag, morph_name):
+        morph_amount = face_morph_tag.GetMorphCount()
+        for x in range(morph_amount):
+            face_morph_tag.SetActiveMorphIndex(x)
+            morph = face_morph_tag.GetActiveMorph()
+            face_morph_name = morph.GetName()
+            if set(face_morph_name.split(" ")) == set(morph_name.split(" ")):
+                return face_morph_tag.GetMorphID(x)
+
+    @staticmethod
+    def connect_face_morphs(face_capture):
+        """Connects to the Move By Maxon Animation"""
+        doc = c4d.documents.GetActiveDocument()
+        morph_obj = doc.SearchObject("Daz Morphs Controller")
+        morph_tag = morph_obj.GetTag(c4d.Tposemorph)
+        face_morph_tag = face_capture.GetTag(c4d.Tposemorph)
+        xpresso_tag = morph_obj.GetTag(c4d.Texpresso)
+        node_master = xpresso_tag.GetNodeMaster()
+        morph_master_output = Tracking.create_node(node_master, morph_tag, -1000, 100)
+        facial_node = Tracking.create_node(node_master, face_morph_tag, -1200, 100)
+        if morph_tag:
+            morph_amount = morph_tag.GetMorphCount()
+            for x in range(morph_amount):
+                morph_tag.SetActiveMorphIndex(x)
+                morph = morph_tag.GetActiveMorph()
+                morph_name = morph.GetName()
+                blend_shape = Tracking.find_facial_morph(face_morph_tag, morph_name)
+                if blend_shape:
+                    morph_num = morph_tag.GetMorphID(x)
+                    morph_input = morph_master_output.AddPort(
+                        c4d.GV_PORT_INPUT, morph_num
+                    )
+                    facial_output = facial_node.AddPort(c4d.GV_PORT_OUTPUT, blend_shape)
+                    facial_output.Connect(morph_input)
+
+            return morph_master_output, facial_node
+
+    @staticmethod
+    def disconnect_face_morphs(face_node, morph_node):
+        """Remove the Connection to the Move By Maxon Animation"""
+        face_node.Remove()
+        morph_node.Remove()
+        c4d.gui.MessageDialog(
+            "Face Capture Has been Successfully Removed!", type=c4d.GEMB_OK
+        )
