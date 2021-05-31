@@ -1,6 +1,7 @@
 from ntpath import join
 import c4d
 from c4d import utils, documents
+from c4d import gui
 
 from .CustomIterators import TagIterator
 from . import ErcExpressions as erc
@@ -28,7 +29,6 @@ class Morphs:
             c4d.EventAdd()
             return null
 
-
     @staticmethod
     def find_facial_morph(face_morph_tag, morph_name):
         morph_amount = face_morph_tag.GetMorphCount()
@@ -38,6 +38,7 @@ class Morphs:
             face_morph_name = morph.GetName()
             if set(face_morph_name.split(" ")) == set(morph_name.split(" ")):
                 return face_morph_tag.GetMorphID(x)
+
     @staticmethod
     def connect_face_morphs(face_capture):
         doc = documents.GetActiveDocument()
@@ -59,16 +60,20 @@ class Morphs:
                 if blend_shape:
                     morph_num = morph_tag.GetMorphID(x)
                     morph_input = morph_master_output.AddPort(
-                    c4d.GV_PORT_INPUT, morph_num
+                        c4d.GV_PORT_INPUT, morph_num
                     )
-                    facial_output = facial_node.AddPort(
-                    c4d.GV_PORT_OUTPUT, blend_shape
-                    )
+                    facial_output = facial_node.AddPort(c4d.GV_PORT_OUTPUT, blend_shape)
                     facial_output.Connect(morph_input)
 
+            return morph_master_output, facial_node
 
-
-
+    @staticmethod
+    def disconnect_face_morphs(face_node, morph_node):
+        face_node.Remove()
+        morph_node.Remove()
+        c4d.gui.MessageDialog(
+            "Face Capture Has been Successfully Removed!", type=c4d.GEMB_OK
+        )
 
     @staticmethod
     def move_poses_under_morphs(group, poses):

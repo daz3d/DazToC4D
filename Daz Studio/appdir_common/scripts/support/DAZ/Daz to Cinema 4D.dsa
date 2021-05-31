@@ -1890,6 +1890,7 @@
 		oDtuJson["JointOrientation"] = s_oJointOrientation;
 		oDtuJson["LimitData"] = s_oLimitsData;
 		oDtuJson["PoseData"] = s_oPoseData;
+		oDtuJson["Subdivision"] = s_nSubDivLevel;
 		
 		aFigureMats = writeMaterials( oNode, sDir );
 		oDtuJson["Materials"].push( aFigureMats );
@@ -2099,7 +2100,25 @@
 		}
 		return aControlledMeshes
 	}
+	/*********************************************************************/
 
+	// Array : Find if Bone Exists on Children Objects
+	function checkForMorphOnChild( oNode, aControlledMeshes, sMorphName )
+	{
+		for ( var i = 0; i < oNode.getNumNodeChildren(); i++ ){
+			oChildNode = oNode.getNodeChild( i );
+			if( oChildNode.inherits( "DzFigure" ) ){
+				oObject = oChildNode.getObject();
+				if( oObject ){
+					oModifer = oObject.findModifier( sMorphName );
+					if( oModifer ){
+						aControlledMeshes.pushIfNotExists( oChildNode.name + ".Shape" );
+					}
+				}					
+			}
+		}
+		return aControlledMeshes
+	}
 
 	/*********************************************************************/
 	// Void : Load morph links that are directly controlled by skeleton bones
@@ -2162,7 +2181,8 @@
 					aControlledMeshes.pushIfNotExists( oMorphInfo.node.name + ".Shape" );
 				}
 			}
-			
+			// Check for FACs Morphs on Children
+			aControlledMeshes = checkForMorphOnChild( oNode, aControlledMeshes, oMorphInfo.name )
 
 			var oMorphLinkObj = {
 					"Label": oMorphProperty.getLabel(),

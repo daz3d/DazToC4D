@@ -9,6 +9,7 @@ from . import Materials
 from . import Utilities
 from . import Morphs
 from . import DazRig
+from .DtC4DWeights import Weights
 from .DtC4DPosing import Poses
 from .DtC4DDialogs import guiASKtoSave
 from .Definitions import EXPORT_DIR
@@ -61,6 +62,7 @@ class CustomImports:
         morph = Morphs.Morphs()
         var = Utilities.Variables()
         jnt_fixes = DazRig.JointFixes()
+        wgt = Weights()
 
         if os.path.exists(file_path) == False:
             gui.MessageDialog(
@@ -114,6 +116,14 @@ class CustomImports:
 
         print("Material Conversion Done")
         c4d.EventAdd()
+
+        wgt.store_subdivision(dtu)
+        if wgt.check_level():
+            auto_weight = c4d.gui.QuestionDialog(
+                "Subdivisions have been detected\nthis is currently not fully supported.\nWould you like to autoweight the mesh?"
+            )
+            if auto_weight:
+                wgt.auto_calculate_weights(var.body)
 
         isPosed = Poses().checkIfPosed()
         if isPosed == False:

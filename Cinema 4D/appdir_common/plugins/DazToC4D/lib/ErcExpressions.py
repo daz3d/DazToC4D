@@ -88,10 +88,7 @@ def erc_multiply(addend, x, var):
     erc_multiply = """
     global var{1}
     var{1} = {2}{1}))
-    if current > 0:
-        temp += var{1} * current + {0} 
-    else:
-        temp *= var{1} + {0} 
+    temp *= var{1} + {0} 
                 """.format(
         addend, x, var
     )

@@ -16,6 +16,7 @@ class DtuLoader:
     joint_orientation_dict = dict()
     asset_name = ""
     fbx_path = ""
+    subdivsion_level = ""
     materials_list = []
 
     def __init__(self, imported_dir):
@@ -60,6 +61,15 @@ class DtuLoader:
         if self.asset_name == "":
             self.load_fbx_path()
         return self.fbx_path
+
+    def load_subdivision(self):
+        dtu_dict = self.get_dtu_dict()
+        self.subdivision = dtu_dict["Subdivision"]
+
+    def get_subdivision(self):
+        if self.subdivsion_level == "":
+            self.load_subdivision()
+        return self.subdivision
 
     def load_bone_head_tail_dict(self):
         dtu_dict = self.get_dtu_dict()
