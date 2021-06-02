@@ -130,7 +130,7 @@ class Poses:
         obj = doc.SearchObject("hip")
         if obj:
             doc = documents.GetActiveDocument()
-            if doc.SearchObject("lThighTwist") != True:
+            if not doc.SearchObject("lThighTwist"):
                 if self.checkIfPosedResetPose(False) == False:
                     forceTpose().dazFix_All_To_T_Pose()
             if doc.SearchObject("lThighTwist"):
@@ -257,9 +257,7 @@ class Poses:
                 c4d.EventAdd()
 
                 AllSceneToZero().sceneToZero()
-                answer = gui.QuestionDialog(
-                    "Would You Like to Run\nAUTO-IK"
-                )
+                answer = gui.QuestionDialog("Would You Like to Run\nAUTO-IK")
                 if answer:
                     return True
                 else:
@@ -343,6 +341,27 @@ class Poses:
 
         return isPosed
 
+    def find_genesis(self):
+        doc = documents.GetActiveDocument()
+
+        if doc.SearchObject("lThigh"):
+            if doc.SearchObject("lShin"):
+                if doc.SearchObject("abdomen2"):
+                    return "Genesis2"
+
+        if doc.SearchObject("lShldrBend"):
+            if doc.SearchObject("lMetatarsals"):
+                if doc.SearchObject("rThighTwist"):
+                    obj1PosY = ""
+                    obj1PosY = ""
+                    obj1PosY = doc.SearchObject("lShldrBend").GetMg().off[1]
+                    obj2PosY = doc.SearchObject("lForearmBend").GetMg().off[1]
+                    distValue = obj1PosY - obj2PosY
+                    if distValue < 2.9:
+                        return "Genesis3"  # TODO !!
+                    else:
+                        return "Genesis8"
+
     def dazManualRotationFixTpose(self):
         # return False #Quit TEMPORAL
         doc = documents.GetActiveDocument()
@@ -356,36 +375,15 @@ class Poses:
             if z != 0.0:
                 joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z] = z
 
-        dazType = ""
-        if doc.SearchObject("lShldrBend"):
-            if doc.SearchObject("lMetatarsals"):
-                if doc.SearchObject("rThighTwist"):
-                    obj1PosY = ""
-                    obj1PosY = ""
-                    obj1PosY = doc.SearchObject("lShldrBend").GetMg().off[1]
-                    obj2PosY = doc.SearchObject("lForearmBend").GetMg().off[1]
-                    distValue = obj1PosY - obj2PosY
-                    if distValue < 2.9:
-                        dazType = "Genesis3"  # TODO !!
-                    else:
-                        dazType = "Genesis8"
-
-        if doc.SearchObject("lThigh"):
-            if doc.SearchObject("lShin"):
-                if doc.SearchObject("abdomen2"):
-                    dazType = "Genesis2"
+        dazType = self.find_genesis()
 
         if dazType == "Genesis8":
-            # GENESIS 8 --------------------------------------------
-            # Genesis 8 LEFT Side:
             autoAlignArms()
 
         if dazType == "Genesis3":
-            # GENESIS 3 -ZOMBIE WORKS TOO -------------------------------------------
             autoAlignArms()
 
         if dazType == "Genesis2":
-            # GENESIS 2 --------------------------------------------
             # Genesis 2 LEFT Side:
             setRotAndMirror("lShldr", 0.089, 0.0, -0.019)
             setRotAndMirror("lForeArm", 0.334, 0.0, 0.0)
@@ -397,78 +395,13 @@ class Poses:
             setRotAndMirror("rForeArm", -0.334, 0.0, 0.0)
             setRotAndMirror("rHand", -0.083, 0.222, 0.121)
             setRotAndMirror("rThigh", 0.0, 0.0, 0.0)
+
         c4d.EventAdd()
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
             | c4d.DRAWFLAGS_NO_THREAD
             | c4d.DRAWFLAGS_STATICBREAK
         )
-        c4d.EventAdd()
-
-    def mirrorPose(self):
-        doc = documents.GetActiveDocument()
-
-        def mirrorPose(jointName):
-            jointNameR = "r" + jointName[1:100]
-            jointObjL = doc.SearchObject(jointName)
-            jointObjR = doc.SearchObject(jointNameR)
-            if jointObjL:
-                objLRot = jointObjL[c4d.ID_BASEOBJECT_REL_ROTATION]
-                jointObjR[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = -objLRot[0]
-                jointObjR[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y] = objLRot[1]
-                jointObjR[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z] = -objLRot[2]
-
-        mirrorPose("lCollar")
-        mirrorPose("lShldr")  # ----Genesis 2
-        mirrorPose("lForeArm")  # ----Genesis 2
-        mirrorPose("lShldrBend")
-        mirrorPose("lShldrTwist")
-        mirrorPose("lForearmBend")
-        mirrorPose("lForearmTwist")
-        mirrorPose("lHand")
-
-        mirrorPose("lThumb1")
-        mirrorPose("lThumb2")
-        mirrorPose("lThumb3")
-        mirrorPose("lCarpal1")
-        mirrorPose("lIndex1")
-        mirrorPose("lIndex2")
-        mirrorPose("lIndex3")
-        mirrorPose("lCarpal2")
-        mirrorPose("lMid1")
-        mirrorPose("lMid2")
-        mirrorPose("lMid3")
-        mirrorPose("lCarpal3")
-        mirrorPose("lRing1")
-        mirrorPose("lRing2")
-        mirrorPose("lRing3")
-        mirrorPose("lCarpal4")
-        mirrorPose("lPinky1")
-        mirrorPose("lPinky2")
-        mirrorPose("lPinky3")
-
-        mirrorPose("lThigh")  # ----Genesis 2
-        mirrorPose("lShin")  # ----Genesis 2
-        mirrorPose("lToe")  # ----Genesis 2
-
-        mirrorPose("lThighBend")
-        mirrorPose("lThighTwist")
-        mirrorPose("lShin")
-        mirrorPose("lFoot")
-        mirrorPose("lMetatarsals")
-        mirrorPose("lToe")
-
-        mirrorPose("lSmallToe4")
-        mirrorPose("lSmallToe4_2")
-        mirrorPose("lSmallToe3")
-        mirrorPose("lSmallToe3_2")
-        mirrorPose("lSmallToe2")
-        mirrorPose("lSmallToe2_2")
-        mirrorPose("lSmallToe1")
-        mirrorPose("lSmallToe1_2")
-        mirrorPose("lBigToe")
-        mirrorPose("lBigToe_2")
-
         c4d.EventAdd()
 
 

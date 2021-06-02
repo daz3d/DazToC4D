@@ -70,16 +70,7 @@ class JointFixes:
         rig_joint.SetMg(joint.GetMg())
         c4d.CallButton(rig_joint, c4d.ID_BASEOBJECT_FREEZE_R)
 
-    def update_axis(self, joint):
-        joint_data = self.get_orientation(joint)
-        if len(joint_data) == 0:
-            return
-        rotation_order = joint_data[0]
-        index = self.find_order(rotation_order)
-        x = joint_data[1]
-        y = joint_data[2]
-        z = joint_data[3]
-        joint[c4d.ID_BASEOBJECT_ROTATION_ORDER] = index
+    def store_incorrect_orientations(self, joint):
         current_m = joint.GetMl()
         v1 = c4d.GetCustomDataTypeDefault(c4d.DTYPE_VECTOR)
         v1[c4d.DESC_NAME] = "V1 at Import"
@@ -93,6 +84,18 @@ class JointFixes:
         v3[c4d.DESC_NAME] = "V3 at Import"
         descId = joint.AddUserData(v3)
         joint[descId] = current_m.v3
+
+    def update_axis(self, joint):
+        joint_data = self.get_orientation(joint)
+        if len(joint_data) == 0:
+            return
+        rotation_order = joint_data[0]
+        index = self.find_order(rotation_order)
+        x = joint_data[1]
+        y = joint_data[2]
+        z = joint_data[3]
+        joint[c4d.ID_BASEOBJECT_ROTATION_ORDER] = index
+        self.store_incorrect_orientations(joint)
         matrix = joint.GetMl() * c4d.utils.MatrixRotX(c4d.utils.Rad(x))
         matrix = matrix * c4d.utils.MatrixRotY(c4d.utils.Rad(y))
         matrix = matrix * c4d.utils.MatrixRotZ(c4d.utils.Rad(-z))
@@ -105,14 +108,14 @@ class JointFixes:
             for tag in tags:
                 tag_type = tag.GetTypeName()
                 if tag_type == "Weight":
-                    if sys.version_info > (3,0):
-                        tag[c4d.ID_CA_WEIGHT_TAG_SET_BUTTON] = 2005
-                        c4d.CallButton(tag, c4d.ID_CA_WEIGHT_TAG_SET_BUTTON)
+                    if c4d.GetC4DVersion() <= 22123:
+                        tag[c4d.ID_CA_WEIGHT_TAG_SET] = 2005
+                        c4d.CallButton(tag, c4d.ID_CA_WEIGHT_TAG_SET)
                         c4d.EventAdd()
                         break
                     else:
-                        tag[c4d.ID_CA_WEIGHT_TAG_SET] = 2005
-                        c4d.CallButton(tag, c4d.ID_CA_WEIGHT_TAG_SET)
+                        tag[c4d.ID_CA_WEIGHT_TAG_SET_BUTTON] = 2005
+                        c4d.CallButton(tag, c4d.ID_CA_WEIGHT_TAG_SET_BUTTON)
                         c4d.EventAdd()
                         break
 
@@ -246,8 +249,6 @@ class DazRig:
                 except:
                     pass
             slaveObj.InsertTag(constraintTAG)
-            # if mode == "PARENT":
-            #     slaveObj.SetMg(mg)
 
             c4d.EventAdd()
 

@@ -122,7 +122,7 @@ class guiDazToC4DMain(gui.GeDialog):
         return bc
 
     def CreateLayout(self):
-        self.SetTitle("DazToC4D v1.2.1 Beta")
+        self.SetTitle("DazToC4D v1.2.0")
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
 
         bc = c4d.BaseContainer()  # Create a new container to store the button image

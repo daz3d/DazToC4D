@@ -5,7 +5,6 @@ from c4d import gui
 
 from .CustomIterators import TagIterator
 from . import ErcExpressions as erc
-from .Database import facial_morphs
 
 
 class Morphs:
