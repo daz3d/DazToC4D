@@ -1232,11 +1232,11 @@ class EXTRADialog(c4d.gui.GeDialog):
 
         if id == self.BUTTON_CONNECT_MORPH:
             face_capture = self.face_link.GetLink()
-            self.morph_node, self.face_morphs = Morphs.connect_face_morphs(face_capture)
+            self.morph_node, self.face_morphs = Tracking.connect_face_morphs(face_capture)
 
         if id == self.BUTTON_DISCONNECT_MORPH:
             face_capture = self.face_link.GetLink()
-            Morphs.disconnect_face_morphs(self.face_morphs, self.morph_node)
+            Tracking.disconnect_face_morphs(self.face_morphs, self.morph_node)
 
         if id == self.BUTTON_CONNECT_HEAD:
             face_capture = self.face_link.GetLink()
