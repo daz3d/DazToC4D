@@ -106,8 +106,8 @@ class JointFixes:
         for obj in c_meshes:
             tags = TagIterator(obj)
             for tag in tags:
-                tag_type = tag.GetTypeName()
-                if tag_type == "Weight":
+                tag_type = tag.GetType()
+                if tag_type == c4d.Tweights:
                     if c4d.GetC4DVersion() <= 22123:
                         tag[c4d.ID_CA_WEIGHT_TAG_SET] = 2005
                         c4d.CallButton(tag, c4d.ID_CA_WEIGHT_TAG_SET)

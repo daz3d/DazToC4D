@@ -5,6 +5,7 @@ from xml.etree import ElementTree
 
 from .Definitions import ROOT_DIR
 from .CustomIterators import TagIterator, ObjectIterator
+from .CustomCmd import Cinema4DCommands as dzc4d
 from . import Database
 
 
@@ -114,7 +115,7 @@ def get_daz_name():
 def getJointFromSkin(obj, jointName):
     objTags = TagIterator(obj)
     for t in objTags:
-        if "Weight" in t.GetName():
+        if t.GetType() == c4d.Tweights:
             for j in range(t.GetJointCount()):
                 if jointName in t.GetJoint(j).GetName():
                     return t.GetJoint(j)
@@ -124,7 +125,7 @@ def getJointFromSkin(obj, jointName):
 def getJointFromConstraint(jointName):
     objTags = TagIterator(jointName)
     for t in objTags:
-        if "Constraint" in t.GetName():
+        if t.GetType() == dzc4d.Tconstraint():
             return t[10001]
 
     return None
@@ -817,7 +818,6 @@ class dazToC4Dutils:
                 self.moveToObj(meshName + guide_suffix, joint)
             elif len(objs) == 3:
                 self.moveToObj(meshName + guide_suffix, objs[2])
-
 
     def cleanJointsDaz(self, side="Left"):
         doc = documents.GetActiveDocument()
