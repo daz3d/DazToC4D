@@ -55,7 +55,7 @@ class DtuLoader:
 
     def load_fbx_path(self):
         dtu_dict = self.get_dtu_dict()
-        self.fbx_path = dtu_dict["FBX File"]
+        self.fbx_path = os.path.abspath(dtu_dict["FBX File"])
 
     def get_fbx_path(self):
         if self.asset_name == "":

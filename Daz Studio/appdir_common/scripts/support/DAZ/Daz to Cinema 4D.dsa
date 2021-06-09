@@ -360,11 +360,14 @@
 					.arg( oExporter.getExtension() ) :
 				oExportMgr.getExportPath() );
 			
-			var sPath = s_sRootPath + sName + "/" + sName + nIdx + "/";
+			var sPath = s_sRootPath + sName + "/" + sName + nIdx + "/"
+			s_sFbxPath = sName + "/" + sName + nIdx + "/";
 			if( bAscii ){
 				sPath += "A_" + sName + ".fbx"
+				s_sFbxPath += "A_" + sName + ".fbx"
 			} else {
 				sPath += "B_" + sName + ".fbx"
+				s_sFbxPath += "B_" + sName + ".fbx"
 			}
 			
 			// If the user didn't cancel and the file doesn't already
@@ -376,8 +379,6 @@
 			// Clean up; don't leak memory
 			oExporter.deleteLater();
 			
-			//Store FBX Path
-			s_sFbxPath = sPath;
 		// We didn't find an exporter with the class name we wanted
 		} else {
 			// Inform the user
@@ -2022,10 +2023,12 @@
 		if( !oDir.exists() ){
 			oDir.mkpath( sPath );
 		}
+		oDir.setPath( s_sRootPath )
 
 		var sNewTexture = String( "%1/%2" ).arg( sPath ).arg( sOrgImageName )
+		var sRelTexture = oDir.relativeFilePath( sNewTexture )
 		oOrigFile.copy( sNewTexture )
-		return sNewTexture
+		return sRelTexture
 		
 	};
 

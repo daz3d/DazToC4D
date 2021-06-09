@@ -72,8 +72,7 @@ class Materials:
             self.material_dict[asset_name][mat_name] = mat
 
     def store_sliders(self, sss_value, normal_value, bump_value):
-        """ Stores the Sliders from UI Before Material Creation
-        """
+        """Stores the Sliders from UI Before Material Creation"""
         self.sss_value = sss_value
         self.normal_value = normal_value
         self.bump_value = bump_value
@@ -81,6 +80,7 @@ class Materials:
     @staticmethod
     def create_texture(mat, path):
         path = str(path)
+        path = os.path.abspath(path)
         texture = c4d.BaseList2D(c4d.Xbitmap)
         texture[c4d.BITMAPSHADER_FILENAME] = path
         mat.InsertShader(texture)

@@ -42,20 +42,26 @@ class CustomImports:
     def auto_import_genesis(self, sss_value, normal_value, bump_value):
         import_list = self.get_genesis_list()
         import_vars = []
+        current_dir = os.getcwd()
+        os.chdir(EXPORT_DIR)
         for imported_dir in import_list:
             dtu = DtuLoader.DtuLoader(imported_dir)
             fbx_path = dtu.get_fbx_path()
             import_vars.append(
                 self.genesis_import(fbx_path, dtu, sss_value, normal_value, bump_value)
             )
+        os.chdir(current_dir)
         return import_vars
 
     def auto_import_prop(self, sss_value, normal_value, bump_value):
+        current_dir = os.getcwd()
+        os.chdir(EXPORT_DIR)
         import_list = self.get_prop_list()
         for imported_dir in import_list:
             dtu = DtuLoader.DtuLoader(imported_dir)
             fbx_path = dtu.get_fbx_path()
             self.prop_import(fbx_path, dtu, sss_value, normal_value, bump_value)
+        os.chdir(current_dir)
 
     def genesis_import(self, file_path, dtu, sss_value, normal_value, bump_value):
         mat = Materials.Materials()
