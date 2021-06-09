@@ -6,6 +6,27 @@ Note: ErcKeyed is not calculated the same way as in Daz Studio and uses a linear
 """
 
 
+def erc_controls():
+    erc_controls = """
+import c4d
+
+def main():
+    global Output1
+    if Input2 > Input1 and Input1 != 0:
+        Output1 = Input2
+    elif Input1 == 0:
+        if Input2 > 0:
+            Output1 = Input2
+        else:
+            Output1 = 0
+    else:
+        Output1 = Input1
+
+
+"""
+    return erc_controls
+
+
 def erc_start():
     erc_start = """
 import math
@@ -119,6 +140,7 @@ def erc_add(addend, x, var):
 
 def erc_limits(min, max):
     erc_limits = """
+    temp += current
     if temp < {0}:
         Output1 = 0
     elif temp > {1}:
