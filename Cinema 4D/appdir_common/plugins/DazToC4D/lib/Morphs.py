@@ -196,28 +196,9 @@ class Morphs:
         pm_tag = self.body.GetTag(c4d.Tposemorph)
         if pm_tag:
             morph_amount = pm_tag.GetMorphCount()
-            xtag = self.find_body_xpresso_tag(self.body)
-            node_master = xtag.GetNodeMaster()
-
             ctrl_xtag = self.find_ctrl_xpresso_tag()
-            ctrl_null = self.find_ctrl_null()
             ctrl_node_master = ctrl_xtag.GetNodeMaster()
-            self.morph_ctrl_node = self.create_node(ctrl_node_master, pm_tag, 0, 100)
-            self.ctrl_null_node = self.create_node(
-                ctrl_node_master, ctrl_null, -500, 100
-            )
-            self.ctrl_null_node_input = self.create_node(
-                ctrl_node_master, ctrl_null, -750, 100
-            )
-            self.morph_master_input = self.create_node(
-                ctrl_node_master, pm_tag, -500, 100
-            )
-            self.morph_master_input_2 = self.create_node(
-                ctrl_node_master, pm_tag, -500, 100
-            )
-            self.morph_master_input_3 = self.create_node(
-                ctrl_node_master, pm_tag, -500, 100
-            )
+            self.create_xpresso_nodes()
             pos = self.prepare_pos(morph_amount)
             morph_indices = self.reorder_morph_list(pm_tag)
             for x in morph_indices:
@@ -239,6 +220,63 @@ class Morphs:
                 # self.create_ctrl_connections(
                 #     morph_link, morph_name, x, ctrl_node_master, pos
                 # )
+            self.remove_empty_nodes()
+
+    def create_xpresso_nodes(self):
+        pm_tag = self.body.GetTag(c4d.Tposemorph)
+        ctrl_xtag = self.find_ctrl_xpresso_tag()
+        ctrl_null = self.find_ctrl_null()
+        ctrl_node_master = ctrl_xtag.GetNodeMaster()
+        self.ctrl_null_node = self.create_node(
+            ctrl_node_master,
+            ctrl_null,
+            -1000,
+            100,
+        )
+        self.ctrl_null_node_input = self.create_node(
+            ctrl_node_master,
+            ctrl_null,
+            -600,
+            100,
+        )
+        self.morph_ctrl_node = self.create_node(
+            ctrl_node_master,
+            pm_tag,
+            -200,
+            100,
+        )
+        self.morph_master_input = self.create_node(
+            ctrl_node_master,
+            pm_tag,
+            200,
+            100,
+        )
+        self.morph_master_input_2 = self.create_node(
+            ctrl_node_master,
+            pm_tag,
+            600,
+            100,
+        )
+        self.morph_master_input_3 = self.create_node(
+            ctrl_node_master,
+            pm_tag,
+            1000,
+            100,
+        )
+
+    def remove_empty_nodes(self):
+        """Check if any nodes can be removed"""
+        nodes = [
+            self.morph_ctrl_node,
+            self.ctrl_null_node,
+            self.ctrl_null_node_input,
+            self.morph_master_input,
+            self.morph_master_input_2,
+            self.morph_master_input_3,
+        ]
+        for node in nodes:
+            if len(node.GetInPorts()) == 0 and len(node.GetOutPorts()) == 0:
+                node.Remove()
 
     def reorder_morph_list(self, pm_tag):
         morph_amount = pm_tag.GetMorphCount()
@@ -260,16 +298,33 @@ class Morphs:
             morph_indices.append(sorted_morphs[i])
         return morph_indices
 
-    def check_morph_hierarchy(self, new_links):
+    def check_morph_hierarchy(self, new_links, morph_num):
         for link in new_links:
             tmp_morph = link["Property"]
             if tmp_morph in self.nodes[self.body_name].keys():
-                if "Input" in self.nodes[self.body_name][tmp_morph].keys():
-                    return "Input2"
+                if "Input1" in self.nodes[self.body_name][tmp_morph].keys():
+                    morph_input = self.morph_master_input_2.AddPort(
+                        c4d.GV_PORT_INPUT, morph_num
+                    )
+                    morph_output = self.morph_master_input.AddPort(
+                        c4d.GV_PORT_OUTPUT, morph_num
+                    )
+                    driver_node = self.morph_master_input
+                    return morph_input, morph_output, driver_node, "Input2"
                 if "Input2" in self.nodes[self.body_name][tmp_morph].keys():
-                    return "Input3"
+                    morph_input = self.morph_master_input_3.AddPort(
+                        c4d.GV_PORT_INPUT, morph_num
+                    )
+                    morph_output = self.morph_master_input_2.AddPort(
+                        c4d.GV_PORT_OUTPUT, morph_num
+                    )
+                    driver_node = self.morph_master_input_2
+                    return morph_input, morph_output, driver_node, "Input3"
 
-        return "Input"
+        morph_input = self.morph_master_input.AddPort(c4d.GV_PORT_INPUT, morph_num)
+        morph_output = self.morph_ctrl_node.AddPort(c4d.GV_PORT_OUTPUT, morph_num)
+        driver_node = self.morph_ctrl_node
+        return morph_input, morph_output, driver_node, "Input1"
 
     def create_morph_connection(
         self, node_master, morph_link, x, morph_name, pm_tag, pos
@@ -288,35 +343,17 @@ class Morphs:
             -100,
             pos[x],
         )
-        level = self.check_morph_hierarchy(new_links)
         morph_num = pm_tag.GetMorphID(x)
-        if "Input" == level:
-            morph_input = self.morph_master_input.AddPort(c4d.GV_PORT_INPUT, morph_num)
-            morph_output = self.morph_ctrl_node.AddPort(c4d.GV_PORT_OUTPUT, morph_num)
-            driver_node = self.morph_ctrl_node
-        if "Input2" == level:
-            morph_input = self.morph_master_input_2.AddPort(
-                c4d.GV_PORT_INPUT, morph_num
-            )
-            morph_output = self.morph_master_input.AddPort(
-                c4d.GV_PORT_OUTPUT, morph_num
-            )
-            driver_node = self.morph_master_input
-        if "Input3" == level:
-            morph_input = self.morph_master_input_3.AddPort(
-                c4d.GV_PORT_INPUT, morph_num
-            )
-            driver_node = self.morph_master_input_2
-            morph_output = self.morph_master_input_2.AddPort(
-                c4d.GV_PORT_OUTPUT, morph_num
-            )
+        morph_input, morph_output, driver_node, input_tier = self.check_morph_hierarchy(
+            new_links, morph_num
+        )
 
         if morph_input == None:
-            morph_input = self.nodes[self.body_name][clean_name][level]
+            morph_input = self.nodes[self.body_name][clean_name][input_tier]
         if morph_output == None:
             morph_output = self.nodes[self.body_name][clean_name]["Output2"]
 
-        self.store_morph(self.body, morph_input, level, clean_name)
+        self.store_morph(self.body, morph_input, input_tier, clean_name)
         self.store_morph(self.body, morph_output, "Output2", clean_name)
         for python_output in python_node.GetOutPorts():
             python_output.Connect(morph_input)
@@ -586,8 +623,33 @@ class Morphs:
         self.morph_controller.InsertTag(xtag)
         self.ctrl_xpresso_tag = xtag
 
+    def add_path_group(self, morph_ctrl, morph_link):
+        path = morph_link["Path"]
+        path = path.replace("//", "/")
+        group_names = path.split("/")
+        parent = None
+        for grp_name in group_names:
+            user_id = self.find_user_data_by_name(morph_ctrl, grp_name)
+            if not user_id:
+                group = c4d.GetCustomDatatypeDefault(c4d.DTYPE_GROUP)
+                group[c4d.DESC_NAME] = grp_name
+                group[c4d.DESC_PARENTGROUP] = parent
+                group[c4d.DESC_DEFAULT] = c4d.DESC_GUIOPEN
+
+                parent = morph_ctrl.AddUserData(group)
+            else:
+                parent = user_id
+        return parent
+
+    def find_user_data_by_name(self, obj, name):
+        for user_data_id, bc in obj.GetUserDataContainer():
+            currentName = bc.GetString(c4d.DESC_NAME)
+            if currentName == name:
+                return user_data_id
+
     def create_custom_controller(self, morph_link, morph_name):
         morph_ctrl = self.find_ctrl_null()
+        parent = self.add_path_group(morph_ctrl, morph_link)
         label_name = morph_link["Label"]
         min_morph = morph_link["Minimum"]
         max_morph = morph_link["Maximum"]
@@ -600,6 +662,7 @@ class Morphs:
         real_data[c4d.DESC_MINSLIDER] = min_morph
         real_data[c4d.DESC_MAXSLIDER] = max_morph
         real_data[c4d.DESC_STEP] = 0.01
+        real_data[c4d.DESC_PARENTGROUP] = parent
         slider_id = morph_ctrl.AddUserData(real_data)
         c4d.EventAdd()
         self.morph_ctrl_user_data[morph_name] = slider_id

@@ -2335,8 +2335,6 @@
 				}
 					
 			}
-			
-		
 
 			var oMorphLinkObj = {
 					"Label": oMorphProperty.getLabel(),
@@ -2345,6 +2343,7 @@
 					"Minimum": oMorphInfo.min,
 					"Maximum": oMorphInfo.max,
 					"isHidden": oMorphInfo.hidden,
+					"Path": oMorphInfo.path,
 					"Controlled Meshes" : aControlledMeshes
 			};
 			s_oMorphLinks[getPropertyName( oMorphProperty )] = oMorphLinkObj;
