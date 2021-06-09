@@ -20,30 +20,6 @@ class Morphs:
         self.ctrl_sliders_output = dict()
         self.ctrl_sliders_input = dict()
 
-    @staticmethod
-    def create_null_for_morphs(body):
-        """Create a null to hold the Morphs for the Daz Pose Morph"""
-        doc = documents.GetActiveDocument()
-        morph_tag = body.GetTag(c4d.Tposemorph)
-        xpresso_tag = body.GetTag(c4d.Texpresso)
-        if morph_tag:
-            null = c4d.BaseObject(c4d.Onull)  # Create new null
-            doc.InsertObject(null)
-            c4d.EventAdd()
-            null.SetName("Daz Morphs Controller")
-            null.InsertTag(morph_tag)
-            null.InsertTag(xpresso_tag)
-            c4d.EventAdd()
-            return null
-
-    @staticmethod
-    def move_poses_under_morphs(group, poses):
-        """Move the Poses (Morphs) to the Morph Group"""
-        for pose in poses:
-            if pose and group:
-                pose.InsertUnder(group)
-                c4d.EventAdd()
-
     def store_morph_links(self, dtu):
         """
         Pass the Morph Links to be used for the current import

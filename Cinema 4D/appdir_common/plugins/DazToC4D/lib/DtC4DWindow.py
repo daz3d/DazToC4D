@@ -342,15 +342,11 @@ class guiDazToC4DMain(gui.GeDialog):
                     self.import_vars = CustomImports().auto_import_genesis()
             for var in self.import_vars:
                 if "Genesis" in var.skeleton.GetName():
-                    morph_grp = Morphs.create_null_for_morphs(var.body)
-                    Morphs.move_poses_under_morphs(morph_grp, var.c_poses)
                     if Poses().checkIfPosedResetPose():  # Removes Pose if Needed
                         daz_geo = dzc4d.add_obj_to_new_group(var.c_meshes)
                         DazToC4D().autoIK(var)
                         dzc4d.add_sub_div(daz_geo)
                         DazToC4D().lockAllModels()
-                        dzc4d.move_obj_to_top(morph_grp)
-
                 else:
                     gui.MessageDialog(
                         "No Character found, Auto-Import a Character and try again.",
