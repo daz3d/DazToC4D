@@ -40,8 +40,21 @@ def main():
     return erc_start
 
 
-def erc_var(bone, direction):
-    if bone != "None":
+def erc_current(current):
+    erc_current = """
+    current = {0}
+    
+    """.format(
+        current
+    )
+
+    return erc_current
+
+
+def erc_var(bone, direction, prop, sublink):
+    if sublink:
+        return "float((" + direction + "*var"
+    if bone != "None" and prop.endswith("Rotate"):
         return "math.degrees((" + direction + " * var"
     else:
         return "float((" + direction + " * var"
@@ -138,6 +151,13 @@ def erc_add(addend, x, var):
     return erc_add
 
 
+def erc_to_degrees():
+    erc_to_degrees = """
+    temp = math.radians(temp)
+    """
+    return erc_to_degrees
+
+
 def erc_limits(min, max):
     erc_limits = """
     temp += current
@@ -151,3 +171,11 @@ def erc_limits(min, max):
         min, max
     )
     return erc_limits
+
+
+def erc_translate():
+    erc_translate = """
+    temp +=current
+    Output1 = temp
+    """
+    return erc_translate

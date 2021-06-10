@@ -47,6 +47,7 @@
 	var s_oMorphLinks = {};
 	var s_aMorphNamesToExport = [];
 	var s_oSkeletonData = {};
+	var s_oSkeletonTransforms = {}
 	var s_oLimitsData = {};
 	var s_oHeadTailData = {};
 	var s_oJointOrientation = {};
@@ -2381,6 +2382,62 @@
 	}
 
 	/*********************************************************************/
+	// Void: ...
+	function disconnectSkeleton( oNode )
+	{
+		if( oNode.inherits( "DzSkeleton" ) ){
+			var oSkeleton = oNode.getSkeleton();
+			var aNodes = oSkeleton.getAllBones();
+			for( var i = 0; i < aNodes.length; i += 1 ){
+				var oBoneNode = aNodes[i]
+				oXpos = oBoneNode.getXPosControl();	
+				oXrot = oBoneNode.getXRotControl();
+				oYpos = oBoneNode.getYPosControl();
+				oYrot = oBoneNode.getYRotControl();
+				oZpos = oBoneNode.getZPosControl();
+				oZrot = oBoneNode.getZRotControl();
+				s_oSkeletonTransforms[oBoneNode.name] = {}
+				aProperties = [oXpos, oXrot, oYpos, oYrot, oZpos, oZrot];
+				for( var j = 0; j < aProperties.length; j += 1 ){
+					var oProperty = aProperties[j]
+					s_oSkeletonTransforms[oBoneNode.name][oProperty.assetId] = oProperty.getValue();
+					oProperty.setValue( 0 );
+					oProperty.setOverrideControllers( true );
+				}
+			}
+		}
+		
+	}
+	
+	/*********************************************************************/
+	// Void: ...
+	function reconnectSkeleton( oNode )
+	{
+		if( oNode.inherits( "DzSkeleton" ) ){
+			var oSkeleton = oNode.getSkeleton();
+			var aNodes = oSkeleton.getAllBones();
+			var oAssetMgr = App.getAssetMgr();
+			for( var i = 0; i < aNodes.length; i += 1 ){
+				var oBoneNode = aNodes[i]
+				oXpos = oBoneNode.getXPosControl();	
+				oXrot = oBoneNode.getXRotControl();
+				oYpos = oBoneNode.getYPosControl();
+				oYrot = oBoneNode.getYRotControl();
+				oZpos = oBoneNode.getZPosControl();
+				oZrot = oBoneNode.getZRotControl();
+
+				aProperties = [oXpos, oXrot, oYpos, oYrot, oZpos, oZrot,];
+				for( var j = 0; j < aProperties.length; j += 1 ){
+					var oProperty = aProperties[j]
+					oProperty.setOverrideControllers( false );
+					oProperty.setValue( s_oSkeletonTransforms[oBoneNode.name][oProperty.assetId] );
+				}
+			}
+		}
+	}
+
+	/*********************************************************************/
+
 	// void : ...
 	function main()
 	{
@@ -2443,6 +2500,7 @@
 					s_sMorphRules = getMorphString( s_aExportableProperties );
 					loadMorphLinks( s_aExportableProperties, oFigure );
 					disconnectMorphs( s_aExportableProperties );
+					disconnectSkeleton( oFigure );
 				};	
 				// Export Figure
 				loadFigureBoneData( oFigure );
@@ -2457,6 +2515,7 @@
 				reparentFigure( oFigure );
 				if ( s_bIncludeMorphs ){
 					reconnectMorphs( s_aExportableProperties );
+					reconnectSkeleton( oFigure )
 				}
 
 				// Write data

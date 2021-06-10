@@ -1,3 +1,4 @@
+import json
 from ntpath import join
 import c4d
 from c4d import utils, documents
@@ -19,6 +20,8 @@ class Morphs:
         self.morph_ctrl_user_data = dict()
         self.ctrl_sliders_output = dict()
         self.ctrl_sliders_input = dict()
+        self.morph_to_joints_nodes = dict()
+        self.math_to_joints_nodes = dict()
 
     def store_morph_links(self, dtu):
         """
@@ -212,10 +215,11 @@ class Morphs:
                     print("{0} Connections Could not be found ...".format(morph_name))
                     continue
 
-                sub_links = morph_link["SubLinks"]
-                new_sub_links = self.check_sub_links(sub_links)
                 self.create_morph_connection(
                     ctrl_node_master, morph_link, x, morph_name, pm_tag, pos
+                )
+                self.connect_morph_to_bones(
+                    ctrl_node_master, pm_tag, morph_link, x, morph_name, pos
                 )
                 # self.create_ctrl_connections(
                 #     morph_link, morph_name, x, ctrl_node_master, pos
@@ -261,6 +265,12 @@ class Morphs:
             ctrl_node_master,
             pm_tag,
             1000,
+            100,
+        )
+        self.morph_to_bone = self.create_node(
+            ctrl_node_master,
+            pm_tag,
+            -1200,
             100,
         )
 
@@ -387,7 +397,7 @@ class Morphs:
         # Add Expression
         python_node[c4d.GV_PYTHON_CODE] = expression
 
-    def get_expression(self, link, x):
+    def get_expression(self, link, x, sublink=False):
         """Selects the expression based on the ErcType
         Args:
             link (list): Information for one of the Bones/Morphs that Drives the output
@@ -403,7 +413,7 @@ class Morphs:
         prop = link["Property"]
         expression = ""
         direction = str(self.check_conversion(prop))
-        var = erc.erc_var(bone, direction)
+        var = erc.erc_var(bone, direction, prop, sublink)
         if erc_type == 0:
             # ERCDeltaAdd
             expression = erc.erc_delta_add(scalar, addend, x, var)
@@ -463,10 +473,10 @@ class Morphs:
         prop = link["Property"]
         if joint_name != "None":
             # Create Joint Driver
-            vector = self.find_vector(prop)
+            vector, rotation = self.find_vector(prop)
             joint = self.find_joint(joint_name)
             descid = c4d.DescID(
-                c4d.DescLevel(c4d.ID_BASEOBJECT_ROTATION, 0, 0),
+                c4d.DescLevel(rotation, 0, 0),
                 c4d.DescLevel(vector, 0, 0),
             )
             driver_node = self.create_node(node_master, joint, x, y)
@@ -485,11 +495,17 @@ class Morphs:
             prop (str): Property in Morph_links rotation value that drives the morph
         """
         if "YRotate" == prop:
-            return c4d.VECTOR_Y
+            return c4d.VECTOR_Y, c4d.ID_BASEOBJECT_ROTATION
         if "ZRotate" == prop:
-            return c4d.VECTOR_Z
+            return c4d.VECTOR_Z, c4d.ID_BASEOBJECT_ROTATION
         if "XRotate" == prop:
-            return c4d.VECTOR_X
+            return c4d.VECTOR_X, c4d.ID_BASEOBJECT_ROTATION
+        if "YTranslate" == prop:
+            return c4d.VECTOR_Y, c4d.ID_BASEOBJECT_POSITION
+        if "ZTranslate" == prop:
+            return c4d.VECTOR_Z, c4d.ID_BASEOBJECT_POSITION
+        if "XTranslate" == prop:
+            return c4d.VECTOR_X, c4d.ID_BASEOBJECT_POSITION
 
     def check_conversion(self, prop):
         """Returns the Value to take into account C4D being Right-Handed and Daz Being Left-Handed
@@ -501,6 +517,12 @@ class Morphs:
         if "ZRotate" == prop:
             return -1
         if "XRotate" == prop:
+            return 1
+        if "YTranslate" == prop:
+            return 1
+        if "ZTranslate" == prop:
+            return -1
+        if "XTranslate" == prop:
             return 1
         else:
             return 1
@@ -528,7 +550,7 @@ class Morphs:
         for link in sublinks:
             prop = link["Property"]
             joint_name = link["Bone"]
-            if self.find_joint(joint_name):
+            if not self.find_joint(joint_name):
                 continue
             if not prop in possible_links:
                 continue
@@ -720,6 +742,92 @@ class Morphs:
         ctrl_null_output = self.ctrl_null_node.AddPort(c4d.GV_PORT_OUTPUT, slider_id)
         self.ctrl_sliders_output[morph_name] = ctrl_null_output
         ctrl_null_output.Connect(morph_input)
+
+    def connect_morph_to_bones(
+        self, node_master, pm_tag, morph_link, x, morph_name, pos
+    ):
+        sub_links = morph_link["SubLinks"]
+        clean_name = self.clean_name(morph_name)
+        new_sub_links = self.check_sub_links(sub_links)
+        if len(new_sub_links) == 0:
+            return
+        self.morph_to_joints_nodes = {}
+
+        morph_num = pm_tag.GetMorphID(x)
+        morph_output = self.morph_to_bone.AddPort(c4d.GV_PORT_OUTPUT, morph_num)
+        for link in new_sub_links:
+            joint_name = link["Bone"]
+            prop = link["Property"]
+            python_node = self.create_xpresso_node(
+                node_master,
+                1022471,
+                -600,
+                pos[x],
+            )
+            joint = self.find_joint(joint_name)
+            vector, transform = self.find_vector(prop)
+            descid = c4d.DescID(
+                c4d.DescLevel(transform, 0, 0),
+                c4d.DescLevel(vector, 0, 0),
+            )
+            if not joint_name + prop in self.math_to_joints_nodes.keys():
+                math_node = self.create_xpresso_node(
+                    node_master,
+                    c4d.ID_OPERATOR_MATH,
+                    -400,
+                    pos[x],
+                )
+                self.math_to_joints_nodes[joint_name + prop] = math_node
+
+            if joint_name + prop not in self.morph_to_joints_nodes.keys():
+                driver_node = self.create_node(node_master, joint, x, -300)
+                driver_input = driver_node.AddPort(c4d.GV_PORT_INPUT, descid)
+                self.morph_to_joints_nodes[joint_name + prop] = driver_node
+
+            math_node = self.math_to_joints_nodes[joint_name + prop]
+            driver_node = self.morph_to_joints_nodes[joint_name + prop]
+
+            current_port = python_node.GetInPorts()[0]
+            current_port.SetName("current")
+            ctrl_python_port = python_node.GetInPorts()[1]
+            ctrl_python_port.SetName("var1")
+            morph_output.Connect(ctrl_python_port)
+            connected = False
+            lv1 = c4d.DescLevel(2000, c4d.DTYPE_SUBCONTAINER, 0)
+            lv2 = c4d.DescLevel(1000, c4d.DTYPE_DYNAMIC, 0)
+            math_node.SetParameter(
+                c4d.DescID(lv1, lv2), joint[descid], c4d.DESCFLAGS_SET_0
+            )
+            for index, math_input in enumerate(math_node.GetInPorts()):
+                if index == 0:
+                    continue
+                elif not math_input.IsIncomingConnected():
+                    python_node.GetOutPorts()[0].Connect(math_input)
+                    connected = True
+                    break
+            if not connected:
+                real_id = c4d.DescID(
+                    c4d.DescLevel(
+                        c4d.GV_MATH_INPUT, c4d.ID_GV_DATA_TYPE_REAL, 400001121
+                    )
+                )
+                math_node.AddPort(c4d.GV_PORT_INPUT, real_id)
+                for index, math_input in enumerate(math_node.GetInPorts()):
+                    if index == 0:
+                        continue
+                    elif not math_input.IsIncomingConnected():
+                        python_node.GetOutPorts()[0].Connect(math_input)
+                        break
+
+            math_node.GetOutPorts()[0].Connect(driver_input)
+
+            expression = erc.erc_start()
+            # expression += erc.erc_current(joint[descid])
+            expression += self.get_expression(link, str(1), True)
+            if prop.endswith("Rotate"):
+                expression += erc.erc_to_degrees()
+            expression += erc.erc_translate()
+            python_node[c4d.GV_PYTHON_CODE] = expression
 
     def find_morph_id(self, morph_tag_main, morph_tag_slave, x):
         """Find DescID for parent and child
