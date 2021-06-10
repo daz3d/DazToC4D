@@ -29,31 +29,87 @@ class Morphs:
         """
         self.morph_links = dtu.get_morph_links_dict()
 
-    def store_variables(self, body, children, joints, skeleton):
+    def store_variables(self, body, meshes, joints, skeleton, poses):
         self.body = body
         self.body_name = body.GetName()
-        self.children = children
+        self.meshes = meshes
         self.joints = joints
         self.skeleton = skeleton
         self.skeleton_name = skeleton.GetName()
+        self.poses = poses
 
     def find_morph_link(self, morph_name):
-        split = morph_name.split("__")
-        if len(split) != 2:
-            if morph_name not in self.morph_links.keys():
-                return
-            return self.morph_links[morph_name]
-
-        original_morph_name = split[1]
+        original_morph_name = self.clean_name(morph_name)
         if original_morph_name not in self.morph_links.keys():
             return
         return self.morph_links[original_morph_name]
 
     def clean_name(self, morph_name):
-        split = morph_name.split("__")
-        if len(split) != 2:
+        if morph_name.startswith(self.skeleton_name + "__"):
+            morph_name = morph_name[len(self.skeleton_name + "__") :]
             return morph_name
-        return split[1]
+        for obj in self.meshes:
+            prefix = obj.GetName().replace(".Shape", "") + "__"
+            if morph_name.startswith(prefix):
+                morph_name = morph_name[len(prefix) :]
+                return morph_name
+        return morph_name
+
+    def morphs_to_delta(self):
+        """
+        Convert Morphs to Delta Morphs
+        """
+        doc = c4d.documents.GetActiveDocument()
+        for obj in self.meshes:
+            morph_names = []
+            pm_remove = []
+            pm_tag = obj.GetTag(c4d.Tposemorph)
+            pm_tag.ExitEdit(doc, True)
+            if pm_tag:
+                morph_amount = pm_tag.GetMorphCount()
+                for x in range(morph_amount):
+                    pm_tag.SetActiveMorphIndex(x)
+                    morph_name = pm_tag.GetActiveMorph().GetName()
+                    if "Default:" in morph_name:
+                        continue
+                    morph_names.append(morph_name)
+                    pm_remove.append(x)
+                for i in reversed(pm_remove):
+                    pm_tag.RemoveMorph(i)
+                pm_tag[c4d.ID_CA_POSE_POINTS] = True
+                for pose in self.poses:
+                    for morph_obj in pose.GetChildren():
+                        if morph_obj.GetName() in morph_names:
+                            morph = pm_tag.AddMorph()
+                            morph.SetName(morph_obj.GetName())
+                            count = pm_tag.GetMorphCount()
+                            pm_tag.SetActiveMorphIndex(count - 1)
+                            desc_id = c4d.DescID(
+                                c4d.DescLevel(c4d.ID_CA_POSE_ANIMATE_DATA),
+                                c4d.DescLevel(1101),
+                            )
+                            # Set Data to Absolute and link to our obj
+                            pm_tag[c4d.ID_CA_POSE_MIXING] = c4d.ID_CA_POSE_MIXING_ABS
+                            pm_tag[c4d.ID_CA_POSE_TARGET] = morph_obj
+
+                            # Store the point data in the morph node
+                            morph.Store(doc, pm_tag, c4d.CAMORPH_DATA_FLAGS_POINTS)
+                            morph.Apply(doc, pm_tag, c4d.CAMORPH_DATA_FLAGS_POINTS)
+
+                            # Set data to Relative and remove the link
+                            pm_tag[c4d.ID_CA_POSE_MIXING] = c4d.ID_CA_POSE_MIXING_REL
+                            pm_tag[c4d.ID_CA_POSE_TARGET] = None
+
+                            pm_tag.UpdateMorphs()
+                            pm_tag.SetParameter(
+                                desc_id, 0, c4d.DESCFLAGS_SET_USERINTERACTION
+                            )
+                            morph_obj.Remove()
+                            c4d.EventAdd()
+
+        for obj in self.meshes:
+            pm_tag = obj.GetTag(c4d.Tposemorph)
+            pm_tag[c4d.ID_CA_POSE_MODE] = c4d.ID_CA_POSE_MODE_ANIMATE
 
     def delete_morphs(self, c_meshes, c_morphs):
         """
@@ -83,12 +139,6 @@ class Morphs:
                     pm_tag.RemoveMorph(i)
                 if pm_tag.GetMorphCount() == 1:
                     pm_tag.Remove()
-        for obj in c_morphs:
-            if "Default:" in obj.GetName():
-                continue
-            morph_name = obj.GetName()
-            if morph_name in obj_remove:
-                obj.Remove()
 
     def rename_morphs(self, c_meshes):
         """
@@ -196,6 +246,7 @@ class Morphs:
 
     def add_drivers(self):
         """Creates the drivers that will control all the morphs on the main body."""
+
         pm_tag = self.body.GetTag(c4d.Tposemorph)
         if pm_tag:
             morph_amount = pm_tag.GetMorphCount()
@@ -859,11 +910,7 @@ class Morphs:
         """
         for index in range(morph_tag.GetMorphCount()):
             current_morph = morph_tag.GetMorph(index).GetName()
-            split = current_morph.split("__")
-            if len(split) > 1:
-                original_name = split[1]
-            else:
-                original_name = current_morph
+            original_name = self.clean_name(current_morph)
             if morph_name == original_name:
                 return morph_tag.GetMorphID(index)
         return

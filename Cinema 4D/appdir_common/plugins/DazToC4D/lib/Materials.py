@@ -141,6 +141,13 @@ class Materials:
             properties[prop["Name"]] = prop
         return properties
 
+    def find_mat_type(self, obj, mat):
+        if obj not in self.material_dict.keys():
+            return
+        if mat not in self.material_dict[obj].keys():
+            return
+        return self.material_dict[obj][mat]["Value"]
+
     def update_materials(self):
         doc = c4d.documents.GetActiveDocument()
         doc_mat = doc.GetMaterials()
@@ -153,6 +160,7 @@ class Materials:
                 mat_obj = link.GetObject()
                 obj_name = mat_obj.GetName().replace(".Shape", "")
                 prop = self.find_mat_properties(obj_name, mat_name)
+                asset_type = self.find_mat_type(obj_name, mat_name)
                 if not prop:
                     continue
                 self.clean_up_layers(mat)
@@ -162,7 +170,7 @@ class Materials:
                 self.set_up_bump_normal(mat, prop)
                 self.set_up_alpha(mat, prop)
                 self.set_up_translucency(mat, prop)
-                self.viewport_settings(mat)
+                self.viewport_settings(mat, asset_type)
 
     def clean_up_layers(self, mat):
         mat[c4d.MATERIAL_USE_COLOR] = False
@@ -376,7 +384,9 @@ class Materials:
                     strength = self.check_value("float", strength)
                     mat[c4d.MATERIAL_LUMINANCE_BRIGHTNESS] = strength
 
-    def viewport_settings(self, mat):
+    def viewport_settings(self, mat, asset_type):
+        if asset_type == "Follower/Hair":
+            mat[c4d.MATERIAL_DISPLAY_USE_ALPHA] = False
         mat[c4d.MATERIAL_DISPLAY_USE_LUMINANCE] = False
 
     @staticmethod
