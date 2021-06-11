@@ -157,7 +157,7 @@ class CustomImports:
             var.body, var.c_meshes, var.c_joints, var.skeleton, var.c_poses
         )
         morph.morphs_to_delta()
-        morph.delete_morphs(var.c_meshes, var.c_morphs)
+        morph.delete_morphs(var.c_meshes)
         morph.connect_morphs_to_parents(var.body, var.c_meshes)
         morph.add_drivers()
         morph.rename_morphs(var.c_meshes)
