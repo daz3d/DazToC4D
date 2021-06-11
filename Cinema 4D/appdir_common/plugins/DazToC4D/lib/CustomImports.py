@@ -5,7 +5,7 @@ from c4d import documents, gui
 
 from .CustomCmd import Cinema4DCommands as dzc4d
 from . import DtuLoader
-from . import Materials
+from . import StandardMaterials
 from . import Utilities
 from . import Morphs
 from . import DazRig
@@ -64,7 +64,7 @@ class CustomImports:
         os.chdir(current_dir)
 
     def genesis_import(self, file_path, dtu, sss_value, normal_value, bump_value):
-        mat = Materials.Materials()
+        mat = StandardMaterials.StdMaterials()
         morph = Morphs.Morphs()
         var = Utilities.Variables()
         jnt_fixes = DazRig.JointFixes()
@@ -183,7 +183,7 @@ class CustomImports:
 
     def prop_import(self, file_path, dtu, sss_value, normal_value, bump_value):
 
-        mat = Materials.Materials()
+        mat = StandardMaterials.StdMaterials()
         if os.path.exists(file_path) == False:
             gui.MessageDialog(
                 "Nothing to import.\nYou have to export from DAZ Studio first",

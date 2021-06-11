@@ -1,9 +1,6 @@
 import c4d
-from c4d import utils, documents
-from c4d import gui
 
 from . import ErcExpressions as erc
-
 from .MorphHelpers import MorphHelpers
 
 
