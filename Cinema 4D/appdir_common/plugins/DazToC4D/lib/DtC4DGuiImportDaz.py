@@ -12,9 +12,10 @@ from .Definitions import RES_DIR
 from .Morphs import Morphs
 from .DazToC4DClasses import DazToC4D
 from .CustomCmd import Cinema4DCommands as dzc4d
+from .Utilities import Variables
 
 
-class guiDazToC4DMain(gui.GeDialog):
+class GuiImportDaz(gui.GeDialog):
 
     dialog = None
     import_vars = []
@@ -50,7 +51,6 @@ class guiDazToC4DMain(gui.GeDialog):
 
     def __init__(self):
         try:
-            self.AddGadget(c4d.DIALOG_NOMENUBAR, 0)  # disable menubar
             self.AddGadget(c4d.DIALOG_PIN, 0)
             self.config_dialog = EXTRADialog()
         except:
@@ -62,7 +62,6 @@ class guiDazToC4DMain(gui.GeDialog):
         Used to Allow the User to know when the command is still loading
         """
         c4d.StatusClear()
-        c4d.EventAdd()
         c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
@@ -74,27 +73,36 @@ class guiDazToC4DMain(gui.GeDialog):
         c4d.StatusClear()
         if btnState == False:
             self.main_logo.SetImage(self.img_loading, False)
-            try:
-                self.main_logo.LayoutChanged()
-                self.main_logo.Redraw()
-            except:
-                print("DazToC4D: LayoutChanged skip...")
-
-            self.auto_import_fig_but.SetImage(self.img_btnAutoImportOff_FIG, False)
-            self.auto_import_prop_but.SetImage(self.img_btnAutoImportOff_PROP, False)
-            self.convert_mat_but.SetImage(self.img_btnConvertMaterialsOff, False)
-            self.auto_ik_but.SetImage(self.img_btnAutoIKOff, False)
+            self.auto_import_fig_but.SetImage(self.img_btnAutoImportOff_FIG, True)
+            self.auto_import_prop_but.SetImage(self.img_btnAutoImportOff_PROP, True)
+            self.convert_mat_but.SetImage(self.img_btnConvertMaterialsOff, True)
+            self.auto_ik_but.SetImage(self.img_btnAutoIKOff, True)
 
         if btnState == True:
-            self.main_logo.SetImage(self.img_d2c4dLogo, False)
-            self.auto_import_fig_but.SetImage(self.img_btnAutoImport_FIG, False)
-            self.auto_import_prop_but.SetImage(self.img_btnAutoImport_PROP, False)
-            self.convert_mat_but.SetImage(self.img_btnConvertMaterials, False)
-            self.auto_ik_but.SetImage(self.img_btnAutoIK, False)
+            self.main_logo.SetImage(self.img_d2c4dLogo, True)
+            self.auto_import_fig_but.SetImage(self.img_btnAutoImport_FIG, True)
+            self.auto_import_prop_but.SetImage(self.img_btnAutoImport_PROP, True)
+            self.convert_mat_but.SetImage(self.img_btnConvertMaterials, True)
+            self.auto_ik_but.SetImage(self.img_btnAutoIK, True)
 
+        try:
+            self.main_logo.LayoutChanged()
+            self.main_logo.Redraw()
+        except:
+            print("DazToC4D: LayoutChanged skip...")
+        c4d.StatusClear()
+        c4d.EventAdd()
+        c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
+        c4d.DrawViews(
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
+            | c4d.DRAWFLAGS_NO_THREAD
+            | c4d.DRAWFLAGS_STATICBREAK
+        )
+        c4d.DrawViews()
+        c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
+        c4d.DrawViews(c4d.DRAWFLAGS_FORCEFULLREDRAW)
         bc = c4d.BaseContainer()
         c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
-
         return True
 
     def buttonBC(self, tooltipText="", presetLook=""):
@@ -309,12 +317,7 @@ class guiDazToC4DMain(gui.GeDialog):
             sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
             normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
             bump_value = self.GetFloat(self.SLIDER_BUMP_MULTIPLIER)
-            c4d.EventAdd()
-
-            c4d.EventAdd()
-            self.import_vars = CustomImports().auto_import_genesis(
-                sss_value, normal_value, bump_value
-            )
+            CustomImports().auto_import_genesis(sss_value, normal_value, bump_value)
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_AUTO_IMPORT_PROP:
@@ -322,8 +325,6 @@ class guiDazToC4DMain(gui.GeDialog):
             sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
             normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
             bump_value = self.GetFloat(self.SLIDER_BUMP_MULTIPLIER)
-            c4d.EventAdd()
-
             CustomImports().auto_import_prop(sss_value, normal_value, bump_value)
             self.buttonsChangeState(True)
 
@@ -332,26 +333,27 @@ class guiDazToC4DMain(gui.GeDialog):
             c4d.EventAdd()
             if self.config_dialog.IsOpen():
                 self.config_dialog.Close()
-
-            if len(self.import_vars) == 0:
+            var = Variables()
+            var.restore_variables()
+            if not var.skeleton:
                 error = gui.MessageDialog(
                     "Error has occured\n please re-import Character",
                     c4d.GEMB_RETRYCANCEL,
                 )
                 if error == c4d.GEMB_R_RETRY:
                     self.import_vars = CustomImports().auto_import_genesis()
-            for var in self.import_vars:
-                if "Genesis" in var.skeleton.GetName():
-                    if Poses().checkIfPosedResetPose():  # Removes Pose if Needed
-                        daz_geo = dzc4d.add_obj_to_new_group(var.c_meshes)
-                        DazToC4D().autoIK(var)
-                        dzc4d.add_sub_div(daz_geo)
-                        DazToC4D().lockAllModels()
-                else:
-                    gui.MessageDialog(
-                        "No Character found, Auto-Import a Character and try again.",
-                        c4d.GEMB_OK,
-                    )
+
+            if "Genesis" in var.skeleton.GetName():
+                if Poses().checkIfPosedResetPose():  # Removes Pose if Needed
+                    daz_geo = dzc4d.add_obj_to_new_group(var.c_meshes)
+                    DazToC4D().autoIK(var)
+                    dzc4d.add_sub_div(daz_geo)
+                    DazToC4D().lockAllModels()
+            else:
+                gui.MessageDialog(
+                    "No Character found, Auto-Import a Character and try again.",
+                    c4d.GEMB_OK,
+                )
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_CONFIG:

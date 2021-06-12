@@ -35,6 +35,10 @@ class DtuLoader:
             self.load_dtu()
         return self.dtu_dict
 
+    def load_dtu_dict(self, dtu_dict):
+        self.dtu_dict = dtu_dict
+        return self.dtu_dict
+
     def load_asset_name(self):
         dtu_dict = self.get_dtu_dict()
         self.asset_name = dtu_dict["Asset Name"]

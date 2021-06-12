@@ -1,5 +1,6 @@
 import os
 import c4d
+import json
 from c4d import documents, utils
 from xml.etree import ElementTree
 
@@ -7,10 +8,29 @@ from .Definitions import ROOT_DIR
 from .CustomIterators import TagIterator, ObjectIterator
 from .CustomCmd import Cinema4DCommands as dzc4d
 from . import Database
+from .DtuLoader import DtuLoader
 
 
 class Variables:
+    import_name = None
+    dtu = None
+    skeleton = None
+    skeleton_name = None
+    body = None
+    body_name = None
+    c_meshes = None
+    c_morphs = None
+    c_poses = None
+    c_joints = None
+    c_skin_data = None
+
+    unique_id = 1057461
+
     def store_asset_name(self, dtu):
+        if isinstance(dtu, dict):
+            dtu_dict = dtu
+            dtu = DtuLoader("")
+            dtu.load_dtu_dict(dtu_dict)
         self.import_name = dtu.get_import_name()
         self.dtu = dtu
 
@@ -77,6 +97,17 @@ class Variables:
         self.children = res
         return res
 
+    def store_to_scene(self):
+        doc = c4d.documents.GetActiveDocument()
+        doc_bc = doc.GetDataInstance()
+        sub_bc = c4d.BaseContainer()
+        sub_bc[1000] = json.dumps(self.dtu.get_dtu_dict())
+        sub_bc[2000] = self.skeleton_name
+        sub_bc[3000] = self.body_name
+        sub_bc[4000] = self.import_name
+        doc_bc.SetContainer(self.unique_id, sub_bc)
+        doc.SetData(doc_bc)
+
     def prepare_variables(self):
         """
         Sets up Variables
@@ -88,8 +119,22 @@ class Variables:
             self.find_body(self.import_name)
             self.find_body_name()
             self.find_children(self.skeleton)
+            self.store_to_scene()
         else:
             return True
+
+    def restore_variables(self):
+        """
+        Restores Variables Based on the Unique ID
+        """
+        doc = c4d.documents.GetActiveDocument()
+        dtu_dict = json.loads(doc[self.unique_id][1000])
+        self.store_asset_name(dtu_dict)
+        self.find_skeleton(self.import_name)
+        self.find_skeleton_name()
+        self.find_body(self.import_name)
+        self.find_body_name()
+        self.find_children(self.skeleton)
 
 
 def get_daz_mesh():

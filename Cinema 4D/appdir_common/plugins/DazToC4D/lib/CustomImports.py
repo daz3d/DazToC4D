@@ -41,26 +41,28 @@ class CustomImports:
 
     def auto_import_genesis(self, sss_value, normal_value, bump_value):
         import_list = self.get_genesis_list()
-        import_vars = []
         current_dir = os.getcwd()
         os.chdir(EXPORT_DIR)
-        for imported_dir in import_list:
-            dtu = DtuLoader.DtuLoader(imported_dir)
-            fbx_path = dtu.get_fbx_path()
-            import_vars.append(
-                self.genesis_import(fbx_path, dtu, sss_value, normal_value, bump_value)
-            )
+        if import_list:
+            for imported_dir in import_list:
+                dtu = DtuLoader.DtuLoader(imported_dir)
+                fbx_path = dtu.get_fbx_path()
+                self.genesis_import(
+                    fbx_path, dtu, sss_value, normal_value, bump_value
+                )
+                
         os.chdir(current_dir)
-        return import_vars
+
 
     def auto_import_prop(self, sss_value, normal_value, bump_value):
+        import_list = self.get_prop_list()
         current_dir = os.getcwd()
         os.chdir(EXPORT_DIR)
-        import_list = self.get_prop_list()
-        for imported_dir in import_list:
-            dtu = DtuLoader.DtuLoader(imported_dir)
-            fbx_path = dtu.get_fbx_path()
-            self.prop_import(fbx_path, dtu, sss_value, normal_value, bump_value)
+        if import_list:
+            for imported_dir in import_list:
+                dtu = DtuLoader.DtuLoader(imported_dir)
+                fbx_path = dtu.get_fbx_path()
+                self.prop_import(fbx_path, dtu, sss_value, normal_value, bump_value)
         os.chdir(current_dir)
 
     def genesis_import(self, file_path, dtu, sss_value, normal_value, bump_value):
@@ -150,19 +152,19 @@ class CustomImports:
             )
         c4d.EventAdd()
 
-        print("Starting Morph Updates")
-
-        morph.store_morph_links(dtu)
-        morph.store_variables(
-            var.body, var.c_meshes, var.c_joints, var.skeleton, var.c_poses
-        )
-        morph.morphs_to_delta()
-        morph.delete_morphs(var.c_meshes)
-        morph.connect_morphs_to_parents(var.body, var.c_meshes)
-        morph.add_drivers()
-        morph.rename_morphs(var.c_meshes)
-        print("Morph Corrections Done")
-        c4d.EventAdd()
+        if var.body.GetTag(c4d.Tposemorph):
+            print("Starting Morph Updates")
+            morph.store_morph_links(dtu)
+            morph.store_variables(
+                var.body, var.c_meshes, var.c_joints, var.skeleton, var.c_poses
+            )
+            morph.morphs_to_delta()
+            morph.delete_morphs(var.c_meshes)
+            morph.connect_morphs_to_parents(var.body, var.c_meshes)
+            morph.add_drivers()
+            morph.rename_morphs(var.c_meshes)
+            print("Morph Corrections Done")
+            c4d.EventAdd()
 
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
@@ -179,7 +181,6 @@ class CustomImports:
             defaultw=200,
             defaulth=150,
         )
-        return var
 
     def prop_import(self, file_path, dtu, sss_value, normal_value, bump_value):
 
@@ -260,15 +261,27 @@ class CustomImports:
         Returns the Absolute Paths of the Exports from Daz for Figures
         """
         import_list = []
-        for i in os.listdir(os.path.join(EXPORT_DIR, "FIG")):
-            import_list.append(os.path.join(EXPORT_DIR, "FIG", i))
-        return import_list
+        if os.path.exists(os.path.join(EXPORT_DIR, "FIG")):
+            for i in os.listdir(os.path.join(EXPORT_DIR, "FIG")):
+                import_list.append(os.path.join(EXPORT_DIR, "FIG", i))
+            return import_list
+        else:
+            gui.MessageDialog(
+                "Could Not find Exported File from Daz Studio",
+                type=c4d.GEMB_ICONEXCLAMATION,
+            )
 
     def get_prop_list(self):
         """
         Returns the Absolute Paths of the Exports from Daz for Environments and Props
         """
         import_list = []
-        for i in os.listdir(os.path.join(EXPORT_DIR, "ENV")):
-            import_list.append(os.path.join(EXPORT_DIR, "ENV", i))
-        return import_list
+        if os.path.exists(os.path.join(EXPORT_DIR, "ENV")):
+            for i in os.listdir(os.path.join(EXPORT_DIR, "ENV")):
+                import_list.append(os.path.join(EXPORT_DIR, "ENV", i))
+            return import_list
+        else:
+            gui.MessageDialog(
+                "Could Not find Exported File from Daz Studio",
+                type=c4d.GEMB_ICONEXCLAMATION,
+            )
