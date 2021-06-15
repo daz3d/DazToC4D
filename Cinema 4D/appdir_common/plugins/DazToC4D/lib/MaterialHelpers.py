@@ -1,6 +1,8 @@
 import os
 import c4d
 
+from c4d import gui
+
 from .TextureLib import texture_library
 
 # region top-level methods
@@ -51,6 +53,16 @@ class MaterialHelpers:
         texture[c4d.BITMAPSHADER_FILENAME] = path
         mat.InsertShader(texture)
         return texture
+
+    def check_materials(self):
+        """Checks if any standard materials exist in the scene."""
+        doc = c4d.documents.GetActiveDocument()
+        docMaterials = doc.GetMaterials()
+        for mat in docMaterials:
+            matName = mat.GetName()
+            if mat.GetType() == c4d.Mmaterial:
+                return True
+        gui.MessageDialog("No standard mats found. This scene was already converted")
 
     def store_materials(self, dtu):
         """
@@ -132,3 +144,14 @@ class MaterialHelpers:
         if mat not in self.material_dict[obj].keys():
             return
         return self.material_dict[obj][mat]["Value"]
+
+    def find_map_by_type(self, type, prop):
+        lib = texture_library
+        for prop_name in lib[type]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    path = prop[prop_name]["Texture"]
+                    return os.path.abspath(path)
+
+    def get_all_reflect_shaders(self, mat):
+        all_shaders = mat.GetAllReflectionShaders()

@@ -114,15 +114,6 @@ class DtuLoader:
     def load_pose_data_dict(self):
         dtu_dict = self.get_dtu_dict()
         data = dtu_dict["PoseData"]
-        for key in data:
-            if key.startswith("Genesis"):
-                new_key = "root"
-                data[key]["Name"] = new_key
-                data[key]["Object Type"] = "BONE"
-                data[new_key] = data[key]
-                del data[key]
-                break
-
         self.pose_data_dict = dtu_dict["PoseData"]
 
     def get_pose_data_dict(self):

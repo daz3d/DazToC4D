@@ -47,12 +47,9 @@ class CustomImports:
             for imported_dir in import_list:
                 dtu = DtuLoader.DtuLoader(imported_dir)
                 fbx_path = dtu.get_fbx_path()
-                self.genesis_import(
-                    fbx_path, dtu, sss_value, normal_value, bump_value
-                )
-                
-        os.chdir(current_dir)
+                self.genesis_import(fbx_path, dtu, sss_value, normal_value, bump_value)
 
+        os.chdir(current_dir)
 
     def auto_import_prop(self, sss_value, normal_value, bump_value):
         import_list = self.get_prop_list()
@@ -97,7 +94,7 @@ class CustomImports:
         dzc4d.del_unused_mats()
         c4d.EventAdd()
 
-        var.store_asset_name(dtu)
+        var.store_dtu(dtu)
         if var.prepare_variables():
             gui.MessageDialog(
                 "Import Failed.\nYou can check the console for more info (Shift + F10)",

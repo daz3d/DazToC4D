@@ -4,11 +4,12 @@ import webbrowser
 import c4d
 from c4d import gui
 
-from .Materials import Materials, convertToRedshift, convertMaterials
+from .Materials import Materials, convertMaterials
+from .RedshfitMaterials import RedshiftMaterials
 from .CustomImports import CustomImports
 from .DtC4DDialogs import EXTRADialog
 from .DtC4DPosing import Poses
-from .Definitions import RES_DIR
+from .Definitions import RES_DIR, EXPORT_DIR
 from .Morphs import Morphs
 from .DazToC4DClasses import DazToC4D
 from .CustomCmd import Cinema4DCommands as dzc4d
@@ -270,17 +271,6 @@ class GuiImportDaz(gui.GeDialog):
         self.SetInt32(self.SLIDER_SSS_MULTIPLIER, value=5, min=1, max=100)
 
         self.GroupEnd()  # END ///////////////////////////////////////////////
-
-        self.GroupBegin(10001, c4d.BFH_CENTER, 2, title="Redshift Settings: ")
-        self.GroupBorder(c4d.BORDER_THIN_OUT)
-        self.GroupBorderSpace(20, 5, 20, 5)
-        self.AddStaticText(99, c4d.BFH_CENTER, 0, 0, name="Choose Bump Type:")
-        self.AddComboBox(2002, c4d.BFH_SCALEFIT, 0, 0, False)
-        self.AddChild(2002, 0, "Tangent-Space Normal")
-        self.AddChild(2002, 1, "Bump/Height Field")
-        self.AddChild(2002, 2, "Object-Space Normal")
-        self.GroupEnd()
-
         self.GroupEnd()  # MATERIALS END ///////////////////////////////////////////////
 
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
@@ -341,7 +331,7 @@ class GuiImportDaz(gui.GeDialog):
                     c4d.GEMB_RETRYCANCEL,
                 )
                 if error == c4d.GEMB_R_RETRY:
-                    self.import_vars = CustomImports().auto_import_genesis()
+                    CustomImports().auto_import_genesis()
 
             if "Genesis" in var.skeleton.GetName():
                 if Poses().checkIfPosedResetPose():  # Removes Pose if Needed
@@ -373,6 +363,9 @@ class GuiImportDaz(gui.GeDialog):
             comboRender = self.GetInt32(2001)
             redshiftBumpType = self.GetInt32(2002)
             mat = Materials()
+            sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
+            normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
+            bump_value = self.GetFloat(self.SLIDER_BUMP_MULTIPLIER)
             if comboRender == 0:
                 gui.MessageDialog("Please select renderer from the list")
 
@@ -385,21 +378,32 @@ class GuiImportDaz(gui.GeDialog):
                         c4d.GEMB_YESNO,
                     )
                     if answer == c4d.GEMB_R_YES:
+                        current_dir = os.getcwd()
+                        os.chdir(EXPORT_DIR)
                         if comboRender == 1:
                             convertMaterials().convertTo("Vray")
                             c4d.CallCommand(1026375)  # Reload Python Plugins
 
                         if comboRender == 2:
-                            convert_to_redshift = convertToRedshift()
-                            convert_to_redshift.getBumpType(redshiftBumpType)
-                            convert_to_redshift.execute()
-                            c4d.CallCommand(100004766, 100004766)  # Select All
-                            c4d.CallCommand(100004767, 100004767)  # Deselect All
+                            var = Variables()
+                            var.restore_variables()
+                            rs_mat = RedshiftMaterials()
+                            if rs_mat.check_for_redshift():
+                                rs_mat.store_materials(var.dtu)
+                                rs_mat.store_sliders(
+                                    sss_value, normal_value, bump_value
+                                )
+                                rs_mat.execute()
+                                c4d.CallCommand(100004766, 100004766)  # Select All
+                                c4d.CallCommand(100004767, 100004767)  # Deselect All
+                            else:
+                                gui.MessageDialog("Redshift is Not Installed...")
 
                         if comboRender == 3:
                             mat.convertToOctane()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             c4d.CallCommand(100004767, 100004767)  # Deselect All
+                        os.chdir(current_dir)
 
         if id == self.BUTTON_HELP:
             new = 2  # open in a new tab, if possible
