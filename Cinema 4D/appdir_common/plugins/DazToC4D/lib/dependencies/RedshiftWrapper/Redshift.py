@@ -24,7 +24,8 @@ __project__ = "https://github.com/gr4ph0s/C4D_RedshiftWrapper_API"
 __version__ = "1.1"
 
 
-class Redshift(MetaName, metaclass=ImportTester):
+class Redshift(MetaName):
+    __metaclass__ = ImportTester
     """The main wrapper arround Redshift API.
 
     :member doUndo: (Bool) True if the wrapper have to call GvMaster.AddUndo() before any change otherwise False.

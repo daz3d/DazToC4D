@@ -125,9 +125,9 @@ class Variables:
         doc_bc = doc.GetDataInstance()
         sub_bc = c4d.BaseContainer()
         sub_bc[1000] = json.dumps(self.dtu.get_dtu_dict())
-        sub_bc[2000] = self.skeleton_name
-        sub_bc[3000] = self.body_name
-        sub_bc[4000] = self.import_name
+        sub_bc[2000] = str(self.skeleton_name)
+        sub_bc[3000] = str(self.body_name)
+        sub_bc[4000] = str(self.import_name)
         doc_bc.SetContainer(self.unique_id, sub_bc)
         doc.SetData(doc_bc)
 

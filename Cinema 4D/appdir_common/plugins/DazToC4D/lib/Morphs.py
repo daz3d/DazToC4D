@@ -467,11 +467,12 @@ class Morphs(MorphHelpers):
         return driver_output
 
     def add_path_group(self, morph_ctrl, morph_link):
-        path = morph_link["Path"]
+        path = str(morph_link["Path"])
         path = path.replace("//", "/")
         group_names = path.split("/")
         parent = None
         for grp_name in group_names:
+            grp_name = str(grp_name)
             user_id = self.find_user_data_by_name(morph_ctrl, grp_name)
             if not user_id:
                 group = c4d.GetCustomDatatypeDefault(c4d.DTYPE_GROUP)
@@ -487,7 +488,7 @@ class Morphs(MorphHelpers):
     def create_custom_controller(self, morph_link, morph_name):
         morph_ctrl = self.find_ctrl_null()
         parent = self.add_path_group(morph_ctrl, morph_link)
-        label_name = morph_link["Label"]
+        label_name = str(morph_link["Label"])
         min_morph = morph_link["Minimum"]
         max_morph = morph_link["Maximum"]
         real_data = c4d.GetCustomDataTypeDefault(c4d.DTYPE_REAL)
