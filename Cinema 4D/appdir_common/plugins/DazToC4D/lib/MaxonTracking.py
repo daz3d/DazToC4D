@@ -1,21 +1,9 @@
 import c4d
 from . import Utilities
+from .MorphHelpers import MorphHelpers
 
 
-class Tracking:
-    @staticmethod
-    def create_node(node_parent, obj, x, y):
-        node = node_parent.CreateNode(
-            node_parent.GetRoot(), c4d.ID_OPERATOR_OBJECT, None, x, y
-        )
-        node[c4d.GV_OBJECT_OBJECT_ID] = obj
-        return node
-
-    @staticmethod
-    def create_xpresso_node(node_parent, type, x, y):
-        node = node_parent.CreateNode(node_parent.GetRoot(), type, None, x, y)
-        return node
-
+class Tracking(MorphHelpers):
     @staticmethod
     def add_head_tracking(face_capture):
         """Need to removed Hardcoding of Neck_Ctrl"""
@@ -46,43 +34,29 @@ class Tracking:
             )
             degrees_to_rad[c4d.GV_DEGREE_FUNCTION_ID] = c4d.GV_RAD2DEGREE_NODE_FUNCTION
 
-    @staticmethod
-    def find_facial_morph(face_morph_tag, morph_name):
-        morph_amount = face_morph_tag.GetMorphCount()
-        for x in range(morph_amount):
-            face_morph_tag.SetActiveMorphIndex(x)
-            morph = face_morph_tag.GetActiveMorph()
-            face_morph_name = morph.GetName()
-            if set(face_morph_name.split(" ")) == set(morph_name.split(" ")):
-                return face_morph_tag.GetMorphID(x)
+    def find_facial_morph(self, face_capture, morph_name):
+        description = face_capture.GetDescription(c4d.DESCFLAGS_DESC_0)
+        for bc, paramid, groupid in description:
+            name = bc[c4d.DESC_NAME]
+            print(name, paramid, morph_name)
+            if set(name.split(" ")) == set(morph_name.split(" ")):
+                return paramid
 
-    @staticmethod
-    def connect_face_morphs(face_capture):
+    def connect_face_morphs(self, morphs, face_capture):
         """Connects to the Move By Maxon Animation"""
         doc = c4d.documents.GetActiveDocument()
-        morph_obj = doc.SearchObject("Daz Morphs Controller")
-        morph_tag = morph_obj.GetTag(c4d.Tposemorph)
-        face_morph_tag = face_capture.GetTag(c4d.Tposemorph)
-        xpresso_tag = morph_obj.GetTag(c4d.Texpresso)
+        xpresso_tag = morphs.GetTag(c4d.Texpresso)
         node_master = xpresso_tag.GetNodeMaster()
-        morph_master_output = Tracking.create_node(node_master, morph_tag, -1000, 100)
-        facial_node = Tracking.create_node(node_master, face_morph_tag, -1200, 100)
-        if morph_tag:
-            morph_amount = morph_tag.GetMorphCount()
-            for x in range(morph_amount):
-                morph_tag.SetActiveMorphIndex(x)
-                morph = morph_tag.GetActiveMorph()
-                morph_name = morph.GetName()
-                blend_shape = Tracking.find_facial_morph(face_morph_tag, morph_name)
-                if blend_shape:
-                    morph_num = morph_tag.GetMorphID(x)
-                    morph_input = morph_master_output.AddPort(
-                        c4d.GV_PORT_INPUT, morph_num
-                    )
-                    facial_output = facial_node.AddPort(c4d.GV_PORT_OUTPUT, blend_shape)
-                    facial_output.Connect(morph_input)
-
-            return morph_master_output, facial_node
+        morph_node = self.create_node(node_master, morphs, -1000, 100)
+        facial_node = self.create_node(node_master, face_capture, -1200, 100)
+        for desc_id, bc in morphs.GetUserDataContainer():
+            morph_name = bc.GetString(c4d.DESC_NAME)
+            face_capture_id = self.find_facial_morph(face_capture, morph_name)
+            if not face_capture_id:
+                continue
+            facial_output = facial_node.AddPort(c4d.GV_PORT_OUTPUT, face_capture_id)
+            morph_input = morph_node.AddPort(c4d.GV_PORT_INPUT, desc_id)
+            facial_output.Connect(morph_input)
 
     @staticmethod
     def disconnect_face_morphs(face_node, morph_node):

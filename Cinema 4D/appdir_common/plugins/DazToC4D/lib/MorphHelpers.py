@@ -161,8 +161,8 @@ class MorphHelpers:
 
     def find_user_data_by_name(self, obj, name):
         for user_data_id, bc in obj.GetUserDataContainer():
-            currentName = bc.GetString(c4d.DESC_NAME)
-            if currentName == name:
+            current_name = bc.GetString(c4d.DESC_NAME)
+            if current_name == name:
                 return user_data_id
 
     def find_vector(self, prop):

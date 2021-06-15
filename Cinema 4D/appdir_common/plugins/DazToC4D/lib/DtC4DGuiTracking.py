@@ -5,7 +5,8 @@ from .MaxonTracking import Tracking
 
 
 class GuiGenesisTracking(gui.GeDialog):
-    IDC_LINKBOX_2 = 341798000
+    LINK_BOX_MORPHS = 341797999
+    LINK_BOX_FACE = 341798000
     BUTTON_CONNECT_MORPH = 341798001
     BUTTON_DISCONNECT_MORPH = 341798002
     BUTTON_CONNECT_HEAD = 341798003
@@ -26,16 +27,31 @@ class GuiGenesisTracking(gui.GeDialog):
         self.GroupBegin(11, c4d.BFH_SCALEFIT, 1, 1, title="Moves By Maxon: ")
         self.GroupBorder(c4d.BORDER_GROUP_IN)
         self.GroupBorderSpace(10, 5, 10, 5)
-
+        self.GroupBegin(11, c4d.BFH_SCALEFIT, 2, 1, title="")
+        self.GroupBegin(11, c4d.BFH_SCALEFIT, 8, 1, title="Choose Morph Controller")
+        self.GroupBorder(c4d.BORDER_GROUP_IN)
+        self.morph_link = self.AddCustomGui(
+            self.LINK_BOX_MORPHS,
+            c4d.CUSTOMGUI_LINKBOX,
+            "Morph Group:",
+            c4d.BFH_SCALEFIT,
+            350,
+            0,
+        )
+        self.GroupEnd()
+        self.GroupBegin(11, c4d.BFH_SCALEFIT, 8, 1, title="Choose Face Capture")
+        self.GroupBorder(c4d.BORDER_GROUP_IN)
         self.face_link = self.AddCustomGui(
-            self.IDC_LINKBOX_2,
+            self.LINK_BOX_FACE,
             c4d.CUSTOMGUI_LINKBOX,
             "Face Capture:",
             c4d.BFH_SCALEFIT,
             350,
             0,
         )
-        self.GroupBegin(11, c4d.BFH_SCALEFIT, 8, 1, title="Connect Face Capture: ")
+        self.GroupEnd()
+        self.GroupEnd()
+        self.GroupBegin(11, c4d.BFV_CENTER, 8, 1, title="Connect Face Capture: ")
         self.GroupBorder(c4d.BORDER_GROUP_IN)
         self.GroupBorderSpace(10, 5, 12, 5)
 
@@ -47,7 +63,7 @@ class GuiGenesisTracking(gui.GeDialog):
         )
 
         self.GroupEnd()
-        self.GroupBegin(11, c4d.BFH_SCALEFIT, 8, 1, title="Connect Face Capture: ")
+        self.GroupBegin(11, c4d.BFV_CENTER, 8, 1, title="Connect Face Capture: ")
         self.GroupBorder(c4d.BORDER_GROUP_IN)
         self.GroupBorderSpace(10, 5, 12, 5)
         self.disconnect_morphs = self.AddButton(
@@ -62,14 +78,13 @@ class GuiGenesisTracking(gui.GeDialog):
         return True
 
     def Command(self, id, msg):
-        if id == self.IDC_LINKBOX_2:
-            self.find_face_captures()
+        # if id == self.LINK_BOX_FACE:
+        #     self.find_face_captures()
 
         if id == self.BUTTON_CONNECT_MORPH:
+            morph_controller = self.morph_link.GetLink()
             face_capture = self.face_link.GetLink()
-            self.morph_node, self.face_morphs = Tracking.connect_face_morphs(
-                face_capture
-            )
+            Tracking().connect_face_morphs(morph_controller, face_capture)
 
         if id == self.BUTTON_DISCONNECT_MORPH:
             face_capture = self.face_link.GetLink()
