@@ -1,3 +1,5 @@
+import math
+
 from c4d import documents, gui
 import c4d
 
@@ -125,6 +127,64 @@ class autoAlignArms:
 
 
 class Poses:
+    pose_data = dict()
+
+    def store_pose(self, dtu):
+        self.pose_data = dtu.get_pose_data_dict()
+
+    def get_pose_data(self, joint):
+        jnt_name = joint.GetName()
+        if jnt_name in self.pose_data.keys():
+            return self.pose_data[jnt_name]
+
+    def clear_pose(self, joints):
+        for joint in joints:
+            jnt_data = self.get_pose_data(joint)
+            if jnt_data:
+                pos_x = joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_X]
+                pos_y = joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Y]
+                pos_z = joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z]
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y] = 0
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z] = 0
+                joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_X] = (
+                    pos_x - jnt_data["Position"][0]
+                )
+                joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Y] = (
+                    pos_y - jnt_data["Position"][1]
+                )
+                joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z] = (
+                    pos_z + jnt_data["Position"][2]
+                )
+            c4d.EventAdd()
+
+    def restore_pose(self, joints):
+        for joint in joints:
+            jnt_data = self.get_pose_data(joint)
+            if jnt_data:
+                pos_x = joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_X]
+                pos_y = joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Y]
+                pos_z = joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z]
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = math.radians(
+                    jnt_data["Rotation"][0]
+                )
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y] = math.radians(
+                    jnt_data["Rotation"][1]
+                )
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z] = -1 * math.radians(
+                    jnt_data["Rotation"][2]
+                )
+                joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_X] = (
+                    pos_x + jnt_data["Position"][0]
+                )
+                joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Y] = (
+                    pos_y + jnt_data["Position"][1]
+                )
+                joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Z] = (
+                    pos_z - jnt_data["Position"][2]
+                )
+            c4d.EventAdd()
+
     def preAutoIK(self):
         doc = documents.GetActiveDocument()
         obj = doc.SearchObject("hip")

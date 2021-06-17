@@ -240,6 +240,22 @@ class RedshiftMaterials(MaterialHelpers):
                 rs_material[c4d.REDSHIFT_SHADER_MATERIAL_REFL_IOR] = value
         c4d.EventAdd()
 
+    def set_up_alpha(self, prop, rs_material, rs):
+        lib = texture_library
+        for prop_name in lib["opacity"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    path = prop[prop_name]["Texture"]
+                    texture_node = self.create_texture_rs(path, rs, 10, 400)
+                    texture_node[
+                        c4d.REDSHIFT_SHADER_TEXTURESAMPLER_ALPHA_IS_LUMINANCE
+                    ] = True
+                    rs_material.ExposeParameter(
+                        c4d.REDSHIFT_SHADER_MATERIAL_OPACITY_COLOR,
+                        c4d.GV_PORT_INPUT,
+                    )
+                    rs.CreateConnection(texture_node, rs_material, 0, 3)
+
     def make_rsmat(self, mat, prop):
         lib = texture_library
         doc = c4d.documents.GetActiveDocument()
@@ -254,6 +270,7 @@ class RedshiftMaterials(MaterialHelpers):
         self.set_up_bump_normal(prop, rs_material, rs)
         self.set_up_metalness_workflow(prop, rs_material, rs)
         self.set_up_transmission(prop, rs_material, rs)
+        self.set_up_alpha(prop, rs_material, rs)
         c4d.EventAdd()
 
     def makeRSmat(self, mat, prop):

@@ -2401,7 +2401,6 @@
 				for( var j = 0; j < aProperties.length; j += 1 ){
 					var oProperty = aProperties[j]
 					s_oSkeletonTransforms[oBoneNode.name][oProperty.assetId] = oProperty.getValue();
-					oProperty.setValue( 0 );
 					oProperty.setOverrideControllers( true );
 				}
 			}

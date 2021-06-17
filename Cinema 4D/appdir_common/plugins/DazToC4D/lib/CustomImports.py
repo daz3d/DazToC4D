@@ -9,6 +9,7 @@ from . import StandardMaterials
 from . import Utilities
 from . import Morphs
 from . import DazRig
+from . import Animations
 from .DtC4DWeights import Weights
 from .DtC4DPosing import Poses
 from .DtC4DDialogs import guiASKtoSave
@@ -68,6 +69,8 @@ class CustomImports:
         var = Utilities.Variables()
         jnt_fixes = DazRig.JointFixes()
         wgt = Weights()
+        anim = Animations.Animations()
+        pose = Poses()
 
         if os.path.exists(file_path) == False:
             gui.MessageDialog(
@@ -130,18 +133,31 @@ class CustomImports:
             if auto_weight:
                 wgt.auto_calculate_weights(var.body)
 
-        isPosed = Poses().checkIfPosed()
-        if isPosed == False:
+        pose.store_pose(dtu)
+        is_posed = pose.checkIfPosed()
+        is_anim = anim.check_animation_exists(var.c_joints)
+        clear_pose = False
+        if is_posed:
+            clear_pose = gui.QuestionDialog(
+                "Importing Posed Figure is currently not fully supported\nWould you like to try to fix bone orientation?",
+            )
+            if clear_pose:
+                pose.clear_pose(var.c_joints)
+
+        if is_anim == False or clear_pose:
             jnt_fixes.store_joint_orientations(dtu)
             jnt_fixes.fix_joints(var.c_skin_data, var.c_joints, var.c_meshes)
             c4d.EventAdd()
             dzc4d.deselect_all()
+            if is_posed:
+                pose.restore_pose(var.c_joints)
             make_tpose = gui.QuestionDialog(
                 "Would you like to Convert\nthe Base Pose to a T-Pose?",
             )
             if make_tpose:
-                Poses().preAutoIK()
+                pose.preAutoIK()
                 c4d.EventAdd()
+
         else:
             gui.MessageDialog(
                 "Animation or a Pose was Detected\nJoint Orientation has not been fixed",
