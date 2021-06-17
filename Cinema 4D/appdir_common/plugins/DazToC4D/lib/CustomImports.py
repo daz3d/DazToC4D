@@ -134,6 +134,7 @@ class CustomImports:
                 wgt.auto_calculate_weights(var.body)
 
         pose.store_pose(dtu)
+        pose.store_offset(dtu)
         is_posed = pose.checkIfPosed()
         is_anim = anim.check_animation_exists(var.c_joints)
         clear_pose = False
@@ -143,6 +144,7 @@ class CustomImports:
             )
             if clear_pose:
                 pose.clear_pose(var.c_joints)
+                pose.fix_offset(var.c_joints, var.c_skin_data)
 
         if is_anim == False or clear_pose:
             jnt_fixes.store_joint_orientations(dtu)

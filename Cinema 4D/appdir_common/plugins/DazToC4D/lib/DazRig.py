@@ -98,7 +98,7 @@ class JointFixes:
         self.store_incorrect_orientations(joint)
         matrix = joint.GetMl() * c4d.utils.MatrixRotX(c4d.utils.Rad(x))
         matrix = matrix * c4d.utils.MatrixRotY(c4d.utils.Rad(y))
-        matrix = matrix * c4d.utils.MatrixRotZ(c4d.utils.Rad(-z))
+        matrix = matrix * c4d.utils.MatrixRotZ(c4d.utils.Rad(-1 * z))
         self.move_axis(joint, matrix)
         c4d.CallButton(joint, c4d.ID_BASEOBJECT_FREEZE_R)
 
