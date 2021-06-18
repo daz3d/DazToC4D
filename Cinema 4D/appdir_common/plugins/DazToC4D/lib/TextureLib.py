@@ -27,6 +27,11 @@ texture_library = {
             "Specular Lobe 1 Roughness",
         ],
     },
+    "roughness-strength": {
+        "Name": [
+            "Dual Lobe Specular Ratio",
+        ],
+    },
     "metalness": {
         "Name": [
             "Metallic Weight",
