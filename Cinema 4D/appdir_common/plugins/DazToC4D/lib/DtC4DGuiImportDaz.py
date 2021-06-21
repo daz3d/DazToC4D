@@ -4,17 +4,19 @@ import webbrowser
 import c4d
 from c4d import gui
 
-from .Materials import Materials, convertToRedshift, convertMaterials
+from .Materials import Materials, convertMaterials
+from .RedshfitMaterials import RedshiftMaterials
 from .CustomImports import CustomImports
 from .DtC4DDialogs import EXTRADialog
 from .DtC4DPosing import Poses
-from .Definitions import RES_DIR
+from .Definitions import RES_DIR, EXPORT_DIR
 from .Morphs import Morphs
 from .DazToC4DClasses import DazToC4D
 from .CustomCmd import Cinema4DCommands as dzc4d
+from .Utilities import Variables
 
 
-class guiDazToC4DMain(gui.GeDialog):
+class GuiImportDaz(gui.GeDialog):
 
     dialog = None
     import_vars = []
@@ -50,7 +52,6 @@ class guiDazToC4DMain(gui.GeDialog):
 
     def __init__(self):
         try:
-            self.AddGadget(c4d.DIALOG_NOMENUBAR, 0)  # disable menubar
             self.AddGadget(c4d.DIALOG_PIN, 0)
             self.config_dialog = EXTRADialog()
         except:
@@ -62,7 +63,6 @@ class guiDazToC4DMain(gui.GeDialog):
         Used to Allow the User to know when the command is still loading
         """
         c4d.StatusClear()
-        c4d.EventAdd()
         c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
@@ -74,27 +74,36 @@ class guiDazToC4DMain(gui.GeDialog):
         c4d.StatusClear()
         if btnState == False:
             self.main_logo.SetImage(self.img_loading, False)
-            try:
-                self.main_logo.LayoutChanged()
-                self.main_logo.Redraw()
-            except:
-                print("DazToC4D: LayoutChanged skip...")
-
-            self.auto_import_fig_but.SetImage(self.img_btnAutoImportOff_FIG, False)
-            self.auto_import_prop_but.SetImage(self.img_btnAutoImportOff_PROP, False)
-            self.convert_mat_but.SetImage(self.img_btnConvertMaterialsOff, False)
-            self.auto_ik_but.SetImage(self.img_btnAutoIKOff, False)
+            self.auto_import_fig_but.SetImage(self.img_btnAutoImportOff_FIG, True)
+            self.auto_import_prop_but.SetImage(self.img_btnAutoImportOff_PROP, True)
+            self.convert_mat_but.SetImage(self.img_btnConvertMaterialsOff, True)
+            self.auto_ik_but.SetImage(self.img_btnAutoIKOff, True)
 
         if btnState == True:
-            self.main_logo.SetImage(self.img_d2c4dLogo, False)
-            self.auto_import_fig_but.SetImage(self.img_btnAutoImport_FIG, False)
-            self.auto_import_prop_but.SetImage(self.img_btnAutoImport_PROP, False)
-            self.convert_mat_but.SetImage(self.img_btnConvertMaterials, False)
-            self.auto_ik_but.SetImage(self.img_btnAutoIK, False)
+            self.main_logo.SetImage(self.img_d2c4dLogo, True)
+            self.auto_import_fig_but.SetImage(self.img_btnAutoImport_FIG, True)
+            self.auto_import_prop_but.SetImage(self.img_btnAutoImport_PROP, True)
+            self.convert_mat_but.SetImage(self.img_btnConvertMaterials, True)
+            self.auto_ik_but.SetImage(self.img_btnAutoIK, True)
 
+        try:
+            self.main_logo.LayoutChanged()
+            self.main_logo.Redraw()
+        except:
+            print("DazToC4D: LayoutChanged skip...")
+        c4d.StatusClear()
+        c4d.EventAdd()
+        c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
+        c4d.DrawViews(
+            c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
+            | c4d.DRAWFLAGS_NO_THREAD
+            | c4d.DRAWFLAGS_STATICBREAK
+        )
+        c4d.DrawViews()
+        c4d.EventAdd(c4d.EVENT_FORCEREDRAW)
+        c4d.DrawViews(c4d.DRAWFLAGS_FORCEFULLREDRAW)
         bc = c4d.BaseContainer()
         c4d.gui.GetInputState(c4d.BFM_INPUT_MOUSE, c4d.BFM_INPUT_CHANNEL, bc)
-
         return True
 
     def buttonBC(self, tooltipText="", presetLook=""):
@@ -122,7 +131,7 @@ class guiDazToC4DMain(gui.GeDialog):
         return bc
 
     def CreateLayout(self):
-        self.SetTitle("DazToC4D v1.2.0")
+        self.SetTitle("DazToC4D v1.3.0")
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
 
         bc = c4d.BaseContainer()  # Create a new container to store the button image
@@ -262,17 +271,6 @@ class guiDazToC4DMain(gui.GeDialog):
         self.SetInt32(self.SLIDER_SSS_MULTIPLIER, value=5, min=1, max=100)
 
         self.GroupEnd()  # END ///////////////////////////////////////////////
-
-        self.GroupBegin(10001, c4d.BFH_CENTER, 2, title="Redshift Settings: ")
-        self.GroupBorder(c4d.BORDER_THIN_OUT)
-        self.GroupBorderSpace(20, 5, 20, 5)
-        self.AddStaticText(99, c4d.BFH_CENTER, 0, 0, name="Choose Bump Type:")
-        self.AddComboBox(2002, c4d.BFH_SCALEFIT, 0, 0, False)
-        self.AddChild(2002, 0, "Tangent-Space Normal")
-        self.AddChild(2002, 1, "Bump/Height Field")
-        self.AddChild(2002, 2, "Object-Space Normal")
-        self.GroupEnd()
-
         self.GroupEnd()  # MATERIALS END ///////////////////////////////////////////////
 
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
@@ -309,12 +307,7 @@ class guiDazToC4DMain(gui.GeDialog):
             sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
             normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
             bump_value = self.GetFloat(self.SLIDER_BUMP_MULTIPLIER)
-            c4d.EventAdd()
-
-            c4d.EventAdd()
-            self.import_vars = CustomImports().auto_import_genesis(
-                sss_value, normal_value, bump_value
-            )
+            CustomImports().auto_import_genesis(sss_value, normal_value, bump_value)
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_AUTO_IMPORT_PROP:
@@ -322,8 +315,6 @@ class guiDazToC4DMain(gui.GeDialog):
             sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
             normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
             bump_value = self.GetFloat(self.SLIDER_BUMP_MULTIPLIER)
-            c4d.EventAdd()
-
             CustomImports().auto_import_prop(sss_value, normal_value, bump_value)
             self.buttonsChangeState(True)
 
@@ -332,30 +323,27 @@ class guiDazToC4DMain(gui.GeDialog):
             c4d.EventAdd()
             if self.config_dialog.IsOpen():
                 self.config_dialog.Close()
-
-            if len(self.import_vars) == 0:
+            var = Variables()
+            var.restore_variables()
+            if not var.skeleton:
                 error = gui.MessageDialog(
                     "Error has occured\n please re-import Character",
                     c4d.GEMB_RETRYCANCEL,
                 )
                 if error == c4d.GEMB_R_RETRY:
-                    self.import_vars = CustomImports().auto_import_genesis()
-            for var in self.import_vars:
-                if "Genesis" in var.skeleton.GetName():
-                    morph_grp = Morphs.create_null_for_morphs(var.body)
-                    Morphs.move_poses_under_morphs(morph_grp, var.c_poses)
-                    if Poses().checkIfPosedResetPose():  # Removes Pose if Needed
-                        daz_geo = dzc4d.add_obj_to_new_group(var.c_meshes)
-                        DazToC4D().autoIK(var)
-                        dzc4d.add_sub_div(daz_geo)
-                        DazToC4D().lockAllModels()
-                        dzc4d.move_obj_to_top(morph_grp)
+                    CustomImports().auto_import_genesis()
 
-                else:
-                    gui.MessageDialog(
-                        "No Character found, Auto-Import a Character and try again.",
-                        c4d.GEMB_OK,
-                    )
+            if "Genesis" in var.skeleton.GetName():
+                if Poses().checkIfPosedResetPose():  # Removes Pose if Needed
+                    daz_geo = dzc4d.add_obj_to_new_group(var.c_meshes)
+                    DazToC4D().autoIK(var)
+                    dzc4d.add_sub_div(daz_geo)
+                    DazToC4D().lockAllModels()
+            else:
+                gui.MessageDialog(
+                    "No Character found, Auto-Import a Character and try again.",
+                    c4d.GEMB_OK,
+                )
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_CONFIG:
@@ -375,6 +363,9 @@ class guiDazToC4DMain(gui.GeDialog):
             comboRender = self.GetInt32(2001)
             redshiftBumpType = self.GetInt32(2002)
             mat = Materials()
+            sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
+            normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
+            bump_value = self.GetFloat(self.SLIDER_BUMP_MULTIPLIER)
             if comboRender == 0:
                 gui.MessageDialog("Please select renderer from the list")
 
@@ -387,21 +378,32 @@ class guiDazToC4DMain(gui.GeDialog):
                         c4d.GEMB_YESNO,
                     )
                     if answer == c4d.GEMB_R_YES:
+                        current_dir = os.getcwd()
+                        os.chdir(EXPORT_DIR)
                         if comboRender == 1:
                             convertMaterials().convertTo("Vray")
                             c4d.CallCommand(1026375)  # Reload Python Plugins
 
                         if comboRender == 2:
-                            convert_to_redshift = convertToRedshift()
-                            convert_to_redshift.getBumpType(redshiftBumpType)
-                            convert_to_redshift.execute()
-                            c4d.CallCommand(100004766, 100004766)  # Select All
-                            c4d.CallCommand(100004767, 100004767)  # Deselect All
+                            var = Variables()
+                            var.restore_variables()
+                            rs_mat = RedshiftMaterials()
+                            if rs_mat.check_for_redshift():
+                                rs_mat.store_materials(var.dtu)
+                                rs_mat.store_sliders(
+                                    sss_value, normal_value, bump_value
+                                )
+                                rs_mat.execute()
+                                c4d.CallCommand(100004766, 100004766)  # Select All
+                                c4d.CallCommand(100004767, 100004767)  # Deselect All
+                            else:
+                                gui.MessageDialog("Redshift is Not Installed...")
 
                         if comboRender == 3:
                             mat.convertToOctane()
                             c4d.CallCommand(100004766, 100004766)  # Select All
                             c4d.CallCommand(100004767, 100004767)  # Deselect All
+                        os.chdir(current_dir)
 
         if id == self.BUTTON_HELP:
             new = 2  # open in a new tab, if possible

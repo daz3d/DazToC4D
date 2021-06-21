@@ -1,3 +1,5 @@
+import math
+
 from c4d import documents, gui
 import c4d
 
@@ -125,6 +127,82 @@ class autoAlignArms:
 
 
 class Poses:
+    pose_data = dict()
+    offset = 0
+
+    def store_offset(self, dtu):
+        self.offset = dtu.get_skeleton_data_dict()["offset"][1]
+
+    def store_pose(self, dtu):
+        self.pose_data = dtu.get_pose_data_dict()
+
+    def get_pose_data(self, joint):
+        jnt_name = joint.GetName()
+        if jnt_name in self.pose_data.keys():
+            return self.pose_data[jnt_name]
+
+    def disable_skin_data(self, c_skin_data):
+        for obj in c_skin_data:
+            obj[c4d.ID_BASEOBJECT_GENERATOR_FLAG] = False
+        c4d.EventAdd()
+
+    def enable_skin_data(self, c_skin_data):
+        for obj in c_skin_data:
+            obj[c4d.ID_BASEOBJECT_GENERATOR_FLAG] = True
+        c4d.EventAdd()
+
+    def clear_pose(self, joints):
+        for joint in joints:
+            jnt_data = self.get_pose_data(joint)
+            if jnt_data:
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y] = 0
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z] = 0
+                pos_vector = c4d.Vector(
+                    -1 * jnt_data["Position"][0],
+                    -1 * jnt_data["Position"][1],
+                    jnt_data["Position"][2],
+                )
+                matrix = joint.GetMg() * c4d.utils.MatrixMove(pos_vector)
+                joint.SetMg(matrix)
+
+    def fix_offset(self, joints, c_skin_data):
+        self.disable_skin_data(c_skin_data)
+        for joint in joints:
+            jnt_data = self.get_pose_data(joint)
+            if jnt_data:
+                if "hip" in joint.GetName():
+                    joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Y] = (
+                        joint[c4d.ID_BASEOBJECT_REL_POSITION, c4d.VECTOR_Y]
+                        + self.offset
+                    )
+                    break
+        self.enable_skin_data(c_skin_data)
+        c4d.EventAdd()
+
+    def restore_pose(self, joints):
+        for joint in joints:
+            jnt_data = self.get_pose_data(joint)
+            if jnt_data:
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 1 * math.radians(
+                    jnt_data["Rotation"][0]
+                )
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Y] = 1 * math.radians(
+                    jnt_data["Rotation"][1]
+                )
+                joint[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_Z] = -1 * math.radians(
+                    jnt_data["Rotation"][2]
+                )
+                pos_vector = c4d.Vector(
+                    jnt_data["Position"][0],
+                    jnt_data["Position"][1],
+                    -1 * jnt_data["Position"][2],
+                )
+                matrix = joint.GetMg() * c4d.utils.MatrixMove(pos_vector)
+                joint.SetMg(matrix)
+
+            c4d.EventAdd()
+
     def preAutoIK(self):
         doc = documents.GetActiveDocument()
         obj = doc.SearchObject("hip")

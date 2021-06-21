@@ -27,6 +27,11 @@ texture_library = {
             "Specular Lobe 1 Roughness",
         ],
     },
+    "roughness-strength": {
+        "Name": [
+            "Dual Lobe Specular Ratio",
+        ],
+    },
     "metalness": {
         "Name": [
             "Metallic Weight",
@@ -75,7 +80,13 @@ texture_library = {
             "Scattering Measurement Distance",
         ]
     },
-    "sss-enable": {"Name": ["Sub Surface Enable", "SSS Mode", "SSS Amount"]},
+    "sss-enable": {
+        "Name": [
+            "Sub Surface Enable",
+            "SSS Mode",
+            "SSS Amount",
+        ],
+    },
     "transmitted-color": {
         "Name": [
             "Transmitted Color",

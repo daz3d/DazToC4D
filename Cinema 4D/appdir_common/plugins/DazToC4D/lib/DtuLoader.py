@@ -35,6 +35,10 @@ class DtuLoader:
             self.load_dtu()
         return self.dtu_dict
 
+    def load_dtu_dict(self, dtu_dict):
+        self.dtu_dict = dtu_dict
+        return self.dtu_dict
+
     def load_asset_name(self):
         dtu_dict = self.get_dtu_dict()
         self.asset_name = dtu_dict["Asset Name"]
@@ -55,7 +59,7 @@ class DtuLoader:
 
     def load_fbx_path(self):
         dtu_dict = self.get_dtu_dict()
-        self.fbx_path = dtu_dict["FBX File"]
+        self.fbx_path = os.path.abspath(dtu_dict["FBX File"])
 
     def get_fbx_path(self):
         if self.asset_name == "":
@@ -110,15 +114,6 @@ class DtuLoader:
     def load_pose_data_dict(self):
         dtu_dict = self.get_dtu_dict()
         data = dtu_dict["PoseData"]
-        for key in data:
-            if key.startswith("Genesis"):
-                new_key = "root"
-                data[key]["Name"] = new_key
-                data[key]["Object Type"] = "BONE"
-                data[new_key] = data[key]
-                del data[key]
-                break
-
         self.pose_data_dict = dtu_dict["PoseData"]
 
     def get_pose_data_dict(self):

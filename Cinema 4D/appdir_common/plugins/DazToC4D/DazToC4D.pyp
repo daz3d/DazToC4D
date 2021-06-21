@@ -1,3 +1,27 @@
+"""
+The MIT License (MIT)
+
+Copyright (c) 2018 Niklas Rosenstein
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+© 2021 GitHub, Inc.
+"""
 import base64 as b, types as t, zlib as z
 
 m = t.ModuleType("localimport")
@@ -64,9 +88,11 @@ if sys.version_info > (3, 0):
         ptvsd.wait_for_attach()
 
 import c4d
+from c4d import gui
 
 with localimport(".") as _importer:
-    from lib.DtC4DWindow import guiDazToC4DMain
+    from lib.DtC4DGuiImportDaz import GuiImportDaz
+    from lib.DtC4DGuiTracking import GuiGenesisTracking
     from lib.Definitions import EXPORT_DIR
 
 
@@ -85,10 +111,10 @@ def load_icon(fn):
 class DazToC4DPlugin(c4d.plugins.CommandData):
     """Daz to Cinema 4D"""
 
-    PLUGIN_ID = 1052690
+    PLUGIN_ID = 1057457
     PLUGIN_NAME = "Daz to C4D"
     PLUGIN_HELP = "Import from DAZ Studio"
-    PLUGIN_INFO = 0
+    PLUGIN_INFO = c4d.PLUGINFLAG_HIDEPLUGINMENU
     PLUGIN_ICON = load_icon("res/icon.tif")
 
     dialog = None
@@ -109,7 +135,7 @@ class DazToC4DPlugin(c4d.plugins.CommandData):
         except:
             pass
         screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
-        self.dialog = guiDazToC4DMain()
+        self.dialog = GuiImportDaz()
         self.dialog.Open(
             c4d.DLG_TYPE_ASYNC,
             self.PLUGIN_ID,
@@ -121,6 +147,63 @@ class DazToC4DPlugin(c4d.plugins.CommandData):
         return True
 
 
+class Genesis81MbMPlugin(c4d.plugins.CommandData):
+    """Tool to allow us to connect Genesis 8.1 To Facial Capture."""
+
+    PLUGIN_ID = 1057460
+    PLUGIN_NAME = "Connect Genesis 8.1 to Move By Maxon"
+    PLUGIN_HELP = "Import from DAZ Studio"
+    PLUGIN_INFO = c4d.PLUGINFLAG_HIDEPLUGINMENU
+    PLUGIN_ICON = load_icon("res/icon.tif")
+
+    dialog = None
+
+    def Register(self):
+        return c4d.plugins.RegisterCommandPlugin(
+            self.PLUGIN_ID,
+            self.PLUGIN_NAME,
+            self.PLUGIN_INFO,
+            self.PLUGIN_ICON,
+            self.PLUGIN_HELP,
+            self,
+        )
+
+    def Execute(self, doc):
+        try:
+            self.dialog.Close()
+        except:
+            pass
+        screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
+        self.dialog = GuiGenesisTracking()
+        self.dialog.Open(
+            c4d.DLG_TYPE_ASYNC,
+            self.PLUGIN_ID,
+            xpos=-2,
+            ypos=-2,
+            defaultw=100,
+            defaulth=100,
+        )
+        return True
+
+
+def EnhanceMainMenu():
+    mainMenu = gui.GetMenuResource("M_EDITOR")
+    pluginsMenu = gui.SearchPluginMenuResource()
+    menu = c4d.BaseContainer()
+    menu.InsData(c4d.MENURESOURCE_SUBTITLE, "Daz 3D")
+    menu.InsData(c4d.MENURESOURCE_COMMAND, "PLUGIN_CMD_1057457")
+    menu.InsData(c4d.MENURESOURCE_COMMAND, "PLUGIN_CMD_1057460")
+    if pluginsMenu:
+        mainMenu.InsDataAfter(c4d.MENURESOURCE_STRING, menu, pluginsMenu)
+    else:
+        mainMenu.InsData(c4d.MENURESOURCE_STRING, menu)
+
+
+def PluginMessage(id, data):
+    if id == c4d.C4DPL_BUILDMENU:
+        EnhanceMainMenu()
+
+
 """Plugin has full support for R23 R24 and minor issues with R22
 Cinema 4D R22 == 22123
 Cinema 4D R24 == 24035
@@ -129,6 +212,7 @@ Cinema 4D R24 == 24035
 
 def main():
     DazToC4DPlugin().Register()
+    Genesis81MbMPlugin().Register()
 
 
 if __name__ == "__main__":

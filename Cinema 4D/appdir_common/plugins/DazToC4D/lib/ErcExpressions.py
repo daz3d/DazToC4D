@@ -6,6 +6,27 @@ Note: ErcKeyed is not calculated the same way as in Daz Studio and uses a linear
 """
 
 
+def erc_controls():
+    erc_controls = """
+import c4d
+
+def main():
+    global Output1
+    if Input2 > Input1 and Input1 != 0:
+        Output1 = Input2
+    elif Input1 == 0:
+        if Input2 > 0:
+            Output1 = Input2
+        else:
+            Output1 = 0
+    else:
+        Output1 = Input1
+
+
+"""
+    return erc_controls
+
+
 def erc_start():
     erc_start = """
 import math
@@ -19,8 +40,21 @@ def main():
     return erc_start
 
 
-def erc_var(bone, direction):
-    if bone != "None":
+def erc_current(current):
+    erc_current = """
+    current = {0}
+    
+    """.format(
+        current
+    )
+
+    return erc_current
+
+
+def erc_var(bone, direction, prop, sublink):
+    if sublink:
+        return "float((" + direction + "*var"
+    if bone != "None" and prop.endswith("Rotate"):
         return "math.degrees((" + direction + " * var"
     else:
         return "float((" + direction + " * var"
@@ -117,8 +151,16 @@ def erc_add(addend, x, var):
     return erc_add
 
 
+def erc_to_degrees():
+    erc_to_degrees = """
+    temp = math.radians(temp)
+    """
+    return erc_to_degrees
+
+
 def erc_limits(min, max):
     erc_limits = """
+    temp += current
     if temp < {0}:
         Output1 = 0
     elif temp > {1}:
@@ -129,3 +171,11 @@ def erc_limits(min, max):
         min, max
     )
     return erc_limits
+
+
+def erc_translate():
+    erc_translate = """
+    temp +=current
+    Output1 = temp
+    """
+    return erc_translate

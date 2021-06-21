@@ -1,0 +1,23 @@
+This is here to represent where to find custom variables stored in the scene.
+
+During the import we are store in the direct DTU into the scene
+
+To look it up we need to find use the Genesis Skeleton
+
+The Character Custom Variables are stored in memory with the ID at the 
+
+GUID 
+
+For Example Bellow will find us the DTU as a String Type
+
+c4d.documents.GetActiveDocument()[ob.GetGUID()][1000]
+
+To Convert it we use the json.loads() to convert back to an object in python
+
+
+*** ob is found by search the root bone on the skeleton of Genesis Import****
+Table of Contents:
+    ob.GetGUID() : Represents the location of the Variables in the Scene
+    1000 : DTU
+    2000 : Skeleton name
+    3000 : Body name

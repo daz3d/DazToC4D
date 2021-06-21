@@ -11,8 +11,16 @@ class Cinema4DCommands:
         super(Cinema4DCommands, self).__init__()
 
     @staticmethod
+    def Tconstraint():
+        return 1019364
+
+    @staticmethod
     def deselect_all():
         c4d.CallCommand(12113, 12113)  # deselect all
+
+    @staticmethod
+    def select_all():
+        c4d.CallCommand(12112, 12112)  # select all
 
     @staticmethod
     def update_viewport():

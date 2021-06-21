@@ -1,21 +1,60 @@
 import os
 import c4d
+import json
 from c4d import documents, utils
 from xml.etree import ElementTree
 
 from .Definitions import ROOT_DIR
 from .CustomIterators import TagIterator, ObjectIterator
+from .CustomCmd import Cinema4DCommands as dzc4d
 from . import Database
+from .DtuLoader import DtuLoader
+from .TextureLib import texture_library
 
 
 class Variables:
-    def store_asset_name(self, dtu):
+    """
+    import_name(str): represents the Node name in Daz Studio
+    dtu(object): instance of the DtuLoader()
+    skeleton(CAJointObject): Represents the Root Joint of the Skeleton
+    skeleton_name(str): Represents the name of the root joint
+    body(Polygon Object): Represents the Genesis Figure Mesh
+    body_name(str): Represents the name of the Genesis figure mesh
+    c_meshes(list[Polygon Object]): Array of all polygon objects parented to the Root Joint
+    c_morphs(list[Polygon Object]): Array of all absolute polygon objects that represent Morphs as geometry
+    c_poses(list[Null Object]): Array of the nulls that store all the poses/morphs
+    c_joints(list[CAJointObject]): Array of all the joints parented to the root joint
+    c_skin_data(list[Skin Object]): Array of all the skinning for the Imported Character
+    unique_id(int): is created with the plugin manager off plugin-cafe
+    """
+
+    import_name = None
+    dtu = None
+    skeleton = None
+    skeleton_name = None
+    body = None
+    body_name = None
+
+    c_meshes = None
+    c_morphs = None
+    c_poses = None
+    c_joints = None
+    c_skin_data = None
+
+    unique_id = 1057461
+
+    def store_dtu(self, dtu):
+        """Will find if the dtu exists either as a function or a dict."""
+        if isinstance(dtu, dict):
+            dtu_dict = dtu
+            dtu = DtuLoader("")
+            dtu.load_dtu_dict(dtu_dict)
         self.import_name = dtu.get_import_name()
         self.dtu = dtu
 
     def check_if_valid(self):
         """
-        Checks if Scene Contains Genesis Skeleton
+        Checks if Scene Contains Genesis Skeleton.
         """
         doc = documents.GetActiveDocument()
         obj = doc.SearchObject("hip")
@@ -38,6 +77,10 @@ class Variables:
         return self.body
 
     def find_body_name(self):
+        """Features the body of the figure's name.
+        Returns:
+            A string that is the bodies name.
+        """
         self.body_name = self.body.GetName()
         return self.body_name
 
@@ -76,6 +119,18 @@ class Variables:
         self.children = res
         return res
 
+    def store_to_scene(self):
+        """Stores the dtu contents as a string inside of the active document."""
+        doc = c4d.documents.GetActiveDocument()
+        doc_bc = doc.GetDataInstance()
+        sub_bc = c4d.BaseContainer()
+        sub_bc[1000] = json.dumps(self.dtu.get_dtu_dict())
+        sub_bc[2000] = str(self.skeleton_name)
+        sub_bc[3000] = str(self.body_name)
+        sub_bc[4000] = str(self.import_name)
+        doc_bc.SetContainer(self.unique_id, sub_bc)
+        doc.SetData(doc_bc)
+
     def prepare_variables(self):
         """
         Sets up Variables
@@ -87,8 +142,22 @@ class Variables:
             self.find_body(self.import_name)
             self.find_body_name()
             self.find_children(self.skeleton)
+            self.store_to_scene()
         else:
             return True
+
+    def restore_variables(self):
+        """
+        Restores Variables Based on the Unique ID
+        """
+        doc = c4d.documents.GetActiveDocument()
+        dtu_dict = json.loads(doc[self.unique_id][1000])
+        self.store_dtu(dtu_dict)
+        self.find_skeleton(self.import_name)
+        self.find_skeleton_name()
+        self.find_body(self.import_name)
+        self.find_body_name()
+        self.find_children(self.skeleton)
 
 
 def get_daz_mesh():
@@ -114,7 +183,7 @@ def get_daz_name():
 def getJointFromSkin(obj, jointName):
     objTags = TagIterator(obj)
     for t in objTags:
-        if "Weight" in t.GetName():
+        if t.GetType() == c4d.Tweights:
             for j in range(t.GetJointCount()):
                 if jointName in t.GetJoint(j).GetName():
                     return t.GetJoint(j)
@@ -124,7 +193,7 @@ def getJointFromSkin(obj, jointName):
 def getJointFromConstraint(jointName):
     objTags = TagIterator(jointName)
     for t in objTags:
-        if "Constraint" in t.GetName():
+        if t.GetType() == dzc4d.Tconstraint():
             return t[10001]
 
     return None
@@ -132,7 +201,7 @@ def getJointFromConstraint(jointName):
 
 class dazToC4Dutils:
     def findTextInFile(self, matName, propertyName):
-
+        lib = texture_library
         dazExtraMapsFile = os.path.join(ROOT_DIR, "DazToC4D.xml")
 
         if os.path.exists(dazExtraMapsFile) == False:
@@ -817,7 +886,6 @@ class dazToC4Dutils:
                 self.moveToObj(meshName + guide_suffix, joint)
             elif len(objs) == 3:
                 self.moveToObj(meshName + guide_suffix, objs[2])
-
 
     def cleanJointsDaz(self, side="Left"):
         doc = documents.GetActiveDocument()
