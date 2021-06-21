@@ -10,6 +10,7 @@ from .Utilities import dazToC4Dutils
 from .CustomIterators import ObjectIterator, TagIterator
 from .Definitions import RES_DIR
 from .MaterialHelpers import MaterialHelpers
+from .CustomCmd import Cinema4DCommands as dzc4d
 
 try:
     import redshift

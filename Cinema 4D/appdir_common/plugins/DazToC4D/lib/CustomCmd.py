@@ -19,6 +19,10 @@ class Cinema4DCommands:
         c4d.CallCommand(12113, 12113)  # deselect all
 
     @staticmethod
+    def select_all():
+        c4d.CallCommand(12112, 12112)  # select all
+
+    @staticmethod
     def update_viewport():
         c4d.CallCommand(12148)  # Frame Geometry
         c4d.DrawViews(

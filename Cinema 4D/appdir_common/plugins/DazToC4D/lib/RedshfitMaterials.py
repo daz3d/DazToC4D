@@ -5,6 +5,7 @@ import c4d
 from .MaterialHelpers import MaterialHelpers, convert_color
 from .dependencies.RedshiftWrapper.Redshift import Redshift
 from .TextureLib import texture_library
+from .CustomCmd import Cinema4DCommands as dzc4d
 
 try:
     import redshift
@@ -106,7 +107,9 @@ class RedshiftMaterials(MaterialHelpers):
 
         for mat in self.NewMatList:
             mat[0].Remove()
-
+        dzc4d.select_all()
+        c4d.EventAdd()
+        dzc4d.deselect_all()
         c4d.EventAdd()
 
     def get_rs_node(self, mat):

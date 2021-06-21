@@ -68,6 +68,15 @@ class Node(MetaName):
         return self.GvNode[key]
 
     def __setitem__(self, key, value):
+
+        try:
+            if isinstance(key, unicode):
+                key = str(key)
+            if isinstance(value, unicode):
+                value = str(value)
+        except:
+            pass
+
         self._GvNode[key] = value
 
     def __repr__(self):
