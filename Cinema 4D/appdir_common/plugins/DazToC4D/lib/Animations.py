@@ -4,3 +4,4 @@ class Animations:
             tracks = joint.GetCTracks()
             if len(tracks) > 0:
                 return True
+        return False
