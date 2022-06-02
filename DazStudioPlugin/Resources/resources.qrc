@@ -1,0 +1,9 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/DazBridgeC4D">
+        <file alias="c4dplugin.zip">c4dplugin.zip</file>
+    </qresource>
+    <qresource prefix="/DazBridgeC4D/Images">
+        <file alias="icon">Images/Daz to Cinema 4D.png</file>
+    </qresource>
+</RCC>
