@@ -123,12 +123,20 @@ void DzC4DAction::executeAction()
 	// input from the user.
 	if (dzScene->getNumSelectedNodes() != 1)
 	{
-		if (m_nNonInteractiveMode == 0)
+		DzNodeList rootNodes = buildRootNodeList();
+		if (rootNodes.length() == 1)
 		{
-			QMessageBox::warning(0, tr("Error"),
-				tr("Please select one Character or Prop to send."), QMessageBox::Ok);
+			dzScene->setPrimarySelection(rootNodes[0]);
 		}
-		return;
+		else
+		{
+			if (m_nNonInteractiveMode == 0)
+			{
+				QMessageBox::warning(0, tr("Error"),
+					tr("Please select one Character or Prop to send."), QMessageBox::Ok);
+			}
+			return;
+		}
 	}
 
 	// Create the dialog
@@ -193,9 +201,23 @@ void DzC4DAction::executeAction()
 //		DzC4DDialog* c4dDialog = qobject_cast<DzC4DDialog*>(m_bridgeDialog);
 
 #if __LEGACY_PATHS__
-		m_sExportFbx = "B_FIG";
-		m_sAssetName = "FIG";
-		m_sDestinationPath = m_sRootFolder + "/";
+		if (m_sAssetType == "SkeletalMesh")
+		{
+			m_sRootFolder = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + "/DAZ 3D/Bridges/Daz To Cinema 4D/Exports/FIG";
+			m_sRootFolder = m_sRootFolder.replace("\\", "/");
+			m_sExportSubfolder = "FIG0";
+			m_sExportFbx = "B_FIG";
+			m_sAssetName = "FIG";
+		}
+		else
+		{
+			m_sRootFolder = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + "/DAZ 3D/Bridges/Daz To Cinema 4D/Exports/ENV";
+			m_sRootFolder = m_sRootFolder.replace("\\", "/");
+			m_sExportSubfolder = "ENV0";
+			m_sExportFbx = "B_ENV";
+			m_sAssetName = "ENV";
+		}
+		m_sDestinationPath = m_sRootFolder + "/" + m_sExportSubfolder + "/";
 		m_sDestinationFBX = m_sDestinationPath + m_sExportFbx + ".fbx";
 #endif
 
