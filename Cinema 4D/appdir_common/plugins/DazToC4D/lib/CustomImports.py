@@ -125,13 +125,15 @@ class CustomImports:
         print("Material Conversion Done")
         c4d.EventAdd()
 
-        wgt.store_subdivision(dtu)
-        if wgt.check_level():
-            auto_weight = c4d.gui.QuestionDialog(
-                "Subdivisions have been detected\nthis is currently not fully supported.\nWould you like to autoweight the mesh?"
-            )
-            if auto_weight:
-                wgt.auto_calculate_weights(var.body)
+        ## DB 2022-June-03: subdivision correction is now done in Daz Studio plugin,
+        ##   the following code block no longer needed.
+        # wgt.store_subdivision(dtu)
+        # if wgt.check_level():
+        #     auto_weight = c4d.gui.QuestionDialog(
+        #         "Subdivisions have been detected\nthis is currently not fully supported.\nWould you like to autoweight the mesh?"
+        #     )
+        #     if auto_weight:
+        #         wgt.auto_calculate_weights(var.body)
 
         pose.store_pose(dtu)
         pose.store_offset(dtu)

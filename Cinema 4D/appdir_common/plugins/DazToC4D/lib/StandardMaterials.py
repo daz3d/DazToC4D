@@ -46,7 +46,30 @@ class StdMaterials(MaterialHelpers):
 
     def set_up_diffuse(self, mat, prop):
         lib = texture_library
+
         if self.is_diffuse(prop):
+            # DB 2022-June-03: New Standard Color Channel Assignment
+            # Adding the diffuse texture file here fixes errors in C4D r25 about
+            #   "Unable to find..." diffuse texture during "Save Project with Assets"
+            #    operations.
+            for prop_name in lib["color"]["Name"]:
+                if prop_name in prop.keys():
+                    if prop[prop_name]["Texture"] != "":
+                        path = prop[prop_name]["Texture"]
+                        hex_str = prop[prop_name]["Value"]
+                        hex_str = self.check_value("hex", hex_str)
+                        color = convert_color(hex_str)
+                        vector = c4d.Vector(color[0], color[1], color[2])
+                        texture = StdMaterials.create_texture(mat, path)
+                        mat[c4d.MATERIAL_USE_COLOR] = True
+                        mat[c4d.MATERIAL_COLOR_SHADER] = texture
+                        mat[c4d.MATERIAL_COLOR_COLOR] = vector
+                        mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
+
+            # Original Code: ?Adds IrayUber Diffuse Component as a Custom "Diffuse
+            #   Layer" to the C4D Reflection Channel? I am uncertain about the
+            #   full intent of this code block, leaving for now.
+            #   -DB (2022-June-03)
             diffuse = mat.AddReflectionLayer()
             diffuse.SetName("Diffuse Layer")
             mat[

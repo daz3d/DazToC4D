@@ -170,6 +170,7 @@ class guiASKtoSave(gui.GeDialog):
 
         if id == self.BUTTON_SAVE:
             c4d.CallCommand(12255, 12255)  # Save Project with Assets...
+            self.Close()
 
         if id == self.BUTTON_CANCEL:
             self.Close()
