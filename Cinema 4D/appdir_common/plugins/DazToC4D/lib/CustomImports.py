@@ -280,7 +280,9 @@ class CustomImports:
         import_list = []
         if os.path.exists(os.path.join(EXPORT_DIR, "FIG")):
             for i in os.listdir(os.path.join(EXPORT_DIR, "FIG")):
-                import_list.append(os.path.join(EXPORT_DIR, "FIG", i))
+                subpath = os.path.join(EXPORT_DIR, "FIG", i)
+                if os.path.isdir(subpath):
+                    import_list.append(subpath)
             return import_list
         else:
             gui.MessageDialog(
@@ -295,7 +297,9 @@ class CustomImports:
         import_list = []
         if os.path.exists(os.path.join(EXPORT_DIR, "ENV")):
             for i in os.listdir(os.path.join(EXPORT_DIR, "ENV")):
-                import_list.append(os.path.join(EXPORT_DIR, "ENV", i))
+                subpath = os.path.join(EXPORT_DIR, "ENV", i)
+                if os.path.isdir(subpath):
+                    import_list.append(subpath)
             return import_list
         else:
             gui.MessageDialog(
