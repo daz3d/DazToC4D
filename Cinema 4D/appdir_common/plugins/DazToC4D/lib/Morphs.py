@@ -23,6 +23,10 @@ class Morphs(MorphHelpers):
             morph_names = []
             pm_remove = []
             pm_tag = obj.GetTag(c4d.Tposemorph)
+            if pm_tag is None:
+                continue
+            if type(pm_tag) != "c4d.modules.character.CAPoseMorphTag":
+                continue
             pm_tag.ExitEdit(doc, True)
             if pm_tag:
                 morph_amount = pm_tag.GetMorphCount()
@@ -67,7 +71,8 @@ class Morphs(MorphHelpers):
 
         for obj in self.meshes:
             pm_tag = obj.GetTag(c4d.Tposemorph)
-            pm_tag[c4d.ID_CA_POSE_MODE] = c4d.ID_CA_POSE_MODE_ANIMATE
+            if pm_tag is not None:
+                pm_tag[c4d.ID_CA_POSE_MODE] = c4d.ID_CA_POSE_MODE_ANIMATE
 
     def delete_morphs(self, c_meshes):
         """
