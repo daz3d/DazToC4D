@@ -290,10 +290,10 @@ void DzC4DDialog::HandleTargetPluginInstallerButton()
 	// verify plugin path
 	bool bIsPluginPath = false;
 	QString sPluginsPath = sDestinationPath;
-	if (sPluginsPath.endsWith("/plugins") == false)
-	{
-		sPluginsPath += "/plugins";
-	}
+	//if (sPluginsPath.endsWith("/plugins", Qt::CaseInsensitive) == false)
+	//{
+	//	sPluginsPath += "/plugins";
+	//}
 	if (QDir(sPluginsPath).exists())
 	{
 		bIsPluginPath = true;
