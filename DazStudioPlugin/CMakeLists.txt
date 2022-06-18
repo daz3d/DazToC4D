@@ -2,7 +2,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-set(DZ_PLUGIN_TGT_NAME dzbridge_c4d)
+set(DZ_PLUGIN_TGT_NAME dzc4dbridge)
 set(DZ_PLUGIN_PROJECT_NAME "DzBridge-C4D")
 
 include_directories(${COMMON_LIB_INCLUDE_DIR})
