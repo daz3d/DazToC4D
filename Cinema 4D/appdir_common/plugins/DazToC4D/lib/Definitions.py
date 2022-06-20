@@ -7,11 +7,18 @@ if (platform.system() == "Windows"):
         CSIDL_PERSONAL=5
         SHGFP_TYPE_CURRENT=0
         buffer = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-        ctypes.windll.shell32.SHGetFolderPathW(0, CSIDL_PERSONAL, 0, SHGFP_TYPE_CURRENT, buffer)
+        result = ctypes.windll.shell32.SHGetFolderPathW(0, CSIDL_PERSONAL, 0, SHGFP_TYPE_CURRENT, buffer)
+        if result != 0:
+            print(f"ERROR: Unable to query Documents path for Windows, return code={hex(result)}, retrying qeury...")
+            # retry
+            result = ctypes.windll.shell32.SHGetFolderPathW(0, CSIDL_PERSONAL, 0, SHGFP_TYPE_CURRENT, buffer)
+        if result != 0:
+            print(f"ERROR: Failed second query, return code={hex(result)}.")
+            raise Exception()
         HOME_DIR = buffer.value
     except:
         HOME_DIR = os.path.expanduser("~").replace("\\","/") + "/Documents"
-        print(f"ERROR: unable to query the correct Documents path for Windows, failing back to user folder=\"{HOME_DIR}\".")
+        print(f"ERROR: Unable to query the correct Documents path for Windows, failing back to user folder=\"{HOME_DIR}\".")
 elif (platform.system() == "Darwin"):
     HOME_DIR = os.path.expanduser("~") + "/Documents"
 else:
