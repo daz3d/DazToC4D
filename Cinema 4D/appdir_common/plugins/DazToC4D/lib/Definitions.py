@@ -2,12 +2,16 @@ import os
 import platform
 
 if (platform.system() == "Windows"):
-    import ctypes.wintypes
-    CSIDL_PERSONAL=5
-    SHGFP_TYPE_CURRENT=0
-    buffer = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-    ctypes.windll.shell32.SHGetFolderPathW(0, CSIDL_PERSONAL, 0, SHGFP_TYPE_CURRENT, buffer)
-    HOME_DIR = buffer.value
+    try:
+        import ctypes.wintypes
+        CSIDL_PERSONAL=5
+        SHGFP_TYPE_CURRENT=0
+        buffer = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
+        ctypes.windll.shell32.SHGetFolderPathW(0, CSIDL_PERSONAL, 0, SHGFP_TYPE_CURRENT, buffer)
+        HOME_DIR = buffer.value
+    except:
+        HOME_DIR = os.path.expanduser("~").replace("\\","/") + "/Documents"
+        print(f"ERROR: unable to query the correct Documents path for Windows, failing back to user folder=\"{HOME_DIR}\".")
 elif (platform.system() == "Darwin"):
     HOME_DIR = os.path.expanduser("~") + "/Documents"
 else:
