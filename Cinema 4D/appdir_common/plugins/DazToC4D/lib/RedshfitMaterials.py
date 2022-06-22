@@ -11,7 +11,7 @@ try:
     import redshift
 
 except ImportError:
-    print("DaztoC4D : Redshift not installed can not convert.")
+    print("DaztoC4D: Redshift not installed can not convert.")
 
 
 def _GetNextHierarchyObject(op):
@@ -44,7 +44,7 @@ class RedshiftMaterials(MaterialHelpers):
 
             return True
         except ImportError:
-            print("DaztoC4D : Redshift not installed can not convert.")
+            print("DaztoC4D: Redshift not installed can not convert.")
             return False
 
     def execute(self):

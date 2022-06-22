@@ -4,28 +4,28 @@ import platform
 if (platform.system() == "Windows"):
     try:
         import ctypes.wintypes
-        CSIDL_PERSONAL=5
-        SHGFP_TYPE_CURRENT=0
+        csidl=5 # My Documents Folder (CSIDL_PERSONAL)
+        access_token=None # Current User
+        flags=0 # Current Value (SHGFP_TYPE_CURRENT)
         buffer = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-        result = ctypes.windll.shell32.SHGetFolderPathW(0, CSIDL_PERSONAL, 0, SHGFP_TYPE_CURRENT, buffer)
+        result = ctypes.windll.shell32.SHGetFolderPathW(0, csidl, access_token, flags, buffer)
         if result != 0:
-            print(f"ERROR: Unable to query Documents path for Windows, return code={hex(result)}, retrying qeury...")
-            # retry
-            result = ctypes.windll.shell32.SHGetFolderPathW(0, CSIDL_PERSONAL, 0, SHGFP_TYPE_CURRENT, buffer)
-        if result != 0:
-            print(f"ERROR: Failed second query, return code={hex(result)}.")
+            if result < 0:
+                result += 2**32
+            print("ERROR: SHGetFolderPathW() returned error code=[" + str(hex(result)) + "]")
+            del buffer
             raise Exception()
         HOME_DIR = buffer.value
     except:
         HOME_DIR = os.path.expanduser("~").replace("\\","/") + "/Documents"
-        print(f"ERROR: Unable to query the correct Documents path for Windows, failing back to user folder=\"{HOME_DIR}\".")
+        print("Unable to query the correct Documents path for Windows, failing back to user folder=\"" + str(HOME_DIR) + "\".")
 elif (platform.system() == "Darwin"):
     HOME_DIR = os.path.expanduser("~") + "/Documents"
 else:
     HOME_DIR = os.path.expanduser("~")
 
 ROOT_DIR = os.path.join(HOME_DIR, "DAZ 3D", "Bridges", "Daz To Cinema 4D")
-EXPORT_DIR = os.path.join(ROOT_DIR, "Exports")
+EXPORT_DIR = os.path.join(ROOT_DIR, "Exports").replace("\\","/")
 
 LIB_DIR = os.path.dirname(__file__)
 PLUGIN_DIR = os.path.dirname(LIB_DIR)
