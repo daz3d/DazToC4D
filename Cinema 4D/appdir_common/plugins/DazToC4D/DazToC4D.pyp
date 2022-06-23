@@ -1,3 +1,24 @@
+DZBRIDGE_VERSION_MAJOR = 2022
+DZBRIDGE_VERSION_MINOR = 1
+DZBRIDGE_VERSION_REVISION = 9
+DZBRIDGE_VERSION_BUILD = 21
+DZBRIDGE_VERSION_STRING = "v%s.%s.%s.%s" % (DZBRIDGE_VERSION_MAJOR, DZBRIDGE_VERSION_MINOR, DZBRIDGE_VERSION_REVISION, DZBRIDGE_VERSION_BUILD)
+##
+## DazToC4D
+##
+## Copyright 2020 Daz Productions, Inc.
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this project except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
 """
 The MIT License (MIT)
 
@@ -77,7 +98,7 @@ import importlib
 import os
 import sys
 
-print("Python Version is {0}".format(sys.version_info))
+print("DazToC4D: Python Version is {}.{}.{} {}".format(sys.version_info.major, sys.version_info.minor, sys.version_info.micro, sys.version_info.releaselevel))
 
 if sys.version_info > (3, 0):
     check = importlib.util.find_spec("ptvsd") is not None
@@ -217,5 +238,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-    print("DazToC4D : has successfully loaded")
-    print("DaztoC4D : Exports to {0}.".format(EXPORT_DIR))
+    print("DazToC4D: has successfully loaded, version {}.".format(DZBRIDGE_VERSION_STRING))
+    print("DaztoC4D: Intermediate folder location is \"{0}\".".format(EXPORT_DIR))
