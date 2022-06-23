@@ -18,6 +18,8 @@
 cmake_minimum_required(VERSION 3.4.0)
 
 if(APPLE)
+	set(CMAKE_OSX_SYSROOT macosx)
+	set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "" FORCE)
 	set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "" FORCE)
 	if(NOT CMAKE_OSX_ARCHITECTURES)
   		message( FATAL_ERROR "Mac needs CMAKE_OSX_ARCHITECTURES, set to i386 or x86_64" )
@@ -73,7 +75,8 @@ elseif(APPLE)
 	endif()
 	set(CMAKE_MACOSX_RPATH TRUE)
 	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-	SET(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
+#	SET(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
+	SET(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ ${CMAKE_CXX_FLAGS}")
 else()
 	message(FATAL_ERROR "Unknown architecture")
 endif(WIN32)
@@ -189,8 +192,8 @@ IF(NOT WIN32)
 		SET(FBX_TMP_TARGET_LIBS ${FBX_TMP_TARGET_LIBS} iconv)
 	ENDIF()
 
-#	SET(CMAKE_CXX_FLAGS "-std=c++11 -stdlib\=libstdc++ ${CMAKE_CXX_FLAGS}")
-    SET(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
+#	SET(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ ${CMAKE_CXX_FLAGS}")
+#	SET(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
 
 ENDIF(NOT WIN32)
 
@@ -206,16 +209,16 @@ if(WIN32)
 	set(FBX_SDK_LIB "${FBX_SDK_DIR}/lib/${FBX_PLATFORM}/libfbxsdk-md.lib" CACHE FILEPATH "Path to FBX SDK static library (libfbx-md.lib)" )
 	set(FBX_SDK_XMLLIB "${FBX_SDK_DIR}/lib/${FBX_PLATFORM}/libxml2-md.lib" CACHE FILEPATH "Path to FBX SDK XML library (libxml2-md.lib)" )
 	set(FBX_IMPORT_LIBS
-		${FBX_SDK_LIB}
-		${FBX_SDK_XMLLIB}
-		${FBX_LINKER_FLAGS})
+	${FBX_SDK_LIB}
+	${FBX_SDK_XMLLIB}
+	${FBX_LINKER_FLAGS})
 elseif(APPLE)
 #	set(FBX_PLATFORM "clang/libstdcpp/release")
-    set(FBX_PLATFORM "clang/release")
+    	set(FBX_PLATFORM "clang/release")
 	set(FBX_SDK_LIB "${FBX_SDK_DIR}/lib/${FBX_PLATFORM}/libfbxsdk.a" CACHE FILEPATH "Path to FBX SDK static library (libfbxsdk.a)" )
 	set(FBX_IMPORT_LIBS
-		${FBX_SDK_LIB}
-		${FBX_LINKER_FLAGS})
+	${FBX_SDK_LIB}
+	${FBX_LINKER_FLAGS})
 endif()
 
 ############################
