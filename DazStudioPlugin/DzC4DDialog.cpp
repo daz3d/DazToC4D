@@ -59,6 +59,25 @@ DzC4DDialog::DzC4DDialog(QWidget* parent) :
 	 setWindowTitle(tr("Daz To Cinema 4D Bridge v%1.%2").arg(PLUGIN_MAJOR).arg(PLUGIN_MINOR));
 #endif
 
+	 // Welcome String for Setup/Welcome Mode
+	 QString sSetupModeString = tr("<h4>\
+If this is your first time using the Daz To Cinema 4D Bridge, please be sure to read or watch \
+the tutorials or videos below to install and enable the Cinema 4D Plugin for the bridge:</h4>\
+<ul>\
+<li><a href=\"https://github.com/daz3d/DazToC4D/releases\">Download latest updates and bugfixes (Github)</a></li>\
+<li><a href=\"https://github.com/daz3d/DazToC4D#2-how-to-install\">How To Install and Configure the Bridge (Github)</a></li>\
+<li><a href=\"https://www.daz3d.com/cinema-4d-bridge#faq\">Daz To Maya FAQ (Daz 3D)</a></li>\
+<li><a href=\"https://youtu.be/26en6WHPXnY\">How To Install Daz To Cinema 4D Bridge (Youtube)</a></li>\
+<li><a href=\"https://support.maxon.net/hc/en-us/articles/1500006433061-Where-do-I-install-plugins-\">Where Do I Install Plugins? (Maxon Knowledge Base)</a></li>\
+<li><a href=\"https://www.daz3d.com/forums/discussion/574851/official-daztocinema4d-bridge-2022-what-s-new-and-how-to-use-it\">What's New and How To Use It (Daz 3D Forums)</a></li>\
+</ul>\
+Once the maya plugin is enabled, please add a Character or Prop to the Scene to transfer assets using the Daz To Cinema 4D Bridge.<br><br>\
+To find out more about Daz Bridges, go to <a href=\"https://www.daz3d.com/daz-bridges\">https://www.daz3d.com/daz-bridges</a><br>\
+");
+	 m_WelcomeLabel->setText(sSetupModeString);
+	 QString sBridgeVersionString = tr("Daz To Cinema 4D Bridge %1.%2  revision %3.%4").arg(PLUGIN_MAJOR).arg(PLUGIN_MINOR).arg(revision).arg(PLUGIN_BUILD);
+	 setBridgeVersionStringAndLabel(sBridgeVersionString);
+
 	 // Disable Unsupported AssetType ComboBox Options
 	 QStandardItemModel* model = qobject_cast<QStandardItemModel*>(assetTypeCombo->model());
 	 QStandardItem* item = nullptr;
@@ -142,7 +161,7 @@ bool DzC4DDialog::loadSavedSettings()
 
 void DzC4DDialog::resetToDefaults()
 {
-	m_DontSaveSettings = true;
+	m_bDontSaveSettings = true;
 	DzBridgeDialog::resetToDefaults();
 
 	QString DefaultPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + QDir::separator() + "DazToC4D";
@@ -167,7 +186,7 @@ void DzC4DDialog::resetToDefaults()
 	{
 		assetTypeCombo->setCurrentIndex(1);
 	}
-	m_DontSaveSettings = false;
+	m_bDontSaveSettings = false;
 }
 
 void DzC4DDialog::HandleSelectIntermediateFolderButton()
@@ -252,10 +271,14 @@ void DzC4DDialog::HandleTargetPluginInstallerButton()
 	// Get Software Versio
 	DzBridgeDialog::m_sEmbeddedFilesPath = ":/DazBridgeC4D";
 	QString sBinariesFile = "/c4dplugin.zip";
-	QString sDestinationPath = QDir().homePath() + "/Documents/cinema4d";
+	QString sDestinationPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + "/cinema4d/plugins";
 	if (QDir(sDestinationPath).exists() == false)
 	{
-		sDestinationPath = QDir().homePath() + "/Documents";
+		sDestinationPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + "/cinema4d";
+	}
+	if (QDir(sDestinationPath).exists() == false)
+	{
+		sDestinationPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
 	}
 	QString softwareVersion = m_TargetSoftwareVersionCombo->currentText();
 
@@ -347,5 +370,25 @@ modify the selected folder."));
 
 	return;
 }
+
+void DzC4DDialog::HandleOpenIntermediateFolderButton(QString sFolderPath)
+{
+	QString sIntermediateFolder = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + QDir::separator() + "DazToC4D";
+#if __LEGACY_PATHS__
+	sIntermediateFolder = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + "/DAZ 3D/Bridges/Daz To Cinema 4D/Exports";
+	if (QFile(sIntermediateFolder).exists() == false)
+	{
+		QDir().mkpath(sIntermediateFolder);
+	}
+#else
+	if (intermediateFolderEdit != nullptr)
+	{
+		sIntermediateFolder = intermediateFolderEdit->text();
+	}
+#endif
+	sIntermediateFolder = sIntermediateFolder.replace("\\", "/");
+	DzBridgeDialog::HandleOpenIntermediateFolderButton(sIntermediateFolder);
+}
+
 
 #include "moc_DzC4DDialog.cpp"

@@ -128,14 +128,13 @@ void DzC4DAction::executeAction()
 		{
 			dzScene->setPrimarySelection(rootNodes[0]);
 		}
-		else
+		else if (rootNodes.length() > 1)
 		{
 			if (m_nNonInteractiveMode == 0)
 			{
 				QMessageBox::warning(0, tr("Error"),
 					tr("Please select one Character or Prop to send."), QMessageBox::Ok);
 			}
-			return;
 		}
 	}
 
