@@ -66,7 +66,7 @@ the tutorials or videos below to install and enable the Cinema 4D Plugin for the
 <ul>\
 <li><a href=\"https://github.com/daz3d/DazToC4D/releases\">Download latest updates and bugfixes (Github)</a></li>\
 <li><a href=\"https://github.com/daz3d/DazToC4D#2-how-to-install\">How To Install and Configure the Bridge (Github)</a></li>\
-<li><a href=\"https://www.daz3d.com/cinema-4d-bridge#faq\">Daz To Maya FAQ (Daz 3D)</a></li>\
+<li><a href=\"https://www.daz3d.com/cinema-4d-bridge#faq\">Daz To Cinema 4D FAQ (Daz 3D)</a></li>\
 <li><a href=\"https://youtu.be/26en6WHPXnY\">How To Install Daz To Cinema 4D Bridge (Youtube)</a></li>\
 <li><a href=\"https://support.maxon.net/hc/en-us/articles/1500006433061-Where-do-I-install-plugins-\">Where Do I Install Plugins? (Maxon Knowledge Base)</a></li>\
 <li><a href=\"https://www.daz3d.com/forums/discussion/574851/official-daztocinema4d-bridge-2022-what-s-new-and-how-to-use-it\">What's New and How To Use It (Daz 3D Forums)</a></li>\
