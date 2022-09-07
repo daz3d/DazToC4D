@@ -152,6 +152,7 @@ class Poses:
         c4d.EventAdd()
 
     def clear_pose(self, joints):
+        print("DEBUG: clear_pose() called")
         for joint in joints:
             jnt_data = self.get_pose_data(joint)
             if jnt_data:
@@ -167,6 +168,7 @@ class Poses:
                 joint.SetMg(matrix)
 
     def fix_offset(self, joints, c_skin_data):
+        print("DEBUG: fix_offset() called")
         self.disable_skin_data(c_skin_data)
         for joint in joints:
             jnt_data = self.get_pose_data(joint)

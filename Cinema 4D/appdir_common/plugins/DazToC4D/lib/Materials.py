@@ -15,7 +15,8 @@ from .CustomCmd import Cinema4DCommands as dzc4d
 try:
     import redshift
 
-except:
+except Exception as e:
+    print("DazToC4D: ERROR: Unable to load redshift module.  Redshift conversions will not work: " + str(e))
     pass
 
 
