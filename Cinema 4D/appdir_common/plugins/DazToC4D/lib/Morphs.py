@@ -25,7 +25,7 @@ class Morphs(MorphHelpers):
             pm_tag = obj.GetTag(c4d.Tposemorph)
             if pm_tag is None:
                 continue
-            if type(pm_tag) != "c4d.modules.character.CAPoseMorphTag":
+            if type(pm_tag) != c4d.modules.character.CAPoseMorphTag:
                 continue
             pm_tag.ExitEdit(doc, True)
             if pm_tag:

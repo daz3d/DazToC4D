@@ -152,23 +152,30 @@ class CustomImports:
         #         pose.clear_pose(var.c_joints)
         #         pose.fix_offset(var.c_joints, var.c_skin_data)
 
+        #print(f"DEBUG 0: is_anim={is_anim} is_posed={is_posed}")
         if (is_anim == False and is_posed == False) or override_pose:
-            fix_bone_rotations == gui.QuestionDialog(
+            fix_bone_rotations = gui.QuestionDialog(
                 "Would you like to fix bone orientations?",
                 )
+            #print(f"fix_bone_rotations={fix_bone_rotations}")
             if fix_bone_rotations:
+                #print(f"DEBUG 1: fix_bone_rotations={fix_bone_rotations} is_posed={is_posed}")
                 jnt_fixes.store_joint_orientations(dtu)
                 jnt_fixes.fix_joints(var.c_skin_data, var.c_joints, var.c_meshes)
                 c4d.EventAdd()
                 dzc4d.deselect_all()
+                #print(f"DEBUG 2: fix_bone_rotations={fix_bone_rotations} is_posed={is_posed}")
                 if is_posed:
                     pose.restore_pose(var.c_joints)
+                #print(f"DEBUG 3: fix_bone_rotations={fix_bone_rotations} is_posed={is_posed}")
                 make_tpose = gui.QuestionDialog(
                     "Would you like to Convert\nthe Base Pose to a T-Pose?",
                 )
+                #print(f"DEBUG 4: make_tpose={make_tpose}")
                 if make_tpose:
                     pose.preAutoIK()
                     c4d.EventAdd()
+                #print(f"DEBUG 5: make_tpose={make_tpose}")
 
         else:
             gui.MessageDialog(

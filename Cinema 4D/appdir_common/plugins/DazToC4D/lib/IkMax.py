@@ -5,7 +5,7 @@ import c4d
 from c4d import gui, documents
 
 from .CustomCmd import Cinema4DCommands as dzc4d
-from .Utilities import dazToC4Dutils
+from .Utilities import dazToC4Dutils, is_genesis9
 from .CustomIterators import TagIterator
 from .DazRig import DazRig, JointFixes
 from . import Utilities
@@ -52,19 +52,41 @@ def applyDazIK(var):
     dazToC4Dutils().constraintJointsToDaz("Right")
     if doc.SearchObject(dazName + "ForearmTwist_ctrl"):
         dazToC4Dutils().twistBoneSetup()  # TwistBone Setup
+        # configure rotation
         obj = doc.SearchObject(dazName + "ForearmTwist_ctrl")
         obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
         obj = doc.SearchObject(dazName + "ForearmTwist_ctrl___R")
         obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
-        ikmGenerator().constraintObj("lForearmTwist", dazName + "ForearmTwist_ctrl")
-        ikmGenerator().constraintObj("rForearmTwist", dazName + "ForearmTwist_ctrl___R")
+        if is_genesis9():
+            obj = doc.SearchObject(dazName + "ForearmTwist2_ctrl")
+            obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
+            obj = doc.SearchObject(dazName + "ForearmTwist2_ctrl___R")
+            obj[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
+
+        # Fix Constraints
+        if is_genesis9():
+            ikmGenerator().constraintObj("l_forearmtwist1", dazName + "ForearmTwist_ctrl")
+            ikmGenerator().constraintObj("l_forearmtwist2", dazName + "ForearmTwist2_ctrl")
+            ikmGenerator().constraintObj("r_forearmtwist1", dazName + "ForearmTwist_ctrl___R")
+            ikmGenerator().constraintObj("r_forearmtwist2", dazName + "ForearmTwist2_ctrl___R")
+        else:
+            ikmGenerator().constraintObj("lForearmTwist", dazName + "ForearmTwist_ctrl")
+            ikmGenerator().constraintObj("rForearmTwist", dazName + "ForearmTwist_ctrl___R")
         dazToC4Dutils().fixConstraints()
-        dazToC4Dutils().zeroTwistRotationFix(
-            dazName + "ForearmTwist_ctrl", "lForearmTwist"
-        )
-        dazToC4Dutils().zeroTwistRotationFix(
-            dazName + "ForearmTwist_ctrl___R", "rForearmTwist"
-        )
+
+        # Zero Twist Rotation Fix
+        if is_genesis9():
+            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl", "l_forearmtwist1")
+            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist2_ctrl", "l_forearmtwist2")
+            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist_ctrl___R", "r_forearmtwist1")
+            dazToC4Dutils().zeroTwistRotationFix(dazName + "ForearmTwist2_ctrl___R", "r_forearmtwist2")
+        else:
+            dazToC4Dutils().zeroTwistRotationFix(
+                dazName + "ForearmTwist_ctrl", "lForearmTwist"
+            )
+            dazToC4Dutils().zeroTwistRotationFix(
+                dazName + "ForearmTwist_ctrl___R", "rForearmTwist"
+            )
 
     ikmaxUtils().freezeChilds(dazName + "IKM_Controls")
     ikmaxUtils().freezeChilds(dazName + "jPelvis")
@@ -782,11 +804,17 @@ class ikmGenerator:
                 parent = doc.SearchObject(dazName + jointParentName)
                 obj.InsertUnder(parent)
             if globalPosName != "":
+                # if "Collar" in globalPosName:
+                #     print("DEBUG: makeJoint() called: " + jointName + ", " + jointParentName + ", " + globalPosName)
+                #     print("DEBUG: makeJoint(): dazName=" + dazName + " globalPosName=" + globalPosName )
                 globalPos = doc.SearchObject(dazName + globalPosName)
-                obj.SetMg(globalPos.GetMg())
+                if globalPos is None:
+                    print("ERROR: unable to SearchObject(dazName + globalPosName)=" + dazName + globalPosName)
+                else:
+                    obj.SetMg(globalPos.GetMg())
         except Exception as e:
+            print("ERROR: makeJoint() failed, joint skipped: " + jointName + ", Exception:")
             print(e)
-            print("Joint skipped...", jointName)
 
         c4d.EventAdd()  # Send global event message
 
@@ -1040,9 +1068,12 @@ class ikmGenerator:
 
     def makeNull(self, nullName, objPosition, preset):
         doc = documents.GetActiveDocument()
+        target = doc.SearchObject(objPosition)
+        if target is None:
+            print("DEBUG: makeNull() crashfix: objPosition not found: " + objPosition )
+            return None
         obj = c4d.BaseObject(c4d.Onull)  # Create new cube
         obj.SetName(nullName)
-        target = doc.SearchObject(objPosition)
         obj.SetMg(target.GetMg())
         doc.InsertObject(obj)
 
@@ -1198,7 +1229,10 @@ class ikmGenerator:
 
         MASTERSIZE = 220.0
         if poleName != "":
-            self.makeNull(dazName + poleName, dazName + polePosition, "pole")  # Pole
+            obj = self.makeNull(dazName + poleName, dazName + polePosition, "pole")  # Pole
+            if obj is None:
+                print("ERROR: makeIKtag() unsupported figure crashfix")
+                return
             poleGoal = doc.SearchObject(dazName + poleName)
             # POLE ZERO ROTATION
             poleGoal[c4d.ID_BASEOBJECT_REL_ROTATION, c4d.VECTOR_X] = 0
@@ -1337,7 +1371,10 @@ class ikmGenerator:
     def makeDAZCollarNull(self, sideName=""):
         doc = c4d.documents.GetActiveDocument()
         objNull = c4d.BaseObject(c4d.Onull)
-        dazCollar = doc.SearchObject("lCollar")
+        if is_genesis9():
+            dazCollar = doc.SearchObject("l_shoulder")
+        else:
+            dazCollar = doc.SearchObject("lCollar")
         ikmGuides = doc.SearchObject(dazName + "_IKM-Guides")
         shoulder = doc.SearchObject(dazName + "Shoulder" + sideName)
 
@@ -1375,21 +1412,26 @@ class ikmGenerator:
         doc = documents.GetActiveDocument()
 
         # --- ARM  ---------------------------------------------
+        #####
+        #print("DEBUG: generateRIG(): sideName=" + sideName + ", about to makeJoint(jCollar...)")
         self.makeJoint("jCollar" + sideName, "jChestUpper", "Collar" + sideName)
-        dazJoint = doc.SearchObject("lCollar")
+        if is_genesis9():
+            dazJoint = doc.SearchObject("l_shoulder")
+        else:
+            dazJoint = doc.SearchObject("lCollar")
         joint = doc.SearchObject(dazName + "jCollar" + sideName)
 
         try:
             joint.SetMg(dazJoint.GetMg())
         except:
-            print("joint skip")
+            print("ERROR: generateRig() joint skipped, joint.SetMg() failed: " + joint.GetName() + ", dazJoint=" + str(dazJoint))
             pass
         try:
             self.makeJoint(
                 "jArm" + sideName, "jCollar" + sideName, "Shoulder" + sideName
             )
         except:
-            print("joint skip")
+            print("ERROR: generateRig() joint skipped, makeJoint() failed: " + joint.GetName())
             pass
         self.makeJoint("jForeArm" + sideName, "jArm" + sideName, "Elbow" + sideName)
         self.makeJoint("jHand" + sideName, "jForeArm" + sideName, "Hand" + sideName)
@@ -1673,9 +1715,7 @@ class ikmGenerator:
             dazName + "Foot_Platform" + sideName,
             "UPVECTOR",
         )
-        self.constraintObj(
-            dazName + "jHand" + sideName, dazName + "IK_Hand" + sideName, "ROTATION"
-        )
+        self.constraintObj(dazName + "jHand" + sideName, dazName + "IK_Hand" + sideName, "ROTATION")
 
         self.makeNull(
             dazName + "ToesEnd" + sideName, dazName + "jToes_end" + sideName, "none"
@@ -1705,11 +1745,14 @@ class ikmGenerator:
             self.constraintObj(dazName + "jPelvis", dazName + "Pelvis_ctrl")
 
             # check if twistbones:
+            if is_genesis9():
+                self.makeNull(dazName + "ForearmTwist_ctrl", "l_forearmtwist1", "twist")
+                self.makeNull(dazName + "ForearmTwist2_ctrl", "l_forearmtwist2", "twist")
+                self.makeNull(dazName + "ForearmTwist_ctrl___R", "r_forearmtwist1", "twist")
+                self.makeNull(dazName + "ForearmTwist2_ctrl___R", "r_forearmtwist2", "twist")
             if doc.SearchObject("lForearmTwist"):
                 self.makeNull(dazName + "ForearmTwist_ctrl", "lForearmTwist", "twist")
-                self.makeNull(
-                    dazName + "ForearmTwist_ctrl___R", "rForearmTwist", "twist"
-                )
+                self.makeNull(dazName + "ForearmTwist_ctrl___R", "rForearmTwist", "twist")
         if sideName == "":
             self.makeNull(dazName + "Spine_ctrl", dazName + "jSpine", "spine")
             self.constraintObj(dazName + "jSpine", dazName + "Spine_ctrl")
@@ -1784,9 +1827,10 @@ class ikmGenerator:
         self.makeChildKeepPos(dazName + "Foot_PlatformBase", dazName + "IKM_Controls")
 
         self.makeChildKeepPos(dazName + "ForearmTwist_ctrl", dazName + "jForeArm")
-        self.makeChildKeepPos(
-            dazName + "ForearmTwist_ctrl___R", dazName + "jForeArm___R"
-        )
+        self.makeChildKeepPos(dazName + "ForearmTwist_ctrl___R", dazName + "jForeArm___R")
+        if is_genesis9():
+            self.makeChildKeepPos(dazName + "ForearmTwist2_ctrl", dazName + "jForeArm")
+            self.makeChildKeepPos(dazName + "ForearmTwist2_ctrl___R", dazName + "jForeArm___R")
 
         dazToC4Dutils().initialDisplaySettings()
 

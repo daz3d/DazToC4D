@@ -151,7 +151,11 @@ class JointFixes:
             suffix = ""
 
         mesh_name = Utilities.get_daz_name() + "_"
-        constraints = Database.rig_joints
+        ## TODO: REPLACE WITH TRUE GENERATION TEST
+        if doc.SearchObject("l_thightwist1"):
+            constraints = Database.rig_joints_g9
+        else:
+            constraints = Database.rig_joints
         for joints in constraints:
             if dz_jnt_name == joints[0]:
                 return doc.SearchObject(mesh_name + joints[1] + suffix)
@@ -321,6 +325,10 @@ class DazRig:
         doc = c4d.documents.GetActiveDocument()
         r_eye = doc.SearchObject("rEye")  # Genesis2
         l_eye = doc.SearchObject("lEye")  # Genesis2
+
+        if r_eye is None or l_eye is None:
+            r_eye = doc.SearchObject("r_eye")  # Genesis9
+            l_eye = doc.SearchObject("l_eye")  # Genesis9
 
         if r_eye is None or l_eye is None:
             return

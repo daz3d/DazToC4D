@@ -11,6 +11,13 @@ from . import Database
 from .DtuLoader import DtuLoader
 from .TextureLib import texture_library
 
+def is_genesis9():
+    doc = documents.GetActiveDocument()
+    if doc.SearchObject("l_shoulder"):
+        if doc.SearchObject("l_forearmtwist1"):
+            if doc.SearchObject("l_forearmtwist2"):
+                return True
+    return False
 
 class Variables:
     """
@@ -671,6 +678,10 @@ class dazToC4Dutils:
         twistJoint = doc.SearchObject(dazName + "ForearmTwist_ctrl___R")
         handJoint = doc.SearchObject("rHand")
         aimObj(twistJoint, handJoint, "AIM", 0)
+        twistJoint2 = doc.SearchObject(dazName + "ForearmTwist2_ctrl")
+        aimObj(twistJoint2, handJoint, "AIM", 0)
+        twistJoint2 = doc.SearchObject(dazName + "ForearmTwist2_ctrl___R")
+        aimObj(twistJoint2, handJoint, "AIM", 0)
 
     def fixConstraints(self):
         def fixConstraint(jointName):
@@ -681,8 +692,14 @@ class dazToC4Dutils:
                 tag[c4d.ID_CA_CONSTRAINT_TAG_PSR_MAINTAIN] = True
                 c4d.EventAdd()
 
-        fixConstraint("lForearmTwist")
-        fixConstraint("rForearmTwist")
+        if is_genesis9():
+            fixConstraint("l_forearmtwist1")
+            fixConstraint("l_forearmtwist2")
+            fixConstraint("r_forearmtwist1")
+            fixConstraint("r_forearmtwist2")
+        else:
+            fixConstraint("lForearmTwist")
+            fixConstraint("rForearmTwist")
 
     def hideRig(self):
         doc = documents.GetActiveDocument()
@@ -725,8 +742,10 @@ class dazToC4Dutils:
         doc = documents.GetActiveDocument()
         jointHeadEnd = doc.SearchObject("head_end")
         if jointHeadEnd == None:
-            jointCollar = doc.SearchObject("lCollar")
-
+            if is_genesis9():
+                jointCollar = doc.SearchObject("l_shoulder")
+            else:
+                jointCollar = doc.SearchObject("lCollar")
             jointHead = doc.SearchObject("head")
             newJoint = c4d.BaseObject(c4d.Ojoint)
             newJoint.SetName("head_end")
@@ -881,11 +900,16 @@ class dazToC4Dutils:
         guides = Database.guides_for_rig
         for objs in guides:
             guide_suffix = objs[0]
-            joint = objs[1]
-            if doc.SearchObject(joint):
-                self.moveToObj(meshName + guide_suffix, joint)
-            elif len(objs) == 3:
-                self.moveToObj(meshName + guide_suffix, objs[2])
+            for joint in objs[1:]:
+                if doc.SearchObject(joint):
+                    self.moveToObj(meshName + guide_suffix, joint)
+                    break
+                #print("DEBUG: guidesToDaz() unsupported figure crashfix: " + joint + " not found...")
+            # joint = objs[1]
+            # if doc.SearchObject(joint):
+            #     self.moveToObj(meshName + guide_suffix, joint)
+            # elif len(objs) == 3:
+            #     self.moveToObj(meshName + guide_suffix, objs[2])
 
     def cleanJointsDaz(self, side="Left"):
         doc = documents.GetActiveDocument()
@@ -916,7 +940,10 @@ class dazToC4Dutils:
             prefix = "r"
             suffix = "___R"
 
-        joints = Database.constraint_joints
+        if doc.SearchObject("l_upperarmtwist1"):
+            joints = Database.constraint_joints_g9
+        else:
+            joints = Database.constraint_joints
         for joint in joints:
             dz_joint = joint[0]
             ctrl_joint = joint[1]

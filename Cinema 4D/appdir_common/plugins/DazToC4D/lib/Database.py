@@ -1,7 +1,7 @@
 import c4d
 
 """
-Storing the AutoIK Hardcoded values to be replaced later down the road 
+Storing the AutoIK Hardcoded values to be replaced later down the road
 so this isn't necessary
 """
 
@@ -104,6 +104,40 @@ constraint_joints = [
     ["Thumb3", "jThumb3"],
 ]
 
+constraint_joints_g9 = [
+    ["_shoulder", "jCollar"],
+    ["_upperarm", "jArm"],
+    ["_forearm", "jForeArm"],
+    #["_forearmtwist1", "ForearmTwist_ctrl"],
+    ["_hand", "jHand"],
+    ["hip", "jPelvis"], ## shared
+    ["pelvis", "jPelvis"], ## shared
+    ["spine1", "jSpine"],
+    ["spine2", "jAbdomenUpper"],
+    ["spine3", "jChest"],
+    ["spine4", "jChestUpper"],
+    ["neck1", "jNeck"],
+    ["head", "jHead"], ## shared
+    ["_thigh", "jUpLeg"],
+    ["_foot", "jFoot"],
+    ["_shin", "jLeg"],
+    ["_toes", "jToes"],
+    ["_index1", "jIndex1"],
+    ["_index2", "jIndex2"],
+    ["_index3", "jIndex3"],
+    ["_mid1", "jMiddle1"],
+    ["_mid2", "jMiddle2"],
+    ["_mid3", "jMiddle3"],
+    ["_ring1", "jRing1"],
+    ["_ring2", "jRing2"],
+    ["_ring3", "jRing3"],
+    ["_pinky1", "jPink1"],
+    ["_pinky2", "jPink2"],
+    ["_pinky3", "jPink3"],
+    ["_thumb1", "jThumb1"],
+    ["_thumb2", "jThumb2"],
+    ["_thumb3", "jThumb3"],
+]
 
 rig_joints = [
     ["Collar", "jCollar"],
@@ -146,53 +180,83 @@ rig_joints = [
     ["Thumb3", "jThumb3"],
 ]
 
+rig_joints_g9 = [
+    ["_shoulder", "jCollar"],
+    ["_upperarm", "jArm"],
+    ["_forearm", "jForeArm"],
+    #["_forearmtwist1", "ForearmTwist_ctrl"],
+    ["_hand", "jHand"],
+    ["hip", "jPelvis"], ## shared
+    ["pelvis", "jPelvis"], ## shared
+    ["spine1", "jSpine"],
+    ["spine2", "jAbdomenUpper"],
+    ["spine3", "jChest"],
+    ["spine4", "jChestUpper"],
+    ["neck1", "jNeck"],
+    ["head", "jHead"], ## shared
+    ["_thigh", "jUpLeg"],
+    ["_foot", "jFoot"],
+    ["_shin", "jLeg"],
+    ["_toes", "jToes"],
+    ["_index1", "jIndex1"],
+    ["_index2", "jIndex2"],
+    ["_index3", "jIndex3"],
+    ["_mid1", "jMiddle1"],
+    ["_mid2", "jMiddle2"],
+    ["_mid3", "jMiddle3"],
+    ["_ring1", "jRing1"],
+    ["_ring2", "jRing2"],
+    ["_ring3", "jRing3"],
+    ["_pinky1", "jPink1"],
+    ["_pinky2", "jPink2"],
+    ["_pinky3", "jPink3"],
+    ["_thumb1", "jThumb1"],
+    ["_thumb2", "jThumb2"],
+    ["_thumb3", "jThumb3"],
+    ["_midtoe2", "jToes_end"],
+]
 
 """ [ Guide, joint ]
 """
 guides_for_rig = [
-    ["Collar", "lCollar", "chest"],
-    ["AbdomenUpper", "abdomenUpper"],
-    ["ChestUpper", "chestUpper"],
-    ["Shoulder", "lShldr"],  # Genesis 2
-    ["Elbow", "lForeArm"],  # Genesis 2
-    ["Shoulder", "lShldrBend"],
-    ["Elbow", "lForearmBend"],
-    ["Hand", "lHand"],
-    ["Index1", "lIndex1"],
-    ["Index2", "lIndex2"],
-    ["Index3", "lIndex3"],
-    ["Index_end", "lIndex3"],
-    ["Middle1", "lMid1"],
-    ["Middle2", "lMid2"],
-    ["Middle3", "lMid3"],
-    ["Middle_end", "lMid3"],
-    ["Ring1", "lRing1"],
-    ["Ring2", "lRing2"],
-    ["Ring3", "lRing3"],
-    ["Ring_end", "lRing3"],
-    ["Pinky1", "lPinky1"],
-    ["Pinky2", "lPinky2"],
-    ["Pinky3", "lPinky3"],
-    ["Pinky_end", "lPinky3"],
-    ["Thumb1", "lThumb1"],
-    ["Thumb2", "lThumb2"],
-    ["Thumb3", "lThumb3"],
-    ["Thumb_end", "lThumb3"],
-    ["LegUpper", "lThighBend"],
-    ["LegUpper", "lThigh"],
-    ["Knee", "lShin"],
-    ["Foot", "lFoot"],
-    ["Toes", "lToe"],
-    ["Toes_end", "lSmallToe2_2"],
-    ["Toes_end", "lSmallToe2"],
+    ["Collar", "l_shoulder", "lCollar", "chest"],
+    ["AbdomenUpper", "spine2", "abdomenUpper"],
+    ["ChestUpper", "spine4", "chestUpper"],
+    ["Shoulder", "l_upperarm", "lShldrBend", "lShldr"],
+    ["Elbow", "l_forearm", "lForearmBend", "lForeArm"],
+    #["ForearmTwist", "l_forearmtwist1"],
+    ["Hand", "l_hand", "lHand"],
+    ["Index1", "l_index1", "lIndex1"],
+    ["Index2", "l_index2", "lIndex2"],
+    ["Index3", "l_index3", "lIndex3"],
+    ["Index_end", "l_index3", "lIndex3"],
+    ["Middle1", "l_mid1", "lMid1"],
+    ["Middle2", "l_mid2", "lMid2"],
+    ["Middle3", "l_mid3", "lMid3"],
+    ["Middle_end", "l_mid3", "lMid3"],
+    ["Ring1", "l_ring1", "lRing1"],
+    ["Ring2", "l_ring2", "lRing2"],
+    ["Ring3", "l_ring3", "lRing3"],
+    ["Ring_end", "l_ring3", "lRing3"],
+    ["Pinky1", "l_pinky1", "lPinky1"],
+    ["Pinky2", "l_pinky2", "lPinky2"],
+    ["Pinky3", "l_pinky3", "lPinky3"],
+    ["Pinky_end", "l_pinky3", "lPinky3"],
+    ["Thumb1", "l_thumb1", "lThumb1"],
+    ["Thumb2", "l_thumb2", "lThumb2"],
+    ["Thumb3", "l_thumb3", "lThumb3"],
+    ["Thumb_end", "l_thumb3", "lThumb3"],
+    ["LegUpper", "l_thigh", "lThighBend", "lThigh"],
+    ["Knee", "l_shin", "lShin"],
+    ["Foot", "l_foot", "lFoot"],
+    ["Toes", "l_toes", "lToe"],
+    ["Toes_end", "l_midtoe2", "lSmallToe2_2"],
+    ["Toes_end", "l_midtoe1", "lSmallToe2"],
     ["Pelvis", "hip"],
-    ["Spine_Start", "abdomenLower"],
-    ["Chest_Start", "chestLower"],
-    ["Neck_Start", "neckLower"],
+    ["Spine_Start", "spine1", "abdomenLower", "abdomen"],
+    ["Chest_Start", "spine3", "chestLower", "chest"],
+    ["Neck_Start", "neck1", "neckLower", "neck"],
     ["Neck_End", "head"],
-    ["Spine_Start", "abdomen"],
-    ["Chest_Start", "chest"],
-    ["Neck_Start", "neck"],
     ["Head_End", "head_end"],  # Labeled temp...
 ]
 
@@ -218,6 +282,7 @@ guides_to_mirror = [
     "Thumb3",
     "Thumb1",
     "Hand",
+    #"ForearmTwist",
     "Elbow",
     "Shoulder",
     "Toes_end",
@@ -285,6 +350,10 @@ ik_controls = [
     ["Chest_ctrl", "jChest", "spine"],
     ["Neck_ctrl", "jNeck", "neck"],
     ["Head_ctrl", "jHead", "head"],
+    ["ForearmTwist_ctrl", "l_forearmtwist1", "twist"],
+    ["ForearmTwist_ctrl___R", "r_forearmtwist1", "twist"],
+    ["ForearmTwist2_ctrl", "l_forearmtwist2", "twist"],
+    ["ForearmTwist2_ctrl___R", "r_forearmtwist2", "twist"],
 ]
 
 ik_tags = [

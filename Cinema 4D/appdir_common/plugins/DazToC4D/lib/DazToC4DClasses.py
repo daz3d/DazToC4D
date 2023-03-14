@@ -3,7 +3,7 @@ from c4d import documents
 
 from . import Utilities as util
 from .CustomIterators import ObjectIterator
-from .Utilities import dazToC4Dutils
+from .Utilities import dazToC4Dutils, is_genesis9
 from .IkMax import applyDazIK, ikmaxUtils
 from .AllSceneToZero import AllSceneToZero
 
@@ -70,6 +70,19 @@ class DazToC4D:
             nullForeArmR.SetRelPos(c4d.Vector(0, 0, 0))
             nullForeArmR.SetRelRot(c4d.Vector(0, 0, 0))
 
+        nullForeArm = doc.SearchObject(dazName + "ForearmTwist2_ctrl")
+        nullForeArmR = doc.SearchObject(dazName + "ForearmTwist2_ctrl___R")
+        if nullForeArm:
+            nullForeArm.SetFrozenPos(nullForeArm.GetAbsPos())
+            nullForeArm.SetFrozenRot(nullForeArm.GetAbsRot())
+            nullForeArmR.SetFrozenPos(nullForeArmR.GetAbsPos())
+            nullForeArmR.SetFrozenRot(nullForeArmR.GetAbsRot())
+
+            nullForeArm.SetRelPos(c4d.Vector(0, 0, 0))
+            nullForeArm.SetRelRot(c4d.Vector(0, 0, 0))
+            nullForeArmR.SetRelPos(c4d.Vector(0, 0, 0))
+            nullForeArmR.SetRelRot(c4d.Vector(0, 0, 0))
+
     def lockAllModels(self):
         doc = documents.GetActiveDocument()
         obj = doc.GetFirstObject()
@@ -108,6 +121,9 @@ class DazToC4D:
         dazName = util.get_daz_name() + "_"
 
         def addProtTag(obj):
+            if obj is None:
+                print("DEBUG: addProtTag: unsupported figure crashfix")
+                return
             xtag = c4d.BaseTag(c4d.Tprotection)
             xtag[c4d.PROTECTION_P] = 1
             xtag[c4d.PROTECTION_S] = False
@@ -123,6 +139,11 @@ class DazToC4D:
         nullForeArmR = doc.SearchObject(dazName + "ForearmTwist_ctrl___R")
         addProtTag(nullForeArm)
         addProtTag(nullForeArmR)
+        if is_genesis9():
+            nullForeArm = doc.SearchObject(dazName + "ForearmTwist2_ctrl")
+            nullForeArmR = doc.SearchObject(dazName + "ForearmTwist2_ctrl___R")
+            addProtTag(nullForeArm)
+            addProtTag(nullForeArmR)
 
     def protectIKMControls(self):
         def protectTag(jointName, protectPreset):
