@@ -99,6 +99,11 @@ class MaterialHelpers:
 
     def is_metal(self, prop):
         lib = texture_library
+        # DB 2023-June-20, Bugfix: Metallicity Enable
+        for prop_name in lib["metalness-enable"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Value"] != 1:
+                    return False
         for prop_name in lib["metalness"]["Name"]:
             if prop_name in prop.keys():
                 if prop[prop_name]["Value"] > 0:
@@ -109,6 +114,24 @@ class MaterialHelpers:
         for prop_name in lib["sss-enable"]["Name"]:
             if prop_name in prop.keys():
                 if prop[prop_name]["Value"] > 0:
+                    return True
+
+    def is_makeup_base(self, prop):
+        lib = texture_library
+        for prop_name in lib["makeup-base"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Value"] != "":
+                    return True
+                if prop[prop_name]["Texture"] != "":
+                    return True
+                
+    def is_makeup_weight(self, prop):
+        lib = texture_library
+        for prop_name in lib["makeup-weight"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Value"] > 0:
+                    return True
+                if prop[prop_name]["Texture"] != "":
                     return True
 
     def check_value(self, type, value):

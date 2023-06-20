@@ -4,6 +4,12 @@ from .MaterialHelpers import MaterialHelpers, convert_color, convert_to_vector
 
 
 class StdMaterials(MaterialHelpers):
+    use_makeup_layer = False
+    makeup_layer_shader = None
+
+    def __init__(self):
+        self.use_makeup_layer = False
+
     def update_materials(self):
         doc = c4d.documents.GetActiveDocument()
         doc_mat = doc.GetMaterials()
@@ -20,6 +26,7 @@ class StdMaterials(MaterialHelpers):
                 if not prop:
                     continue
                 self.clean_up_layers(mat)
+                self.set_up_makeup(mat, prop)
                 self.set_up_transmission(mat, prop)
                 self.set_up_diffuse(mat, prop)
                 self.set_up_daz_mat(mat, prop)
@@ -44,27 +51,103 @@ class StdMaterials(MaterialHelpers):
                 if prop_name in prop.keys():
                     mat[c4d.MATERIAL_TRANSPARENCY_REFRACTION] = prop[prop_name]["Value"]
 
+    def set_up_makeup(self, mat, prop):  
+        return
+        # DB 2023-June-19: PBRSkin Makeup Support
+        lib = texture_library
+
+        # DB 2023-June-19: Create a new layer-based shader for makeup blending
+        # 1. Retrieve makeup weight, makeup base, and diffuse texture paths
+        # 2. Create a layer-based shader
+        # 3. Add diffuse texture to layer 1 and set blending mode to "Normal"
+        # 4. Add makeup weight to layer 2 and set blending mode to "Mask"
+        # 5. Add makeup base to layer 3 and set blending mode to "Normal"
+        makeup_base_texture = None
+        makeup_weight_texture = None
+        diffuse_texture = None
+        for prop_name in lib["makeup-weight"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    makeup_weight_value = prop[prop_name]["Value"]
+                    makeup_weight_value = self.check_value("float", makeup_weight_value)
+                    makeup_weight_path = prop[prop_name]["Texture"]
+                    makeup_weight_texture = StdMaterials.create_texture(mat, makeup_weight_path)
+                    print("DEBUG (ln 73, StandardMaterials.py): makeup_weight_texture = " + str(makeup_weight_texture))
+        for prop_name in lib["makeup-base"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    hex_str = prop[prop_name]["Value"]
+                    hex_str = self.check_value("hex", hex_str)
+                    color = convert_color(hex_str)
+                    makeup_base_color_vector = c4d.Vector(color[0], color[1], color[2])
+                    makeup_base_path = prop[prop_name]["Texture"]
+                    makeup_base_texture = StdMaterials.create_texture(mat, makeup_base_path)
+                    print("DEBUG (ln 84, StandardMaterials.py): makeup_base_texture = " + str(makeup_base_texture))
+        for prop_name in lib["color"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    hex_str = prop[prop_name]["Value"]
+                    hex_str = self.check_value("hex", hex_str)
+                    color = convert_color(hex_str)
+                    diffuse_color_vector = c4d.Vector(color[0], color[1], color[2])
+                    diffuse_path = prop[prop_name]["Texture"]
+                    diffuse_texture = StdMaterials.create_texture(mat, diffuse_path)
+        if makeup_weight_texture and makeup_base_texture and diffuse_texture:
+            self.use_makeup_layer = True
+            # create a layer-based shader
+            makeup_layer_shader = c4d.BaseShader(c4d.Xlayer)
+            # add layers to the shader
+            layer1 =makeup_layer_shader.AddLayer(c4d.TypeShader)
+            layer2 = makeup_layer_shader.AddLayer(c4d.TypeShader)
+            layer3 = makeup_layer_shader.AddLayer(c4d.TypeShader)
+
+            # assign textures to bitmap shaders and assign bitmap shaders to layers
+            # layer2[c4d.BITMAPSHADER_COLOR_SHADER] = makeup_weight_texture
+            # layer2[c4d.BITMAPSHADER_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
+            # layer3[c4d.BITMAPSHADER_COLOR_SHADER] = makeup_base_texture
+            # layer3[c4d.BITMAPSHADER_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
+            # layer1[c4d.BITMAPSHADER_COLOR_SHADER] = diffuse_texture
+            # layer1[c4d.BITMAPSHADER_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
+            layer1.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, diffuse_texture)
+            layer2.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, makeup_weight_texture)
+            layer3.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, makeup_base_texture)
+
+            # # set layer blending modes
+            # layer1[c4d.XLAYER_BLENDING_MODE] = c4d.XLAYER_BLENDING_MODE_NORMAL
+            # layer2[c4d.XLAYER_BLENDING_MODE] = c4d.XLAYER_BLENDING_MODE_MASK
+            # layer3[c4d.XLAYER_BLENDING_MODE] = c4d.XLAYER_BLENDING_MODE_NORMAL
+            layer1.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 0)
+            layer2.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 20)
+            layer3.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 0)
+
+            # connect layer to material
+            mat[c4d.MATERIAL_USE_COLOR] = True
+            #mat[c4d.MATERIAL_COLOR_SHADER] = makeup_layer_shader
+            #mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
+            mat.InsertShader(makeup_layer_shader)
+            mat.SetParameter(c4d.MATERIAL_COLOR_SHADER, makeup_layer_shader, c4d.DESCFLAGS_SET_0)
+            # self.makeup_layer_shader = makeup_layer_shader
+
+        return
+
     def set_up_diffuse(self, mat, prop):
         lib = texture_library
 
         if self.is_diffuse(prop):
             # DB 2022-June-03: New Standard Color Channel Assignment
-            # Adding the diffuse texture file here fixes errors in C4D r25 about
+            # Creating an empty "Color" layer to fix error in R25+ about...
             #   "Unable to find..." diffuse texture during "Save Project with Assets"
-            #    operations.
+            #    operations and Rendering.
             for prop_name in lib["color"]["Name"]:
                 if prop_name in prop.keys():
-                    if prop[prop_name]["Texture"] != "":
-                        path = prop[prop_name]["Texture"]
-                        hex_str = prop[prop_name]["Value"]
-                        hex_str = self.check_value("hex", hex_str)
-                        color = convert_color(hex_str)
-                        vector = c4d.Vector(color[0], color[1], color[2])
-                        texture = StdMaterials.create_texture(mat, path)
-                        mat[c4d.MATERIAL_USE_COLOR] = True
-                        mat[c4d.MATERIAL_COLOR_SHADER] = texture
-                        mat[c4d.MATERIAL_COLOR_COLOR] = vector
-                        mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
+                    hex_str = "#000000"
+                    hex_str = self.check_value("hex", hex_str)
+                    color = convert_color(hex_str)
+                    vector = c4d.Vector(color[0], color[1], color[2])
+                    mat[c4d.MATERIAL_USE_COLOR] = False
+                    mat[c4d.MATERIAL_COLOR_COLOR] = vector
+                    mat[c4d.MATERIAL_COLOR_SHADER] = None
+                    mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
 
             # Original Code: ?Adds IrayUber Diffuse Component as a Custom "Diffuse
             #   Layer" to the C4D Reflection Channel? I am uncertain about the
@@ -75,14 +158,17 @@ class StdMaterials(MaterialHelpers):
             mat[
                 diffuse.GetDataID() + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION
             ] = c4d.REFLECTION_DISTRIBUTION_LAMBERTIAN
+            layer_shader = c4d.BaseShader(c4d.Xlayer)
+            mat.InsertShader(layer_shader)
+            mat[
+                diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
+            ] = layer_shader
+            mat.SetParameter(c4d.REFLECTION_LAYER_COLOR_TEXTURE, layer_shader, c4d.DESCFLAGS_SET_0)
+
             for prop_name in lib["color"]["Name"]:
                 if prop_name in prop.keys():
                     if prop[prop_name]["Texture"] != "":
-                        path = prop[prop_name]["Texture"]
-                        texture = StdMaterials.create_texture(mat, path)
-                        mat[
-                            diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
-                        ] = texture
+                        # Color Value
                         hex_str = prop[prop_name]["Value"]
                         hex_str = self.check_value("hex", hex_str)
                         color = convert_color(hex_str)
@@ -93,6 +179,41 @@ class StdMaterials(MaterialHelpers):
                         mat[
                             diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
                         ] = 3
+                        # Texture to new layer
+                        path = prop[prop_name]["Texture"]
+                        texture = StdMaterials.create_texture(mat, path)
+                        layer = layer_shader.AddLayer(c4d.TypeShader)
+                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, texture)
+                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 0)
+
+            # TODO: add makeup weight and makeup base color layers
+            for prop_name in lib["makeup-weight"]["Name"]:
+                if prop_name in prop.keys():
+                    if prop[prop_name]["Texture"] != "":
+                        makeup_weight_value = prop[prop_name]["Value"]
+                        makeup_weight_value = self.check_value("float", makeup_weight_value)
+                        makeup_weight_path = prop[prop_name]["Texture"]
+                        texture = StdMaterials.create_texture(mat, makeup_weight_path)
+                        texture.SetParameter(c4d.BITMAPSHADER_COLORPROFILE, c4d.BITMAPSHADER_COLORPROFILE_LINEAR, c4d.DESCFLAGS_SET_0)
+                        layer = layer_shader.AddLayer(c4d.TypeShader)
+                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, texture)
+                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 20)
+                        #print("DEBUG (ln 198, StandardMaterials.py): makeup_weight_path = " + str(makeup_weight_path))
+
+            for prop_name in lib["makeup-base"]["Name"]:
+                if prop_name in prop.keys():
+                    if prop[prop_name]["Texture"] != "":
+                        hex_str = prop[prop_name]["Value"]
+                        hex_str = self.check_value("hex", hex_str)
+                        color = convert_color(hex_str)
+                        makeup_base_color_vector = c4d.Vector(color[0], color[1], color[2])
+                        makeup_base_path = prop[prop_name]["Texture"]
+                        texture = StdMaterials.create_texture(mat, makeup_base_path)
+                        layer = layer_shader.AddLayer(c4d.TypeShader)
+                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, texture)
+                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 0)
+                        #print("DEBUG (ln 212, StandardMaterials.py): makeup_weight_path = " + str(makeup_base_path))
+
 
     def set_up_daz_mat(self, mat, prop):
         lib = texture_library
@@ -103,9 +224,10 @@ class StdMaterials(MaterialHelpers):
         ] = c4d.REFLECTION_DISTRIBUTION_GGX
 
         if self.is_metal(prop):
-            mat[
-                daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_ADDITIVE
-            ] = c4d.REFLECTION_ADDITIVE_MODE_METAL
+            # TODO: only enable "REFLECTION_ADDITIVE_MODE_METAL" for non-skin
+            # mat[
+            #     daz_mat.GetDataID() + c4d.REFLECTION_LAYER_MAIN_ADDITIVE
+            # ] = c4d.REFLECTION_ADDITIVE_MODE_METAL
             mat[
                 daz_mat.GetDataID() + c4d.REFLECTION_LAYER_FRESNEL_MODE
             ] = c4d.REFLECTION_FRESNEL_CONDUCTOR
@@ -114,14 +236,21 @@ class StdMaterials(MaterialHelpers):
                 daz_mat.GetDataID() + c4d.REFLECTION_LAYER_FRESNEL_MODE
             ] = c4d.REFLECTION_FRESNEL_DIELECTRIC
 
-        for prop_name in lib["color"]["Name"]:
-            if prop_name in prop.keys():
-                if prop[prop_name]["Texture"] != "":
-                    path = prop[prop_name]["Texture"]
-                    texture = StdMaterials.create_texture(mat, path)
-                    mat[
-                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
-                    ] = texture
+        if self.use_makeup_layer and self.makeup_layer_shader is not None:
+            # mat[
+            #     daz_mat.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
+            # ] = self.makeup_layer_shader
+            pass
+        else:
+            for prop_name in lib["color"]["Name"]:
+                if prop_name in prop.keys():
+                    if prop[prop_name]["Texture"] != "":
+                        path = prop[prop_name]["Texture"]
+                        texture = StdMaterials.create_texture(mat, path)
+                        mat[
+                            daz_mat.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
+                        ] = texture
+        
         for prop_name in lib["roughness"]["Name"]:
             if prop_name in prop.keys():
                 value = prop[prop_name]["Value"]

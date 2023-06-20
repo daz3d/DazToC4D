@@ -1,4 +1,14 @@
 texture_library = {
+    "makeup-weight":{
+        "Name": [
+            "Makeup Weight",
+        ],
+    },
+    "makeup-base":{
+        "Name": [
+            "Makeup Base Color",
+        ],
+    },
     "normal": {
         "Name": [
             "Normal Map",
@@ -30,6 +40,11 @@ texture_library = {
     "roughness-strength": {
         "Name": [
             "Dual Lobe Specular Ratio",
+        ],
+    },
+    "metalness-enable": {
+        "Name": [
+            "Metallicicty Enable",
         ],
     },
     "metalness": {
