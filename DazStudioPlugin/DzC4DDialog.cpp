@@ -54,28 +54,33 @@ DzC4DDialog::DzC4DDialog(QWidget* parent) :
 	 // Set the dialog title
 	 int revision = PLUGIN_REV % 1000;
 #ifdef _DEBUG
-	 setWindowTitle(tr("Daz To Cinema 4D Bridge v%1.%2 Build %3.%4").arg(PLUGIN_MAJOR).arg(PLUGIN_MINOR).arg(revision).arg(PLUGIN_BUILD));
+	 setWindowTitle(tr("Daz To Cinema 4D Bridge %1 v%2.%3.%4 PreRelease Build").arg(PLUGIN_MAJOR).arg(PLUGIN_MINOR).arg(revision).arg(PLUGIN_BUILD));
 #else
-	 setWindowTitle(tr("Daz To Cinema 4D Bridge v%1.%2").arg(PLUGIN_MAJOR).arg(PLUGIN_MINOR));
+	 setWindowTitle(tr("Daz To Cinema 4D Bridge %1 v%2.%3").arg(PLUGIN_MAJOR).arg(PLUGIN_MINOR).arg(revision));
 #endif
 
 	 // Welcome String for Setup/Welcome Mode
+	 QString sDazAppDir = dzApp->getHomePath().replace("\\","/");
+	 QString sPdfPath = sDazAppDir + "/docs/Plugins" + "/Daz to Cinema 4D/Daz to Cinema 4D.pdf";
 	 QString sSetupModeString = tr("<h4>\
-If this is your first time using the Daz To Cinema 4D Bridge, please be sure to read or watch \
-the tutorials or videos below to install and enable the Cinema 4D Plugin for the bridge:</h4>\
-<ul>\
-<li><a href=\"https://github.com/daz3d/DazToC4D/releases\">Download latest updates and bugfixes (Github)</a></li>\
-<li><a href=\"https://github.com/daz3d/DazToC4D#2-how-to-install\">How To Install and Configure the Bridge (Github)</a></li>\
-<li><a href=\"https://www.daz3d.com/cinema-4d-bridge#faq\">Daz To Cinema 4D FAQ (Daz 3D)</a></li>\
-<li><a href=\"https://youtu.be/SMDbwSjLLDY\">How To Install Daz To Cinema 4D Bridge (Youtube)</a></li>\
-<li><a href=\"https://support.maxon.net/hc/en-us/articles/1500006433061-Where-do-I-install-plugins-\">Where Do I Install Plugins? (Maxon Knowledge Base)</a></li>\
-<li><a href=\"https://www.daz3d.com/forums/discussion/574851/official-daztocinema4d-bridge-2022-what-s-new-and-how-to-use-it/p1\">What's New and How To Use It (Daz 3D Forums)</a></li>\
-</ul>\
-Once the maya plugin is enabled, please add a Character or Prop to the Scene to transfer assets using the Daz To Cinema 4D Bridge.<br><br>\
-To find out more about Daz Bridges, go to <a href=\"https://www.daz3d.com/daz-bridges\">https://www.daz3d.com/daz-bridges</a><br>\
+<div style=\"background-color:#282f41;\" align=center>\
+<img src=\":/DazBridgeC4D/banner.jpg\" width=\"370\" height=\"95\" align=\"center\" hspace=\"0\" vspace=\"0\">\
+<table width=100% cellpadding=8 cellspacing=2 style=\"vertical-align:middle; font-size:x-large; font-weight:bold; background-color:#FFAA00;foreground-color:#FFFFFF\" align=center>\
+  <tr>\
+    <td width=33% style=\"text-align:center; background-color:#282f41;\"><div align=center><a href=\"https://www.daz3d.com/cinema-4d-bridge#faq\">FAQ</a></div></td>\
+    <td width=33% style=\"text-align:center; background-color:#282f41;\"><div align=center><a href=\"https://youtu.be/nAPj5_GDeyQ\">Installation Video</a></td>\
+    <td width=33% style=\"text-align:center; background-color:#282f41;\"><div align=center><a href=\"https://youtu.be/aXYEleSQrzY\">Tutorial Video</a></td>\
+  </tr>\
+  <tr>\
+    <td width=33% style=\"text-align:center; background-color:#282f41;\"><div align=center><a href=\"file:///") + sPdfPath + tr("\">PDF</a></td>\
+    <td width=33% style=\"text-align:center; background-color:#282f41;\"><div align=center><a href=\"https://www.daz3d.com/forums/categories/cinema-4d-discussion\">Forums</a></td>\
+    <td width=33% style=\"text-align:center; background-color:#282f41;\"><div align=center><a href=\"https://github.com/daz3d/DazToC4D/issues\">Report Bug</a></td>\
+  </tr>\
+</table>\
+</div>\
 ");
 	 m_WelcomeLabel->setText(sSetupModeString);
-	 QString sBridgeVersionString = tr("Daz To Cinema 4D Bridge %1.%2  revision %3.%4").arg(PLUGIN_MAJOR).arg(PLUGIN_MINOR).arg(revision).arg(PLUGIN_BUILD);
+	 QString sBridgeVersionString = tr("Daz To Cinema 4D Bridge %1 v%2.%3.%4").arg(PLUGIN_MAJOR).arg(PLUGIN_MINOR).arg(revision).arg(PLUGIN_BUILD);
 	 setBridgeVersionStringAndLabel(sBridgeVersionString);
 
 	 // Disable Unsupported AssetType ComboBox Options

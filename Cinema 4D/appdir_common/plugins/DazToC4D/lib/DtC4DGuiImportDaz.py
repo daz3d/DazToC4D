@@ -131,7 +131,7 @@ class GuiImportDaz(gui.GeDialog):
         return bc
 
     def CreateLayout(self):
-        self.SetTitle("DazToC4D 2022.1")
+        self.SetTitle("DazToC4D 2023.1")
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
 
         bc = c4d.BaseContainer()  # Create a new container to store the button image
