@@ -26,7 +26,7 @@ class StdMaterials(MaterialHelpers):
                 if not prop:
                     continue
                 self.clean_up_layers(mat)
-                self.set_up_makeup(mat, prop)
+                # self.set_up_makeup(mat, prop)
                 self.set_up_transmission(mat, prop)
                 self.set_up_diffuse(mat, prop)
                 self.set_up_daz_mat(mat, prop)
@@ -168,6 +168,17 @@ class StdMaterials(MaterialHelpers):
             for prop_name in lib["color"]["Name"]:
                 if prop_name in prop.keys():
                     if prop[prop_name]["Texture"] != "":
+                        # Texture to new layer
+                        path = prop[prop_name]["Texture"]
+                        texture = StdMaterials.create_texture(mat, path)
+                        try:
+                            layer = layer_shader.AddLayer(c4d.TypeShader)
+                            layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, texture)
+                            layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 0)
+                        except:
+                            mat[
+                                diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
+                            ] = texture
                         # Color Value
                         hex_str = prop[prop_name]["Value"]
                         hex_str = self.check_value("hex", hex_str)
@@ -179,14 +190,7 @@ class StdMaterials(MaterialHelpers):
                         mat[
                             diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
                         ] = 3
-                        # Texture to new layer
-                        path = prop[prop_name]["Texture"]
-                        texture = StdMaterials.create_texture(mat, path)
-                        layer = layer_shader.AddLayer(c4d.TypeShader)
-                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, texture)
-                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 0)
 
-            # TODO: add makeup weight and makeup base color layers
             for prop_name in lib["makeup-weight"]["Name"]:
                 if prop_name in prop.keys():
                     if prop[prop_name]["Texture"] != "":
@@ -195,10 +199,13 @@ class StdMaterials(MaterialHelpers):
                         makeup_weight_path = prop[prop_name]["Texture"]
                         texture = StdMaterials.create_texture(mat, makeup_weight_path)
                         texture.SetParameter(c4d.BITMAPSHADER_COLORPROFILE, c4d.BITMAPSHADER_COLORPROFILE_LINEAR, c4d.DESCFLAGS_SET_0)
-                        layer = layer_shader.AddLayer(c4d.TypeShader)
-                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, texture)
-                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 20)
-                        #print("DEBUG (ln 198, StandardMaterials.py): makeup_weight_path = " + str(makeup_weight_path))
+                        try:
+                            layer = layer_shader.AddLayer(c4d.TypeShader)
+                            layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, texture)
+                            layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 20)
+                            #print("DEBUG (ln 198, StandardMaterials.py): makeup_weight_path = " + str(makeup_weight_path))
+                        except:
+                            print("Error: Could not add makeup layer to shader, requires support for AddLayer function.")
 
             for prop_name in lib["makeup-base"]["Name"]:
                 if prop_name in prop.keys():
@@ -209,10 +216,13 @@ class StdMaterials(MaterialHelpers):
                         makeup_base_color_vector = c4d.Vector(color[0], color[1], color[2])
                         makeup_base_path = prop[prop_name]["Texture"]
                         texture = StdMaterials.create_texture(mat, makeup_base_path)
-                        layer = layer_shader.AddLayer(c4d.TypeShader)
-                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, texture)
-                        layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 0)
-                        #print("DEBUG (ln 212, StandardMaterials.py): makeup_weight_path = " + str(makeup_base_path))
+                        try:
+                            layer = layer_shader.AddLayer(c4d.TypeShader)
+                            layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_LINK, texture)
+                            layer.SetParameter(c4d.LAYER_S_PARAM_SHADER_MODE, 0)
+                            #print("DEBUG (ln 212, StandardMaterials.py): makeup_weight_path = " + str(makeup_base_path))
+                        except:
+                            print("Error: Could not add makeup layer to shader, requires support for AddLayer function.")
 
 
     def set_up_daz_mat(self, mat, prop):
@@ -236,20 +246,14 @@ class StdMaterials(MaterialHelpers):
                 daz_mat.GetDataID() + c4d.REFLECTION_LAYER_FRESNEL_MODE
             ] = c4d.REFLECTION_FRESNEL_DIELECTRIC
 
-        if self.use_makeup_layer and self.makeup_layer_shader is not None:
-            # mat[
-            #     daz_mat.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
-            # ] = self.makeup_layer_shader
-            pass
-        else:
-            for prop_name in lib["color"]["Name"]:
-                if prop_name in prop.keys():
-                    if prop[prop_name]["Texture"] != "":
-                        path = prop[prop_name]["Texture"]
-                        texture = StdMaterials.create_texture(mat, path)
-                        mat[
-                            daz_mat.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
-                        ] = texture
+        for prop_name in lib["color"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    path = prop[prop_name]["Texture"]
+                    texture = StdMaterials.create_texture(mat, path)
+                    mat[
+                        daz_mat.GetDataID() + c4d.REFLECTION_LAYER_COLOR_TEXTURE
+                    ] = texture
         
         for prop_name in lib["roughness"]["Name"]:
             if prop_name in prop.keys():
