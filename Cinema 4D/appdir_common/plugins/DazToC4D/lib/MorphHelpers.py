@@ -143,13 +143,13 @@ class MorphHelpers:
 
     def create_node(self, node_parent, tag, x, y):
         node = node_parent.CreateNode(
-            node_parent.GetRoot(), c4d.ID_OPERATOR_OBJECT, None, x, y
+            node_parent.GetRoot(), c4d.ID_OPERATOR_OBJECT, None, int(x), int(y)
         )
         node[c4d.GV_OBJECT_OBJECT_ID] = tag
         return node
 
     def create_xpresso_node(self, node_parent, type, x, y):
-        node = node_parent.CreateNode(node_parent.GetRoot(), type, None, x, y)
+        node = node_parent.CreateNode(node_parent.GetRoot(), type, None, int(x), int(y))
         return node
 
     def connect_morph_nodes(

@@ -268,7 +268,13 @@ class Poses:
         c4d.EventAdd()
 
     def checkIfPosedResetPose(self, checkAndReset=True):
+        ### DB 2023-July-10: *** WARNING! this function is defined multiple places ****
+        ### TODO: Rewrite this entire function because it is hardcoded with many flawed assumptions
         def checkIfPosed():
+            # Until updated, hardcode to always return True if G9
+            if is_genesis9():
+                return True
+
             obj = doc.GetFirstObject()
             scene = ObjectIterator(obj)
             jointsList = [
@@ -389,7 +395,13 @@ class Poses:
         else:
             return True
 
+    ### DB 2023-July-10: *** WARNING! this function is defined multiple places ****
+    ### TODO: Rewrite this entire function because it is hardcoded with many flawed assumptions
     def checkIfPosed(self):
+        # Until updated, hardcode to always return True if G9
+        if is_genesis9():
+            return True
+        
         doc = documents.GetActiveDocument()
 
         obj = doc.GetFirstObject()

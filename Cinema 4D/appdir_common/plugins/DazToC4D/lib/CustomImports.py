@@ -48,8 +48,14 @@ class CustomImports:
             for imported_dir in import_list:
                 dtu = DtuLoader.DtuLoader(imported_dir)
                 fbx_path = dtu.get_fbx_path()
-                self.genesis_import(fbx_path, dtu, sss_value, normal_value, bump_value)
-
+                try:
+                    self.genesis_import(fbx_path, dtu, sss_value, normal_value, bump_value)
+                except:
+                    gui.MessageDialog(
+                        "Import Failed.\nYou can check the console for more info (Shift + F10)",
+                        c4d.GEMB_OK,
+                    )
+                    print("Import Failed")
         os.chdir(current_dir)
 
     def auto_import_prop(self, sss_value, normal_value, bump_value):
@@ -152,34 +158,30 @@ class CustomImports:
         #         pose.clear_pose(var.c_joints)
         #         pose.fix_offset(var.c_joints, var.c_skin_data)
 
-        #print(f"DEBUG 0: is_anim={is_anim} is_posed={is_posed}")
-        if (is_anim == False and is_posed == False) or override_pose:
+        ### DB 2023-July-10: pose.clear_pose() may be fixed now (problem was probably in DTU generation?) so we are trying to use it
+        if (is_anim == False) or override_pose:
             fix_bone_rotations = gui.QuestionDialog(
                 "Would you like to fix bone orientations?",
                 )
-            #print(f"fix_bone_rotations={fix_bone_rotations}")
             if fix_bone_rotations:
-                #print(f"DEBUG 1: fix_bone_rotations={fix_bone_rotations} is_posed={is_posed}")
+                pose.clear_pose(var.c_joints)
+                pose.fix_offset(var.c_joints, var.c_skin_data)
                 jnt_fixes.store_joint_orientations(dtu)
                 jnt_fixes.fix_joints(var.c_skin_data, var.c_joints, var.c_meshes)
                 c4d.EventAdd()
                 dzc4d.deselect_all()
-                #print(f"DEBUG 2: fix_bone_rotations={fix_bone_rotations} is_posed={is_posed}")
-                if is_posed:
-                    pose.restore_pose(var.c_joints)
-                #print(f"DEBUG 3: fix_bone_rotations={fix_bone_rotations} is_posed={is_posed}")
+                pose.restore_pose(var.c_joints)
                 make_tpose = gui.QuestionDialog(
                     "Would you like to Convert\nthe Base Pose to a T-Pose?",
                 )
-                #print(f"DEBUG 4: make_tpose={make_tpose}")
                 if make_tpose:
+                    pose.clear_pose(var.c_joints)
                     pose.preAutoIK()
                     c4d.EventAdd()
-                #print(f"DEBUG 5: make_tpose={make_tpose}")
 
         else:
             gui.MessageDialog(
-                "Animation or a Pose was Detected\nJoint Orientation has not been fixed",
+                "Animation was Detected\nJoint Orientation has not been fixed",
                 type=c4d.GEMB_ICONEXCLAMATION,
             )
         c4d.EventAdd()

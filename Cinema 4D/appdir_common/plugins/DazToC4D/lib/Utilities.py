@@ -11,6 +11,8 @@ from . import Database
 from .DtuLoader import DtuLoader
 from .TextureLib import texture_library
 
+## ***** utility function to check if figure is based on Genesis 9 ****
+## TODO: refactor Utilities.py and consolidate with other Bridge python projects
 def is_genesis9():
     doc = documents.GetActiveDocument()
     if doc.SearchObject("l_shoulder"):
