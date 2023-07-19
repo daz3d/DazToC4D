@@ -332,7 +332,10 @@ class StdMaterials(MaterialHelpers):
             if prop_name in prop.keys():
                 if prop[prop_name]["Texture"] != "":
                     path = prop[prop_name]["Texture"]
-                    strength = float(prop[prop_name]["Value"])
+                    try:
+                        strength = float(prop[prop_name]["Value"])
+                    except:
+                        strength = prop[prop_name]["Value"]
                     strength = self.check_value("float", strength)
                     texture = StdMaterials.create_texture(mat, path)
                     mat[c4d.MATERIAL_USE_NORMAL] = True
