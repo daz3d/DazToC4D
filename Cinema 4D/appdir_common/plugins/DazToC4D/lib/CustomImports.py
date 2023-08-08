@@ -50,12 +50,12 @@ class CustomImports:
                 fbx_path = dtu.get_fbx_path()
                 try:
                     self.genesis_import(fbx_path, dtu, sss_value, normal_value, bump_value)
-                except:
+                except Exception as e:
                     gui.MessageDialog(
                         "Import Failed.\nYou can check the console for more info (Shift + F10)",
                         c4d.GEMB_OK,
                     )
-                    print("Import Failed")
+                    print("Import Failed, with Exception: " + str(e))
         os.chdir(current_dir)
 
     def auto_import_prop(self, sss_value, normal_value, bump_value):
@@ -103,16 +103,8 @@ class CustomImports:
         dzc4d.del_unused_mats()
         c4d.EventAdd()
 
-        var.store_dtu(dtu)
-        if var.prepare_variables():
-            gui.MessageDialog(
-                "Import Failed.\nYou can check the console for more info (Shift + F10)",
-                c4d.GEMB_OK,
-            )
-            print("Import Failed")
-            return
-        print("Import Done")
-
+        # DB 2023-Aug-08: Materials moved to be processed before joint/skeleton corrections
+        #  Note: this code does not rely on var.store_dtu()
         print("Starting Material Updates")
 
         c4d.EventAdd()
@@ -130,6 +122,18 @@ class CustomImports:
 
         print("Material Conversion Done")
         c4d.EventAdd()
+
+        # DB 2023-Aug-08: Joint and Skeleton Corrections moved to after Materials
+        #  Also removed some dependencies for Genesis skeleton so that non-humanoid skeletons can also be partially corrected
+        var.store_dtu(dtu)
+        if var.prepare_variables():
+            gui.MessageDialog(
+                "Import Failed.\nYou can check the console for more info (Shift + F10)",
+                c4d.GEMB_OK,
+            )
+            print("Import Failed")
+            return
+        print("Import Done")
 
         ## DB 2022-June-03: subdivision correction is now done in Daz Studio plugin,
         ##   the following code block no longer needed.

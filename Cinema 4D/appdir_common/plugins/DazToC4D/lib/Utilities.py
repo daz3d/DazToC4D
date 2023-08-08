@@ -61,12 +61,14 @@ class Variables:
         self.import_name = dtu.get_import_name()
         self.dtu = dtu
 
+    # DB 2023-Aug-07: Modified to allow non genesis characters to be joint-corrected and material processed
     def check_if_valid(self):
         """
         Checks if Scene Contains Genesis Skeleton.
         """
         doc = documents.GetActiveDocument()
-        obj = doc.SearchObject("hip")
+        #obj = doc.SearchObject("hip")
+        obj = doc.SearchObject(self.import_name)
         if obj:
             return True
 
