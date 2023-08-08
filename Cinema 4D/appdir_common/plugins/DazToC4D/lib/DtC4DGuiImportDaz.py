@@ -17,6 +17,7 @@ from .Utilities import Variables
 
 
 class GuiImportDaz(gui.GeDialog):
+    daz_to_c4d_bridge_title = None
 
     dialog = None
     import_vars = []
@@ -131,7 +132,10 @@ class GuiImportDaz(gui.GeDialog):
         return bc
 
     def CreateLayout(self):
-        self.SetTitle("DazToC4D 2023.1")
+        if self.daz_to_c4d_bridge_title is not None:
+            self.SetTitle(self.daz_to_c4d_bridge_title)
+        else:
+            self.SetTitle("DazToC4D private beta build")
         self.AddSeparatorH(c4d.BFV_SCALEFIT)  # Separator H
 
         bc = c4d.BaseContainer()  # Create a new container to store the button image

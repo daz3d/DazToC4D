@@ -157,6 +157,12 @@ class DazToC4DPlugin(c4d.plugins.CommandData):
             pass
         screen = c4d.gui.GeGetScreenDimensions(0, 0, True)
         self.dialog = GuiImportDaz()
+        self.dialog.daz_to_c4d_bridge_title = str(
+            "DazToC4D " +
+            str(DZBRIDGE_VERSION_MAJOR) + " v" +
+            str(DZBRIDGE_VERSION_MINOR) + "." +
+            str(DZBRIDGE_VERSION_REVISION)
+        )
         self.dialog.Open(
             c4d.DLG_TYPE_ASYNC,
             self.PLUGIN_ID,
