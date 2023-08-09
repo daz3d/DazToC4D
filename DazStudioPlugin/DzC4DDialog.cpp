@@ -137,7 +137,7 @@ DzC4DDialog::DzC4DDialog(QWidget* parent) :
 	 intermediateFolderEdit->setWhatsThis("Daz to C4D will collect the assets in a subfolder under this folder.  Cinema 4D will import them from here.");
 	 intermediateFolderButton->setWhatsThis("Daz to C4D will collect the assets in a subfolder under this folder.  Cinema 4D will import them from here.");
 	 m_wTargetPluginInstaller->setWhatsThis("You can install the Cinema 4D Plugin by selecting the desired Cinema 4D version and then clicking Install.");
-
+    
 	 // Set Defaults
 	 resetToDefaults();
 
@@ -395,5 +395,9 @@ void DzC4DDialog::HandleOpenIntermediateFolderButton(QString sFolderPath)
 	DzBridgeDialog::HandleOpenIntermediateFolderButton(sIntermediateFolder);
 }
 
+void DzC4DDialog::HandleAssetTypeComboChange(const QString& assetType)
+{
+    DzBridgeDialog::HandleAssetTypeComboChange(assetType);
+}
 
 #include "moc_DzC4DDialog.cpp"

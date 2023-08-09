@@ -35,10 +35,11 @@ public:
 
 protected slots:
 	void HandleSelectIntermediateFolderButton();
-	void HandleAssetTypeComboChange(int state);
-	void HandleTargetPluginInstallerButton();
-	virtual void HandleOpenIntermediateFolderButton(QString sFolderPath = "");
-
+	void HandleAssetTypeComboChange(int state) override;
+	void HandleTargetPluginInstallerButton() override;
+	void HandleOpenIntermediateFolderButton(QString sFolderPath = "") override;
+    void HandleAssetTypeComboChange(const QString& assetType) override;
+    
 protected:
 	QLineEdit* intermediateFolderEdit;
 	QPushButton* intermediateFolderButton;
