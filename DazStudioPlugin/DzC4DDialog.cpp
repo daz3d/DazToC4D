@@ -144,6 +144,10 @@ DzC4DDialog::DzC4DDialog(QWidget* parent) :
 	 // Load Settings
 	 loadSavedSettings();
 
+	 // Daz Ultra
+	 m_WelcomeLabel->hide();
+	 setWindowTitle(tr("Cinema4D Export Options"));
+
 }
 
 bool DzC4DDialog::loadSavedSettings()

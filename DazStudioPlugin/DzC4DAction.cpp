@@ -38,7 +38,7 @@
 #include "dzbridge.h"
 
 DzC4DAction::DzC4DAction() :
-	DzBridgeAction(tr("Daz To &Cinema 4D"), tr("Send the selected node to Cinema 4D."))
+	DzBridgeAction(tr("Send to &Cinema 4D..."), tr("Send the selected node to Cinema 4D."))
 {
 	m_nNonInteractiveMode = 0;
 	m_sAssetType = QString("SkeletalMesh");
