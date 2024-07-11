@@ -284,5 +284,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 list(APPEND CMAKE_AUTOMOC_MOC_OPTIONS -i)
 
-#add_subdirectory("Test/UnitTests")
+if(WIN32)
+	add_subdirectory("Test/UnitTests")
+endif()
 add_subdirectory("DazStudioPlugin")
