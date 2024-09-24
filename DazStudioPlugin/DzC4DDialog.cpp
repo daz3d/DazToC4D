@@ -146,7 +146,7 @@ DzC4DDialog::DzC4DDialog(QWidget* parent) :
 
 	 // Daz Ultra
 	 m_WelcomeLabel->hide();
-	 setWindowTitle(tr("Cinema4D Export Options"));
+	 setWindowTitle(tr("Cinema 4D Export Options"));
 
 }
 

@@ -25,6 +25,7 @@
 #include "dzfacetmesh.h"
 #include "dzfacegroup.h"
 #include "dzprogress.h"
+#include "dzscript.h"
 
 #include "DzC4DAction.h"
 #include "DzC4DDialog.h"
@@ -36,6 +37,18 @@
 #endif
 
 #include "dzbridge.h"
+
+DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* options)
+{
+	QString scriptContents = "\
+var action = new DzC4DAction;\
+action.executeAction();";
+	DzScript oScript;
+	oScript.addCode(scriptContents);
+	oScript.execute();
+
+	return DZ_NO_ERROR;
+};
 
 DzC4DAction::DzC4DAction() :
 	DzBridgeAction(tr("Send to &Cinema 4D..."), tr("Send the selected node to Cinema 4D."))
