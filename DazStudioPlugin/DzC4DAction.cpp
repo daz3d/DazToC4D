@@ -40,6 +40,16 @@
 
 DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* options)
 {
+	bool bDefaultToEnvironment = false;
+	if (DZ_BRIDGE_NAMESPACE::DzBridgeAction::SelectBestRootNodeForTransfer() == DZ_BRIDGE_NAMESPACE::EAssetType::Other) {
+		bDefaultToEnvironment = true;
+	}
+
+	//if (bDefaultToEnvironment) {
+	//	int nEnvIndex = pDialog->getAssetTypeCombo()->findText("Environment");
+	//	pDialog->getAssetTypeCombo()->setCurrentIndex(nEnvIndex);
+	//}
+
 	QString scriptContents = "\
 var action = new DzC4DAction;\
 action.executeAction();";
@@ -131,24 +141,9 @@ void DzC4DAction::executeAction()
 		return;
 	}
 
-	// Create and show the dialog. If the user cancels, exit early,
-	// otherwise continue on and do the thing that required modal
-	// input from the user.
-	if (dzScene->getNumSelectedNodes() != 1)
-	{
-		DzNodeList rootNodes = BuildRootNodeList();
-		if (rootNodes.length() == 1)
-		{
-			dzScene->setPrimarySelection(rootNodes[0]);
-		}
-		else if (rootNodes.length() > 1)
-		{
-			if (m_nNonInteractiveMode == 0)
-			{
-				QMessageBox::warning(0, tr("Error"),
-					tr("Please select one Character or Prop to send."), QMessageBox::Ok);
-			}
-		}
+	bool bDefaultToEnvironment = false;
+	if (SelectBestRootNodeForTransfer() == DZ_BRIDGE_NAMESPACE::EAssetType::Other) {
+		bDefaultToEnvironment = true;
 	}
 
 	// Create the dialog
@@ -193,6 +188,11 @@ void DzC4DAction::executeAction()
 			m_MorphNamesToExport.clear();
 		}
 
+	}
+
+	if (bDefaultToEnvironment) {
+		int nEnvIndex = m_bridgeDialog->getAssetTypeCombo()->findText("Environment");
+		m_bridgeDialog->getAssetTypeCombo()->setCurrentIndex(nEnvIndex);
 	}
 
 	// If the Accept button was pressed, start the export
