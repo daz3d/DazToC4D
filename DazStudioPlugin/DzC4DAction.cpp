@@ -63,6 +63,8 @@ action.executeAction();";
 DzC4DAction::DzC4DAction() :
 	DzBridgeAction(tr("Send to &Cinema 4D..."), tr("Send the selected node to Cinema 4D."))
 {
+	this->setObjectName("DzBridge_DazToC4D_Action");
+
 	m_nNonInteractiveMode = 0;
 	m_sAssetType = QString("SkeletalMesh");
 	//Setup Icon

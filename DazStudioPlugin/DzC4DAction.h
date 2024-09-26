@@ -16,7 +16,7 @@ class UnitTest_DzC4DAction;
 class DzC4DExporter : public DzExporter {
 	Q_OBJECT
 public:
-	DzC4DExporter() : DzExporter(QString("c4d")) {};
+	DzC4DExporter() : DzExporter(QString("c4d")) { this->setObjectName("DzBridge_DazToC4D_Exporter"); };
 
 public slots:
 	virtual void getDefaultOptions(DzFileIOSettings* options) const {};

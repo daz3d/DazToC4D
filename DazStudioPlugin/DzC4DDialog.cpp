@@ -41,6 +41,8 @@ Local definitions
 DzC4DDialog::DzC4DDialog(QWidget* parent) :
 	 DzBridgeDialog(parent, DAZ_BRIDGE_PLUGIN_NAME)
 {
+	this->setObjectName("DzBridge_DazToC4D_Dialog");
+
 	 intermediateFolderEdit = nullptr;
 	 intermediateFolderButton = nullptr;
 
