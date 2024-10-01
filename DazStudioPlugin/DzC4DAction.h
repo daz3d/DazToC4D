@@ -39,7 +39,14 @@ protected:
 	 Q_INVOKABLE void writeConfiguration();
 	 Q_INVOKABLE void setExportOptions(DzFileIOSettings& ExportOptions);
 	 QString readGuiRootFolder();
+	 bool readGui(DZ_BRIDGE_NAMESPACE::DzBridgeDialog* BridgeDialog) override;
 
+	 int m_nPythonExceptionExitCode = 11;  // arbitrary exit code to check for blener python exceptions
+	 int m_nC4DExitCode = 0;
+	 QString m_sC4DExecutablePath = "";
+	 QString m_sOutputC4DFilepath = "";
+
+	 friend class DzC4DExporter;
 #ifdef UNITTEST_DZBRIDGE
 	friend class UnitTest_DzC4DAction;
 #endif

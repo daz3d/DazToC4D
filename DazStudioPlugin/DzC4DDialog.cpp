@@ -96,6 +96,20 @@ DzC4DDialog::DzC4DDialog(QWidget* parent) :
 	 // Connect new asset type handler
 	 connect(assetTypeCombo, SIGNAL(activated(int)), this, SLOT(HandleAssetTypeComboChange(int)));
 
+	 m_wC4DExecutablePathEdit = new QLineEdit(this);
+//	 m_wC4DExecutablePathEdit->setValidator(&m_dzValidatorFileExists);
+	 m_wC4DExecutablePathButton = new DzBridgeBrowseButton(this);
+	 m_wC4DExecutablePathLayout = new QHBoxLayout();
+	 m_wC4DExecutablePathLayout->setSpacing(0);
+	 m_wC4DExecutablePathLayout->addWidget(m_wC4DExecutablePathEdit);
+	 m_wC4DExecutablePathLayout->addWidget(m_wC4DExecutablePathButton);
+	 connect(m_wC4DExecutablePathButton, SIGNAL(released()), this, SLOT(HandleSelectC4DExecutablePathButton()));
+	 connect(m_wC4DExecutablePathEdit, SIGNAL(textChanged(const QString&)), this, SLOT(HandleTextChanged(const QString&)));
+
+	 m_wC4DExecutableRowLabel = new QLabel(tr("Cinema 4D Executable"));
+	 advancedLayout->insertRow(0, m_wC4DExecutableRowLabel, m_wC4DExecutablePathLayout);
+	 m_aRowLabels.append(m_wC4DExecutableRowLabel);
+
 	 // Intermediate Folder
 	 QHBoxLayout* intermediateFolderLayout = new QHBoxLayout();
 	 intermediateFolderEdit = new QLineEdit(this);
@@ -149,6 +163,10 @@ DzC4DDialog::DzC4DDialog(QWidget* parent) :
 	 // Daz Ultra
 	 m_WelcomeLabel->hide();
 	 setWindowTitle(tr("Cinema 4D Export Options"));
+	 wHelpMenuButton->show();
+
+	 fixRowLabelStyle();
+	 fixRowLabelWidths();
 
 }
 
@@ -165,6 +183,66 @@ bool DzC4DDialog::loadSavedSettings()
 	{
 		QString DefaultPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + QDir::separator() + "DazToC4D";
 		intermediateFolderEdit->setText(DefaultPath);
+	}
+	if (!settings->value("C4DExecutablePath").isNull())
+	{
+		m_wC4DExecutablePathEdit->setText(settings->value("C4DExecutablePath").toString());
+	}
+
+	return true;
+}
+
+void DzC4DDialog::saveSettings()
+{
+	if (settings == nullptr || m_bDontSaveSettings) return;
+
+	DzBridgeDialog::saveSettings();
+
+	// Intermediate Path
+	QString sIntermdiateFolderpath = intermediateFolderEdit->text();
+	if (sIntermdiateFolderpath == "") {
+		// reset to default
+		QString DefaultPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + QDir::separator() + "DazToC4D";
+		sIntermdiateFolderpath = DefaultPath;
+	}
+	settings->setValue("IntermediatePath", sIntermdiateFolderpath);
+
+	// C4D Executable Path
+	settings->setValue("C4DExecutablePath", m_wC4DExecutablePathEdit->text());
+
+}
+
+void DzC4DDialog::accept()
+{
+	if (m_bSetupMode) {
+		saveSettings();
+		return DzBasicDialog::reject();
+	}
+
+	bool bResult = HandleAcceptButtonValidationFeedback();
+	if (bResult == true)
+	{
+		saveSettings();
+		return DzBasicDialog::accept();
+	}
+
+}
+
+bool DzC4DDialog::HandleAcceptButtonValidationFeedback()
+{
+	// Check if Intermedia Folder and Blender Executable are valid, if not issue Error and fail gracefully
+	if (
+		(m_bC4DRequired) &&
+		(m_wC4DExecutablePathEdit->text() == "" || isC4DTextBoxValid() == false)
+		)
+	{
+		QMessageBox::warning(0, tr("Cinema 4D Executable Path"), tr("Cinema 4D Executable Path must be set."), QMessageBox::Ok);
+		return false;
+	}
+	else if (assetTypeCombo->itemData(assetTypeCombo->currentIndex()).toString() == "__")
+	{
+		QMessageBox::warning(0, tr("Select Asset Type"), tr("Please select an asset type from the dropdown menu."), QMessageBox::Ok);
+		return false;
 	}
 
 	return true;
@@ -401,9 +479,145 @@ void DzC4DDialog::HandleOpenIntermediateFolderButton(QString sFolderPath)
 	DzBridgeDialog::HandleOpenIntermediateFolderButton(sIntermediateFolder);
 }
 
-void DzC4DDialog::HandleAssetTypeComboChange(const QString& assetType)
+#include <QUrl>
+void DzC4DDialog::HandlePdfButton()
 {
-    DzBridgeDialog::HandleAssetTypeComboChange(assetType);
+	QString sDazAppDir = dzApp->getHomePath().replace("\\", "/");
+	QString sPdfPath = sDazAppDir + "/docs/Plugins" + "/Daz to Cinema 4D/Daz to Cinema 4D.pdf";
+	QDesktopServices::openUrl(QUrl(sPdfPath));
 }
+
+void DzC4DDialog::HandleYoutubeButton()
+{
+	QString url = "https://youtu.be/aXYEleSQrzY";
+	QDesktopServices::openUrl(QUrl(url));
+}
+
+void DzC4DDialog::HandleSupportButton()
+{
+	QString url = "https://bugs.daz3d.com/hc/en-us/requests/new";
+	QDesktopServices::openUrl(QUrl(url));
+}
+
+void DzC4DDialog::HandleSelectC4DExecutablePathButton()
+{
+	QString directoryName = "";
+	QString sMayaExePath = m_wC4DExecutablePathEdit->text();
+	directoryName = QFileInfo(sMayaExePath).dir().path();
+	if (directoryName == "." || directoryName == "") {
+		if (settings != nullptr && settings->value("C4DExecutablePath").isNull() != true) {
+			sMayaExePath = settings->value("C4DExecutablePath").toString();
+			directoryName = QFileInfo(sMayaExePath).dir().path();
+		}
+		if (directoryName == "." || directoryName == "") {
+			// DEFAULT APPLICATION PATH
+#ifdef WIN32
+			directoryName = "C:/Program Files/";
+#elif defined (__APPLE__)
+			directoryName = "/Applications/";
+#endif
+		}
+	}
+#ifdef WIN32
+	QString sExeFilter = tr("Executable Files (*.exe)");
+#elif defined(__APPLE__)
+	QString sExeFilter = tr("Application Bundle (*.app)");
+#endif
+	QString fileName = QFileDialog::getOpenFileName(this,
+		tr("Select Maya Executable"),
+		directoryName,
+		sExeFilter,
+		&sExeFilter,
+		QFileDialog::ReadOnly |
+		QFileDialog::DontResolveSymlinks);
+
+#if defined(__APPLE__)
+	if (fileName != "")
+	{
+		fileName = fileName + "/Contents/MacOS/Cinema 4D";
+	}
+#endif
+
+	if (fileName != "")
+	{
+		m_wC4DExecutablePathEdit->setText(fileName);
+		if (settings != nullptr)
+		{
+			settings->setValue("C4DExecutablePath", fileName);
+		}
+	}
+
+}
+
+bool DzC4DDialog::isC4DTextBoxValid(const QString& text)
+{
+	QString temp_text(text);
+
+	if (temp_text == "") {
+		// check widget text
+		temp_text = m_wC4DExecutablePathEdit->text();
+	}
+
+	// validate blender executable
+	QFileInfo fi(temp_text);
+	if (fi.exists() == false) {
+		dzApp->log("DzBridge: disableAcceptUntilBlenderValid: DEBUG: file does not exist: " + temp_text);
+		return false;
+	}
+
+	return true;
+}
+
+bool DzC4DDialog::disableAcceptUntilAllRequirementsValid()
+{
+	if (!isC4DTextBoxValid() && m_bC4DRequired)
+	{
+		this->setAcceptButtonText("Unable to Proceed");
+		return false;
+	}
+	this->setAcceptButtonText("Accept");
+	return true;
+}
+
+
+void DzC4DDialog::HandleTextChanged(const QString& text)
+{
+	QObject* senderWidget = sender();
+	if (senderWidget == m_wC4DExecutablePathEdit) {
+		updateC4DExecutablePathEdit(isC4DTextBoxValid());
+	}
+	disableAcceptUntilAllRequirementsValid();
+}
+
+void DzC4DDialog::updateC4DExecutablePathEdit(bool isValid)
+{
+	if (!isValid && m_bC4DRequired) {
+		m_wC4DExecutablePathButton->setHighlightStyle(true);
+	}
+	else {
+		m_wC4DExecutablePathButton->setHighlightStyle(false);
+	}
+}
+
+void DzC4DDialog::requireC4DExecutableWidget(bool bRequired)
+{
+	m_bC4DRequired = bRequired;
+
+	if (bRequired) {
+		// move GUI
+		advancedLayout->removeItem(m_wC4DExecutablePathLayout);
+		mainLayout->insertRow(0, m_wC4DExecutableRowLabel, m_wC4DExecutablePathLayout);
+//		m_wMC4DileExportOptionsGroupBox->setVisible(true);
+	}
+	else {
+		mainLayout->removeItem(m_wC4DExecutablePathLayout);
+		advancedLayout->insertRow(0, m_wC4DExecutableRowLabel, m_wC4DExecutablePathLayout);
+//		m_wC4DFileExportOptionsGroupBox->setVisible(false);
+	}
+	updateC4DExecutablePathEdit(isC4DTextBoxValid());
+
+}
+
+
 
 #include "moc_DzC4DDialog.cpp"

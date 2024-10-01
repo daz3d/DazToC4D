@@ -26,6 +26,7 @@
 #include "dzfacegroup.h"
 #include "dzprogress.h"
 #include "dzscript.h"
+#include "dzexportmgr.h"
 
 #include "DzC4DAction.h"
 #include "DzC4DDialog.h"
@@ -44,11 +45,39 @@ DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* op
 	if (DZ_BRIDGE_NAMESPACE::DzBridgeAction::SelectBestRootNodeForTransfer() == DZ_BRIDGE_NAMESPACE::EAssetType::Other) {
 		bDefaultToEnvironment = true;
 	}
+	QString sC4DOutputPath = QFileInfo(filename).dir().path().replace("\\", "/");
 
-	//if (bDefaultToEnvironment) {
-	//	int nEnvIndex = pDialog->getAssetTypeCombo()->findText("Environment");
-	//	pDialog->getAssetTypeCombo()->setCurrentIndex(nEnvIndex);
-	//}
+	DzProgress exportProgress(tr("Cinema 4D Exporter starting..."), 100, false, true);
+	exportProgress.setInfo(QString("Exporting to:\n    \"%1\"\n").arg(filename));
+	exportProgress.setInfo("Generating intermediate file");
+	exportProgress.step(25);
+
+	DzC4DAction* pC4DAction = new DzC4DAction();
+	pC4DAction->m_pSelectedNode = dzScene->getPrimarySelection();
+	pC4DAction->m_sOutputC4DFilepath = QString(filename).replace("\\", "/");
+	pC4DAction->setNonInteractiveMode(DZ_BRIDGE_NAMESPACE::eNonInteractiveMode::DzExporterMode);
+	pC4DAction->createUI();
+	DzC4DDialog* pDialog = qobject_cast<DzC4DDialog*>(pC4DAction->getBridgeDialog());
+	if (pDialog == NULL)
+	{
+		exportProgress.cancel();
+		dzApp->log("Cinema 4D Exporter: CRITICAL ERROR: Unable to initialize DzC4DDialog. Aborting operation.");
+		return DZ_OPERATION_FAILED_ERROR;
+	}
+	pDialog->requireC4DExecutableWidget(true);
+	pC4DAction->executeAction();
+	pDialog->requireC4DExecutableWidget(false);
+
+	if (pDialog->result() == QDialog::Rejected) {
+		exportProgress.cancel();
+		return DZ_USER_CANCELLED_OPERATION;
+	}
+
+	DzError nExecuteActionResult = pC4DAction->getExecutActionResult();
+	if (nExecuteActionResult != DZ_NO_ERROR) {
+		exportProgress.cancel();
+		return nExecuteActionResult;
+	}
 
 	QString scriptContents = "\
 var action = new DzC4DAction;\
@@ -57,6 +86,7 @@ action.executeAction();";
 	oScript.addCode(scriptContents);
 	oScript.execute();
 
+	exportProgress.finish();
 	return DZ_NO_ERROR;
 };
 
@@ -121,6 +151,9 @@ bool DzC4DAction::createUI()
 
 void DzC4DAction::executeAction()
 {
+	m_nExecuteActionResult = DZ_OPERATION_FAILED_ERROR;
+	m_eSelectedNodeAssetType = DZ_BRIDGE_NAMESPACE::EAssetType::None;
+
 	// CreateUI() disabled for debugging -- 2022-Feb-25
 	/*
 		 // Create and show the dialog. If the user cancels, exit early,
@@ -143,9 +176,9 @@ void DzC4DAction::executeAction()
 		return;
 	}
 
-	bool bDefaultToEnvironment = false;
-	if (SelectBestRootNodeForTransfer() == DZ_BRIDGE_NAMESPACE::EAssetType::Other) {
-		bDefaultToEnvironment = true;
+	if (m_nNonInteractiveMode != DZ_BRIDGE_NAMESPACE::eNonInteractiveMode::DzExporterMode) {
+		m_eSelectedNodeAssetType = SelectBestRootNodeForTransfer(true);
+		m_pSelectedNode = dzScene->getPrimarySelection();
 	}
 
 	// Create the dialog
@@ -163,7 +196,7 @@ void DzC4DAction::executeAction()
 	}
 
 	// Prepare member variables when not using GUI
-	if (m_nNonInteractiveMode == 1)
+	if (isInteractiveMode() == false)
 	{
 //		if (m_sRootFolder != "") m_bridgeDialog->getIntermediateFolderEdit()->setText(m_sRootFolder);
 
@@ -192,48 +225,35 @@ void DzC4DAction::executeAction()
 
 	}
 
-	if (bDefaultToEnvironment) {
-		int nEnvIndex = m_bridgeDialog->getAssetTypeCombo()->findText("Environment");
-		m_bridgeDialog->getAssetTypeCombo()->setCurrentIndex(nEnvIndex);
-	}
+	m_bridgeDialog->setEAssetType(m_eSelectedNodeAssetType);
 
 	// If the Accept button was pressed, start the export
 	int dlgResult = -1;
-	if (m_nNonInteractiveMode == 0)
+	if (isInteractiveMode())
 	{
 		dlgResult = m_bridgeDialog->exec();
 	}
-	if (m_nNonInteractiveMode == 1 || dlgResult == QDialog::Accepted)
+	if (isInteractiveMode() == false || dlgResult == QDialog::Accepted)
 	{
+		// Read GUI values
+		if (readGui(m_bridgeDialog) == false)
+		{
+			m_nExecuteActionResult = DZ_OPERATION_FAILED_ERROR;
+			return;
+		}
+
 		// DB 2021-10-11: Progress Bar
-		DzProgress* exportProgress = new DzProgress("Sending to Cinema 4D...", 10);
+		DzProgress* exportProgress = new DzProgress("Sending to Cinema 4D...", 10, false, true);
 
-		// Read Common GUI values
-		readGui(m_bridgeDialog);
-
-		// Read Custom GUI values
-//		DzC4DDialog* c4dDialog = qobject_cast<DzC4DDialog*>(m_bridgeDialog);
-
-#if __LEGACY_PATHS__
-		if (m_sAssetType == "SkeletalMesh" || m_sAssetType == "Animation")
-		{
-			m_sRootFolder = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + "/DAZ 3D/Bridges/Daz To Cinema 4D/Exports/FIG";
-			m_sRootFolder = m_sRootFolder.replace("\\", "/");
-			m_sExportSubfolder = "FIG0";
-			m_sExportFbx = "B_FIG";
-			m_sAssetName = "FIG";
+		DzError result = doPromptableObjectBaking();
+		if (result != DZ_NO_ERROR) {
+			exportProgress->finish();
+			exportProgress->cancel();
+			m_nExecuteActionResult = result;
+			return;
 		}
-		else
-		{
-			m_sRootFolder = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + "/DAZ 3D/Bridges/Daz To Cinema 4D/Exports/ENV";
-			m_sRootFolder = m_sRootFolder.replace("\\", "/");
-			m_sExportSubfolder = "ENV0";
-			m_sExportFbx = "B_ENV";
-			m_sAssetName = "ENV";
-		}
-		m_sDestinationPath = m_sRootFolder + "/" + m_sExportSubfolder + "/";
-		m_sDestinationFBX = m_sDestinationPath + m_sExportFbx + ".fbx";
-#endif
+		exportProgress->step();
+
 
 		//Create Daz3D folder if it doesn't exist
 		QDir dir;
@@ -412,5 +432,49 @@ QString DzC4DAction::readGuiRootFolder()
 
 	return rootFolder;
 }
+
+bool DzC4DAction::readGui(DZ_BRIDGE_NAMESPACE::DzBridgeDialog* BridgeDialog)
+{
+	bool bResult = DzBridgeAction::readGui(BridgeDialog);
+	if (!bResult)
+	{
+		return false;
+	}
+
+#if __LEGACY_PATHS__
+	if (m_sAssetType == "SkeletalMesh" || m_sAssetType == "Animation")
+	{
+		m_sRootFolder = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + "/DAZ 3D/Bridges/Daz To Cinema 4D/Exports/FIG";
+		m_sRootFolder = m_sRootFolder.replace("\\", "/");
+		m_sExportSubfolder = "FIG0";
+		m_sExportFbx = "B_FIG";
+		m_sAssetName = "FIG";
+	}
+	else
+	{
+		m_sRootFolder = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + "/DAZ 3D/Bridges/Daz To Cinema 4D/Exports/ENV";
+		m_sRootFolder = m_sRootFolder.replace("\\", "/");
+		m_sExportSubfolder = "ENV0";
+		m_sExportFbx = "B_ENV";
+		m_sAssetName = "ENV";
+	}
+	m_sDestinationPath = m_sRootFolder + "/" + m_sExportSubfolder + "/";
+	m_sDestinationFBX = m_sDestinationPath + m_sExportFbx + ".fbx";
+#endif
+
+	// Read Custom GUI values
+	DzC4DDialog* pC4DDialog = qobject_cast<DzC4DDialog*>(m_bridgeDialog);
+	if (pC4DDialog) {
+		//
+	}
+	else {
+		// Issue error, fail gracefully
+		dzApp->log("Daz To Maya: ERROR: C4D Dialog was not initialized.  Cancelling operation...");
+	}
+
+
+	return true;
+}
+
 
 #include "moc_DzC4DAction.cpp"
