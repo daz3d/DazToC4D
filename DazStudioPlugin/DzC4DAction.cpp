@@ -240,7 +240,64 @@ void DzC4DAction::executeAction()
 		dir.mkpath(m_sRootFolder);
 		exportProgress->step();
 
-		exportHD(exportProgress);
+		if (m_sAssetType == "Environment") {
+
+			QDir().mkdir(m_sDestinationPath);
+			m_pSelectedNode = dzScene->getPrimarySelection();
+
+			auto objectList = dzScene->getNodeList();
+			foreach(auto el, objectList) {
+				DzNode* pNode = qobject_cast<DzNode*>(el);
+				preProcessScene(pNode);
+			}
+			DzExportMgr* ExportManager = dzApp->getExportMgr();
+			DzExporter* Exporter = ExportManager->findExporterByClassName("DzFbxExporter");
+			DzFileIOSettings ExportOptions;
+			ExportOptions.setBoolValue("IncludeSelectedOnly", false);
+			ExportOptions.setBoolValue("IncludeVisibleOnly", true);
+			ExportOptions.setBoolValue("IncludeFigures", true);
+			ExportOptions.setBoolValue("IncludeProps", true);
+			ExportOptions.setBoolValue("IncludeLights", false);
+			ExportOptions.setBoolValue("IncludeCameras", false);
+			ExportOptions.setBoolValue("IncludeAnimations", true);
+			ExportOptions.setIntValue("RunSilent", !m_bShowFbxOptions);
+			setExportOptions(ExportOptions);
+			// NOTE: be careful to use m_sExportFbx and NOT m_sExportFilename since FBX and DTU base name may differ
+			QString sEnvironmentFbx = m_sDestinationPath + m_sExportFbx + ".fbx";
+			DzError result = Exporter->writeFile(sEnvironmentFbx, &ExportOptions);
+			if (result != DZ_NO_ERROR) {
+				undoPreProcessScene();
+				m_nExecuteActionResult = result;
+				exportProgress->finish();
+				exportProgress->cancel();
+				return;
+			}
+			exportProgress->step();
+
+			writeConfiguration();
+			exportProgress->step();
+
+			undoPreProcessScene();
+			exportProgress->step();
+
+		}
+		else
+		{
+			DzNode* pParentNode = NULL;
+			if (m_pSelectedNode->isRootNode() == false) {
+				dzApp->log("INFO: Selected Node for Export is not a Root Node, unparenting now....");
+				pParentNode = m_pSelectedNode->getNodeParent();
+				pParentNode->removeNodeChild(m_pSelectedNode, true);
+				dzApp->log("INFO: Parent stored: " + pParentNode->getLabel() + ", New Root Node: " + m_pSelectedNode->getLabel());
+			}
+			exportProgress->step();
+			exportHD(exportProgress);
+			exportProgress->step();
+			if (pParentNode) {
+				dzApp->log("INFO: Restoring Parent relationship: " + pParentNode->getLabel() + ", child node: " + m_pSelectedNode->getLabel());
+				pParentNode->addNodeChild(m_pSelectedNode, true);
+			}
+		}
 
 		// DB 2021-10-11: Progress Bar
 		exportProgress->finish();
@@ -258,6 +315,8 @@ void DzC4DAction::executeAction()
 
 void DzC4DAction::writeConfiguration()
 {
+	DzProgress* pDtuProgress = new DzProgress("Writing DTU file", 10, false, true);
+
 	QString DTUfilename = m_sDestinationPath + m_sAssetName + ".dtu";
 	QFile DTUfile(DTUfilename);
 	DTUfile.open(QIODevice::WriteOnly);
@@ -265,8 +324,10 @@ void DzC4DAction::writeConfiguration()
 	writer.startObject(true);
 
 	writeDTUHeader(writer);
+	pDtuProgress->step();
 
-	if (m_sAssetType.toLower().contains("mesh") || m_sAssetType == "Animation")
+//	if (m_sAssetType.toLower().contains("mesh") || m_sAssetType == "Animation")
+	if (true)
 	{
 		QTextStream *pCVSStream = nullptr;
 		if (m_bExportMaterialPropertiesCSV)
@@ -277,40 +338,41 @@ void DzC4DAction::writeConfiguration()
 			pCVSStream = new QTextStream(&file);
 			*pCVSStream << "Version, Object, Material, Type, Color, Opacity, File" << endl;
 		}
-		writeAllMaterials(m_pSelectedNode, writer, pCVSStream);
-		writeAllMorphs(writer);
+		pDtuProgress->update(6);
+		if (m_sAssetType == "Environment") {
+			writeSceneMaterials(writer, pCVSStream);
+			pDtuProgress->step();
+		}
+		else {
+			writeAllMaterials(m_pSelectedNode, writer, pCVSStream);
+			pDtuProgress->step();
+		}
 
+		writeAllMorphs(writer);
 		writeMorphLinks(writer);
-		//writer.startMemberObject("MorphLinks");
-		//writer.finishObject();
 		writeMorphNames(writer);
-		//writer.startMemberArray("MorphNames");
-		//writer.finishArray();
+		pDtuProgress->step();
 
 		DzBoneList aBoneList = getAllBones(m_pSelectedNode);
 
 		writeSkeletonData(m_pSelectedNode, writer);
 		writeHeadTailData(m_pSelectedNode, writer);
-
 		writeJointOrientation(aBoneList, writer);
 		writeLimitData(aBoneList, writer);
 		writePoseData(m_pSelectedNode, writer, true);
+		pDtuProgress->step();
+
 		writeAllSubdivisions(writer);
+		pDtuProgress->step();
+
 		writeAllDforceInfo(m_pSelectedNode, writer);
-	}
-
-	if (m_sAssetType == "Pose")
-	{
-	   writeAllPoses(writer);
-	}
-
-	if (m_sAssetType == "Environment")
-	{
-		writeEnvironment(writer);
+		pDtuProgress->step();
 	}
 
 	writer.finishObject();
 	DTUfile.close();
+
+	pDtuProgress->finish();
 
 }
 
