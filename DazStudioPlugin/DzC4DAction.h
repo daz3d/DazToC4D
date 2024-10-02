@@ -41,6 +41,7 @@ protected:
 	 QString readGuiRootFolder();
 	 bool readGui(DZ_BRIDGE_NAMESPACE::DzBridgeDialog* BridgeDialog) override;
 
+	 bool executeC4DScripts(QString sFilePath, QString sCommandlineArguments, float fTimeoutInSeconds = 120);
 	 int m_nPythonExceptionExitCode = 11;  // arbitrary exit code to check for blener python exceptions
 	 int m_nC4DExitCode = 0;
 	 QString m_sC4DExecutablePath = "";

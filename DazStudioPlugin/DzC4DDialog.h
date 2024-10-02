@@ -4,6 +4,8 @@
 #include <QtCore/qsettings.h>
 #include <DzBridgeDialog.h>
 
+#include "qlineedit.h"
+
 class QPushButton;
 class QLineEdit;
 class QCheckBox;
@@ -41,6 +43,7 @@ public:
 	Q_INVOKABLE void saveSettings() override;
 	void accept() override;
 
+	Q_INVOKABLE QString getC4DExecutablePath() { return m_wC4DExecutablePathEdit->text(); }
 
 protected:
 	virtual void showEvent(QShowEvent* event) override { disableAcceptUntilAllRequirementsValid(); DzBridgeDialog::showEvent(event); }

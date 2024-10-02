@@ -39,6 +39,58 @@
 
 #include "dzbridge.h"
 
+QString FindC4DPyExe(QString sC4DExecutablePath)
+{
+	if (sC4DExecutablePath.isEmpty()) return QString();
+
+	if (QFileInfo(sC4DExecutablePath).exists() == false) return QString();
+
+	if (sC4DExecutablePath.contains("c4dpy", Qt::CaseInsensitive)) return sC4DExecutablePath;
+
+#ifdef WIN32
+	QString sC4DPyExe = QString(sC4DExecutablePath).replace("Cinema 4D.exe", "c4dpy.exe", Qt::CaseInsensitive);
+#elif defined(__APPLE__)
+	QString sC4DPyExe = QString(sC4DExecutablePath).replace("Cinema 4D.app/Contents/MacOS/Cinema 4D", "c4dpy.app/Contents/MacOS/c4dpy", Qt::CaseInsensitive);
+#endif
+
+	if (QFileInfo(sC4DPyExe).exists() == false) return sC4DExecutablePath;
+
+	return sC4DPyExe;
+}
+
+bool GenerateExporterBatchFile(QString batchFilePath, QString sExecutablePath, QString sCommandArgs)
+{
+	QString sBatchFileFolder = QFileInfo(batchFilePath).dir().path().replace("\\", "/");
+	QDir().mkdir(sBatchFileFolder);
+
+	// 4. Generate manual batch file to launch exporter scripts
+	QString sBatchString = QString("\"%1\"").arg(sExecutablePath);
+	foreach(QString arg, sCommandArgs.split(";"))
+	{
+		if (arg.contains(" "))
+		{
+			sBatchString += QString(" \"%1\"").arg(arg);
+		}
+		else
+		{
+			sBatchString += " " + arg;
+		}
+	}
+	// write batch
+	QFile batchFileOut(batchFilePath);
+	bool bResult = batchFileOut.open(QIODevice::WriteOnly | QIODevice::OpenModeFlag::Truncate);
+	if (bResult) {
+		batchFileOut.write(sBatchString.toAscii().constData());
+		batchFileOut.close();
+	}
+	else {
+		dzApp->log("ERROR: GenerateExporterBatchFile(): Unable to open batch file for writing: " + batchFilePath);
+	}
+
+	return true;
+}
+
+
 DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* options)
 {
 	bool bDefaultToEnvironment = false;
@@ -79,12 +131,108 @@ DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* op
 		return nExecuteActionResult;
 	}
 
-	QString scriptContents = "\
-var action = new DzC4DAction;\
-action.executeAction();";
-	DzScript oScript;
-	oScript.addCode(scriptContents);
-	oScript.execute();
+	//////////////////////////////////////////////////////////////////////////////////////////
+	QString sIntermediatePath = QFileInfo(pC4DAction->m_sDestinationFBX).dir().path().replace("\\", "/");
+	QString sIntermediateScriptsPath = sIntermediatePath + "/Scripts";
+	QDir().mkdir(sIntermediateScriptsPath);
+
+	QStringList aScriptFilelist = (QStringList() <<
+		"create_c4d_file.py"
+		);
+	// copy 
+	QString sEmbeddedFolderPath = ":/DazBridgeC4D";
+	foreach(auto sScriptFilename, aScriptFilelist)
+	{
+		bool replace = true;
+		QString sEmbeddedFilepath = sEmbeddedFolderPath + "/" + sScriptFilename;
+		QFile srcFile(sEmbeddedFilepath);
+		QString tempFilepath = sIntermediateScriptsPath + "/" + sScriptFilename;
+		DZ_BRIDGE_NAMESPACE::DzBridgeAction::copyFile(&srcFile, &tempFilepath, replace);
+		srcFile.close();
+	}
+	QString sBinariesFile = "/c4dplugin.zip";
+	DZ_BRIDGE_NAMESPACE::DzBridgeAction::InstallEmbeddedArchive(sEmbeddedFolderPath + sBinariesFile, sIntermediateScriptsPath);
+
+	exportProgress.setInfo("Generating C4D File");
+	exportProgress.step(25);
+
+	//////////////////////////////////////////////////////////////////////////////////////////
+
+	QString sC4DLogPath = sIntermediatePath + "/" + "create_c4d_file.log";
+	QString sScriptPath = sIntermediateScriptsPath + "/" + "create_c4d_file.py";
+	QString sCommandArgs = QString("%1;%2").arg(sScriptPath).arg(pC4DAction->m_sDestinationFBX);
+#if WIN32
+	QString batchFilePath = sIntermediatePath + "/" + "create_c4d_file.bat";
+#else
+	QString batchFilePath = sIntermediatePath + "/" + "create_c4d_file.sh";
+#endif
+	QString sC4DPyExecutable = FindC4DPyExe(pC4DAction->m_sC4DExecutablePath);
+	if (sC4DPyExecutable.isEmpty() || sC4DPyExecutable == "")
+	{
+		QString sNoC4DPyExe = tr("Daz To Cinema 4D: CRITICAL ERROR: Unable to find a valid Cinema 4D Python executable. Aborting operation.");
+		dzApp->log(sNoC4DPyExe);
+		QMessageBox::critical(0, tr("No Cinema 4D Py Executable Found"),
+			sNoC4DPyExe, QMessageBox::Abort);
+		exportProgress.cancel();
+		return DZ_OPERATION_FAILED_ERROR;
+	}
+	GenerateExporterBatchFile(batchFilePath, sC4DPyExecutable, sCommandArgs);
+
+	bool result = pC4DAction->executeC4DScripts(sC4DPyExecutable, sCommandArgs, 120);
+
+	exportProgress.step(25);
+	//////////////////////////////////////////////////////////////////////////////////////////
+
+	if (result)
+	{
+		exportProgress.update(100);
+		QMessageBox::information(0, tr("Cinema 4D Exporter"),
+			tr("Export from Daz Studio complete."), QMessageBox::Ok);
+
+#ifdef WIN32
+		ShellExecuteA(NULL, "open", sC4DOutputPath.toLocal8Bit().data(), NULL, NULL, SW_SHOWDEFAULT);
+#elif defined(__APPLE__)
+		QStringList args;
+		args << "-e";
+		args << "tell application \"Finder\"";
+		args << "-e";
+		args << "activate";
+		args << "-e";
+		if (QFileInfo(filename).exists()) {
+			args << "select POSIX file \"" + filename + "\"";
+		}
+		else {
+			args << "select POSIX file \"" + sC4DOutputPath + "/." + "\"";
+		}
+		args << "-e";
+		args << "end tell";
+		QProcess::startDetached("osascript", args);
+#endif
+	}
+	else
+	{
+		QString sErrorString;
+		sErrorString += QString("An error occured during the export process (ExitCode=%1).\n").arg(pC4DAction->m_nC4DExitCode);
+		sErrorString += QString("Please check log files at : %1\n").arg(pC4DAction->m_sDestinationPath);
+		QMessageBox::critical(0, "Cinema 4D Exporter", tr(sErrorString.toLocal8Bit()), QMessageBox::Ok);
+#ifdef WIN32
+		ShellExecuteA(NULL, "open", pC4DAction->m_sDestinationPath.toLocal8Bit().data(), NULL, NULL, SW_SHOWDEFAULT);
+#elif defined(__APPLE__)
+		QStringList args;
+		args << "-e";
+		args << "tell application \"Finder\"";
+		args << "-e";
+		args << "activate";
+		args << "-e";
+		args << "select POSIX file \"" + batchFilePath + "\"";
+		args << "-e";
+		args << "end tell";
+		QProcess::startDetached("osascript", args);
+#endif
+
+		exportProgress.cancel();
+		return DZ_OPERATION_FAILED_ERROR;
+	}
 
 	exportProgress.finish();
 	return DZ_NO_ERROR;
@@ -330,6 +478,8 @@ void DzC4DAction::executeAction()
 		}
 
 	}
+
+	m_nExecuteActionResult = DZ_NO_ERROR;
 }
 
 
@@ -344,6 +494,10 @@ void DzC4DAction::writeConfiguration()
 	writer.startObject(true);
 
 	writeDTUHeader(writer);
+	pDtuProgress->step();
+
+	// Plugin-specific items
+	writer.addMember("Output C4D Filepath", m_sOutputC4DFilepath);
 	pDtuProgress->step();
 
 //	if (m_sAssetType.toLower().contains("mesh") || m_sAssetType == "Animation")
@@ -465,13 +619,94 @@ bool DzC4DAction::readGui(DZ_BRIDGE_NAMESPACE::DzBridgeDialog* BridgeDialog)
 	// Read Custom GUI values
 	DzC4DDialog* pC4DDialog = qobject_cast<DzC4DDialog*>(m_bridgeDialog);
 	if (pC4DDialog) {
-		//
+
+		if (m_sC4DExecutablePath == "" || isInteractiveMode()) m_sC4DExecutablePath = pC4DDialog->getC4DExecutablePath();
+
 	}
 	else {
 		// Issue error, fail gracefully
 		dzApp->log("Daz To Maya: ERROR: C4D Dialog was not initialized.  Cancelling operation...");
 	}
 
+
+	return true;
+}
+
+bool DzC4DAction::executeC4DScripts(QString sFilePath, QString sCommandlineArguments, float fTimeoutInSeconds)
+{
+	// fork or spawn child process
+	QString sWorkingPath = m_sDestinationPath;
+	QStringList args = sCommandlineArguments.split(";");
+
+	//	float fTimeoutInSeconds = 2 * 60;
+	float fMilliSecondsPerTick = 200;
+	int numTotalTicks = fTimeoutInSeconds * 1000 / fMilliSecondsPerTick;
+	DzProgress* progress = new DzProgress("Running Cinema 4D Script", numTotalTicks, false, true);
+	progress->enable(true);
+	QProcess* pToolProcess = new QProcess(this);
+	pToolProcess->setWorkingDirectory(sWorkingPath);
+	pToolProcess->start(sFilePath, args);
+	int currentTick = 0;
+	int timeoutTicks = numTotalTicks;
+	bool bUserInitiatedTermination = false;
+	while (pToolProcess->waitForFinished(fMilliSecondsPerTick) == false) {
+		// if timeout reached, then terminate process
+		if (currentTick++ > timeoutTicks) {
+			if (!bUserInitiatedTermination)
+			{
+				QString sTimeoutText = tr("\
+The current Cinema 4D operation is taking a long time.\n\
+Do you want to Ignore this time-out and wait a little longer, or \n\
+Do you want to Abort the operation now?");
+				int result = QMessageBox::critical(0,
+					tr("Daz To Maya: Maya Timout Error"),
+					sTimeoutText,
+					QMessageBox::Ignore,
+					QMessageBox::Abort);
+				if (result == QMessageBox::Ignore) {
+					int snoozeTime = 60 * 1000 / fMilliSecondsPerTick;
+					timeoutTicks += snoozeTime;
+				}
+				else {
+					bUserInitiatedTermination = true;
+				}
+			}
+			else
+			{
+				if (currentTick - timeoutTicks < 5) {
+					pToolProcess->terminate();
+				}
+				else {
+					pToolProcess->kill();
+				}
+			}
+		}
+		if (pToolProcess->state() == QProcess::Running) {
+			progress->step();
+		}
+		else {
+			break;
+		}
+	}
+	progress->setCurrentInfo("Maya Script Completed.");
+	progress->finish();
+	delete progress;
+	m_nC4DExitCode = pToolProcess->exitCode();
+//#ifdef __APPLE__
+//	if (m_nC4DExitCode != 0 && m_nC4DExitCode != 120)
+#//else
+	if (m_nC4DExitCode != 1)
+		//#endif
+	{
+		//if (m_nMayaExitCode == m_nPythonExceptionExitCode) {
+		//	dzApp->log(QString("Daz To Maya: ERROR: Python error:.... %1").arg(m_nMayaExitCode));
+		//}
+		//else {
+		//	dzApp->log(QString("Daz To Maya: ERROR: exit code = %1").arg(m_nMayaExitCode));
+		//}
+		dzApp->log(QString("Daz To Maya: ERROR: exit code = %1").arg(m_nC4DExitCode));
+		return false;
+	}
 
 	return true;
 }

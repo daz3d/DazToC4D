@@ -9,5 +9,6 @@
         <file alias="c4dplugin.zip">c4dplugin.zip</file>
         <file alias="icon">Images/Daz to Cinema 4D.png</file>
         <file alias="banner.jpg">Images/banner.jpg</file>
+        <file alias="create_c4d_file.py">Scripts/create_c4d_file.py</file>
     </qresource>
 </RCC>
