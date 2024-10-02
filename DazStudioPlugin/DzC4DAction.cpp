@@ -93,10 +93,7 @@ bool GenerateExporterBatchFile(QString batchFilePath, QString sExecutablePath, Q
 
 DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* options)
 {
-	bool bDefaultToEnvironment = false;
-	if (DZ_BRIDGE_NAMESPACE::DzBridgeAction::SelectBestRootNodeForTransfer() == DZ_BRIDGE_NAMESPACE::EAssetType::Other) {
-		bDefaultToEnvironment = true;
-	}
+	int eAssetType = DZ_BRIDGE_NAMESPACE::DzBridgeAction::SelectBestRootNodeForTransfer(false);
 	QString sC4DOutputPath = QFileInfo(filename).dir().path().replace("\\", "/");
 
 	DzProgress exportProgress(tr("Cinema 4D Exporter starting..."), 100, false, true);
@@ -116,6 +113,7 @@ DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* op
 		dzApp->log("Cinema 4D Exporter: CRITICAL ERROR: Unable to initialize DzC4DDialog. Aborting operation.");
 		return DZ_OPERATION_FAILED_ERROR;
 	}
+	pDialog->setEAssetType(eAssetType);
 	pDialog->requireC4DExecutableWidget(true);
 	pC4DAction->executeAction();
 	pDialog->requireC4DExecutableWidget(false);
@@ -300,7 +298,6 @@ bool DzC4DAction::createUI()
 void DzC4DAction::executeAction()
 {
 	m_nExecuteActionResult = DZ_OPERATION_FAILED_ERROR;
-	m_eSelectedNodeAssetType = DZ_BRIDGE_NAMESPACE::EAssetType::None;
 
 	// CreateUI() disabled for debugging -- 2022-Feb-25
 	/*
@@ -373,7 +370,9 @@ void DzC4DAction::executeAction()
 
 	}
 
-	m_bridgeDialog->setEAssetType(m_eSelectedNodeAssetType);
+	if (m_nNonInteractiveMode != DZ_BRIDGE_NAMESPACE::eNonInteractiveMode::DzExporterMode) {
+		m_bridgeDialog->setEAssetType(m_eSelectedNodeAssetType);
+	}
 
 	// If the Accept button was pressed, start the export
 	int dlgResult = -1;
