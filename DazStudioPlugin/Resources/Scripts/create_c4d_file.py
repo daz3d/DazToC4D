@@ -28,7 +28,7 @@ def _add_to_log(message):
         logfile = g_logfile
 
     print(str(message))
-    with open(logfile, "a") as file:
+    with open(logfile, "a", encoding="utf-8") as file:
         file.write(str(message) + "\n")
 
 
@@ -40,10 +40,12 @@ def _main(argv):
         _print_usage()
         return
 
-    fbx_path = line.replace("\\","/").strip()
+    fbx_path = line.strip()
+    fbx_path = os.path.abspath(fbx_path).replace("\\", "/")
     if (not os.path.exists(fbx_path)):
         _add_to_log("ERROR: main(): fbx file not found: " + str(fbx_path))
         raise Exception("FBX file not found: " + str(fbx_path))
+    _add_to_log("DEBUG: fbx_path=" + fbx_path)
 
     if ("B_FIG" in fbx_path):
         json_path = fbx_path.replace("B_FIG.fbx", "FIG.dtu")
@@ -51,6 +53,7 @@ def _main(argv):
         json_path = fbx_path.replace("B_ENV.fbx", "ENV.dtu")
     else:
         json_path = fbx_path.replace(".fbx", ".dtu")
+    _add_to_log("DEBUG: json_path=" + json_path)
 
     custom_importer = CustomImports.CustomImports()
     os.chdir(Definitions.EXPORT_DIR)
@@ -88,4 +91,3 @@ if __name__=='__main__':
     _add_to_log("Starting script... DEBUG: sys.argv=" + str(sys.argv))
     _main(sys.argv[1:])
     print("script completed.")
-    exit(0)

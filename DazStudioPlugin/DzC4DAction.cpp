@@ -58,13 +58,18 @@ QString FindC4DPyExe(QString sC4DExecutablePath)
 	return sC4DPyExe;
 }
 
-bool GenerateExporterBatchFile(QString batchFilePath, QString sExecutablePath, QString sCommandArgs)
+bool GenerateExporterBatchFile(QString batchFilePath, QString sExecutablePath, QString sCommandArgs, QString sCWD)
 {
 	QString sBatchFileFolder = QFileInfo(batchFilePath).dir().path().replace("\\", "/");
 	QDir().mkdir(sBatchFileFolder);
 
 	// 4. Generate manual batch file to launch exporter scripts
-	QString sBatchString = QString("\"%1\"").arg(sExecutablePath);
+	
+	QString sBatchString = QString("\
+chcp 65001\n\n\
+cd /d \"%1\"\n\n\
+\"%2\"\
+").arg(sCWD).arg(sExecutablePath);
 	foreach(QString arg, sCommandArgs.split(";"))
 	{
 		if (arg.contains(" "))
@@ -80,7 +85,7 @@ bool GenerateExporterBatchFile(QString batchFilePath, QString sExecutablePath, Q
 	QFile batchFileOut(batchFilePath);
 	bool bResult = batchFileOut.open(QIODevice::WriteOnly | QIODevice::OpenModeFlag::Truncate);
 	if (bResult) {
-		batchFileOut.write(sBatchString.toAscii().constData());
+		batchFileOut.write(sBatchString.toUtf8().constData());
 		batchFileOut.close();
 	}
 	else {
@@ -156,8 +161,11 @@ DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* op
 
 	//////////////////////////////////////////////////////////////////////////////////////////
 
-	QString sC4DLogPath = sIntermediatePath + "/" + "create_c4d_file.log";
-	QString sScriptPath = sIntermediateScriptsPath + "/" + "create_c4d_file.py";
+	//QString sC4DLogPath = sIntermediatePath + "/" + "create_c4d_file.log";
+	//QString sScriptPath = sIntermediateScriptsPath + "/" + "create_c4d_file.py";
+	//QString sCommandArgs = QString("%1;%2").arg(sScriptPath).arg(pC4DAction->m_sDestinationFBX);
+	QString sC4DLogPath = QString(".") + "/" + "create_c4d_file.log";
+	QString sScriptPath = QString("./Scripts") + "/" + "create_c4d_file.py";
 	QString sCommandArgs = QString("%1;%2").arg(sScriptPath).arg(pC4DAction->m_sDestinationFBX);
 #if WIN32
 	QString batchFilePath = sIntermediatePath + "/" + "create_c4d_file.bat";
@@ -174,7 +182,7 @@ DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* op
 		exportProgress.cancel();
 		return DZ_OPERATION_FAILED_ERROR;
 	}
-	GenerateExporterBatchFile(batchFilePath, sC4DPyExecutable, sCommandArgs);
+	GenerateExporterBatchFile(batchFilePath, sC4DPyExecutable, sCommandArgs, sIntermediatePath);
 
 	bool result = pC4DAction->executeC4DScripts(sC4DPyExecutable, sCommandArgs, 120);
 
@@ -188,7 +196,9 @@ DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* op
 			tr("Export from Daz Studio complete."), QMessageBox::Ok);
 
 #ifdef WIN32
-		ShellExecuteA(NULL, "open", sC4DOutputPath.toLocal8Bit().data(), NULL, NULL, SW_SHOWDEFAULT);
+//		ShellExecuteA(NULL, "open", sC4DOutputPath.toLocal8Bit().data(), NULL, NULL, SW_SHOWDEFAULT);
+		std::wstring wcsC4DOutputPath(reinterpret_cast<const wchar_t*>(sC4DOutputPath.utf16()));
+		ShellExecuteW(NULL, L"open", wcsC4DOutputPath.c_str(), NULL, NULL, SW_SHOWDEFAULT);
 #elif defined(__APPLE__)
 		QStringList args;
 		args << "-e";
@@ -214,7 +224,9 @@ DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* op
 		sErrorString += QString("Please check log files at : %1\n").arg(pC4DAction->m_sDestinationPath);
 		QMessageBox::critical(0, "Cinema 4D Exporter", tr(sErrorString.toLocal8Bit()), QMessageBox::Ok);
 #ifdef WIN32
-		ShellExecuteA(NULL, "open", pC4DAction->m_sDestinationPath.toLocal8Bit().data(), NULL, NULL, SW_SHOWDEFAULT);
+//		ShellExecuteA(NULL, "open", pC4DAction->m_sDestinationPath.toLocal8Bit().data(), NULL, NULL, SW_SHOWDEFAULT);
+		std::wstring wcsDestinationPath(reinterpret_cast<const wchar_t*>(pC4DAction->m_sDestinationPath.utf16()));
+		ShellExecuteW(NULL, L"open", wcsDestinationPath.c_str(), NULL, NULL, SW_SHOWDEFAULT);
 #elif defined(__APPLE__)
 		QStringList args;
 		args << "-e";
@@ -694,7 +706,7 @@ Do you want to Abort the operation now?");
 //#ifdef __APPLE__
 //	if (m_nC4DExitCode != 0 && m_nC4DExitCode != 120)
 #//else
-	if (m_nC4DExitCode != 1)
+	if (m_nC4DExitCode != 0)
 		//#endif
 	{
 		//if (m_nMayaExitCode == m_nPythonExceptionExitCode) {
