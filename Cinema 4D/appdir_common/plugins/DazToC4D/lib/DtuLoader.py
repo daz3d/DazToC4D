@@ -27,8 +27,8 @@ class DtuLoader:
             if file.endswith(".dtu"):
                 dtu = os.path.join(self.import_dir, file)
                 break
-        with open(dtu, "r", encoding="utf-8") as data:
-            self.dtu_dict = json.load(data)
+        with open(dtu, "rb") as data:
+            self.dtu_dict = json.loads(data.read().decode("utf-8"))
 
     def get_dtu_dict(self):
         if len(self.dtu_dict.keys()) == 0:
