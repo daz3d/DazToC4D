@@ -1,4 +1,24 @@
 texture_library = {
+    "tile-x": {
+        "Name": [
+            "Horizontal Tiles",
+        ],
+    },
+    "tile-y": {
+        "Name": [
+            "Vertical Tiles",
+        ],
+    },
+    "tile-offset-x": {
+        "Name": [
+            "Horizontal Offset",
+        ],
+    },
+    "tile-offset-y": {
+        "Name": [
+            "Vertical Offset",
+        ],
+    },
     "makeup-weight":{
         "Name": [
             "Makeup Weight",

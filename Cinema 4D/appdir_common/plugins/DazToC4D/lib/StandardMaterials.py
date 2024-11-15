@@ -33,6 +33,7 @@ class StdMaterials(MaterialHelpers):
                 self.set_up_bump_normal(mat, prop)
                 self.set_up_alpha(mat, prop)
                 self.set_up_translucency(mat, prop)
+                self.set_up_tiling(mat_obj, mat, prop)
                 self.viewport_settings(mat, asset_type)
 
     def clean_up_layers(self, mat):
@@ -403,3 +404,55 @@ class StdMaterials(MaterialHelpers):
         if asset_type == "Follower/Hair":
             mat[c4d.MATERIAL_DISPLAY_USE_ALPHA] = False
         mat[c4d.MATERIAL_DISPLAY_USE_LUMINANCE] = False
+       
+    def set_up_tiling(self, obj, mat, prop):
+        lib = texture_library
+        for prop_name in lib["tile-x"]["Name"]:
+            if prop_name in prop.keys():
+                try:
+                    tile_x = float(prop[prop_name]["Value"])
+                except:
+                    tile_x = prop[prop_name]["Value"]
+
+        for prop_name in lib["tile-y"]["Name"]:
+            if prop_name in prop.keys():
+                try:
+                    tile_y = float(prop[prop_name]["Value"])
+                except:
+                    tile_y = prop[prop_name]["Value"]
+        
+        for prop_name in lib["tile-offset-x"]["Name"]:
+            if prop_name in prop.keys():
+                try:
+                    offset_x = float(prop[prop_name]["Value"])
+                except:
+                    offset_x = prop[prop_name]["Value"]
+        
+        for prop_name in lib["tile-offset-y"]["Name"]:
+            if prop_name in prop.keys():
+                try:
+                    offset_y = float(prop[prop_name]["Value"])
+                except:
+                    offset_y = prop[prop_name]["Value"]
+
+        if (tile_x and tile_y):
+            texture_tag = self.get_texture_tag_by_name(obj, mat.GetName())
+            if texture_tag:
+                texture_tag[c4d.TEXTURETAG_TILESX] = tile_x
+                texture_tag[c4d.TEXTURETAG_TILESY] = tile_y
+
+        if (offset_x and offset_y):
+            texture_tag = self.get_texture_tag_by_name(obj, mat.GetName())
+            if texture_tag:
+                texture_tag[c4d.TEXTURETAG_OFFSETX] = offset_x
+                texture_tag[c4d.TEXTURETAG_OFFSETY] = offset_y
+
+    def get_texture_tag_by_name(self, obj, tag_name):
+        i = 0
+        tag = obj.GetTag(c4d.Ttexture, i)
+        while tag:
+            if tag.GetName() == tag_name:
+                return tag
+            i += 1
+            tag = obj.GetTag(c4d.Ttexture, i)
+        return None
