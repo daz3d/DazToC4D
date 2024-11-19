@@ -441,6 +441,10 @@ class StdMaterials(MaterialHelpers):
        
     def set_up_tiling(self, obj, mat, prop):
         lib = texture_library
+        tile_x = None
+        tile_y = None
+        offset_x = None
+        offset_y = None
         for prop_name in lib["tile-x"]["Name"]:
             if prop_name in prop.keys():
                 try:
