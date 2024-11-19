@@ -123,12 +123,20 @@ DzC4DDialog::DzC4DDialog(QWidget* parent) :
 	 intermediateFolderEdit->setVisible(false);
 	 intermediateFolderButton->setVisible(false);
 #else
-	 QFormLayout* advancedLayout = qobject_cast<QFormLayout*>(advancedWidget->layout());
 	 if (advancedLayout)
 	 {
-		 advancedLayout->addRow("Intermediate Folder", intermediateFolderLayout);
+		 QLabel* wIntermediateFolderRowLabel = new QLabel(tr("Intermediate Folder"));
+		 advancedLayout->addRow(wIntermediateFolderRowLabel, intermediateFolderLayout);
+		 m_aRowLabels.append(wIntermediateFolderRowLabel);
 	 }
 #endif
+
+	 if (advancedLayout)
+	 {
+		 // reposition the Open Intermediate Folder button so it aligns with the center section
+		 advancedLayout->removeWidget(m_OpenIntermediateFolderButton);
+		 advancedLayout->addRow("", m_OpenIntermediateFolderButton);
+	 }
 
 	 // Configure Target Plugin Installer
 	 renameTargetPluginInstaller("Cinema 4D Plugin Installer");
