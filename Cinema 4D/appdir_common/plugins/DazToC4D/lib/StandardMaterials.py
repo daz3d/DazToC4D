@@ -534,7 +534,7 @@ class StdMaterials(MaterialHelpers):
             mat[c4d.MATERIAL_LUMINANCE_COLOR] = temperature_vector
             # hardcoded luminance value
             if luminance_units == 5:
-                luminance_brightness = luminance_value * 0.05
+                luminance_brightness = luminance_value * 0.01
             mat[c4d.MATERIAL_LUMINANCE_BRIGHTNESS] = luminance_brightness
             mat[c4d.MATERIAL_GLOBALILLUM_AREA] = 1
             mat[c4d.MATERIAL_GLOBALILLUM_GENERATE] = 1
