@@ -1,6 +1,7 @@
 import c4d
 import os
 import sys
+import traceback
 from c4d import documents, gui
 
 from .CustomCmd import Cinema4DCommands as dzc4d
@@ -56,6 +57,7 @@ class CustomImports:
                         c4d.GEMB_OK,
                     )
                     print("Import Failed, with Exception: " + str(e))
+                    traceback.print_exc()
         os.chdir(current_dir)
 
     def auto_import_prop(self, sss_value, normal_value, bump_value):
@@ -66,7 +68,15 @@ class CustomImports:
             for imported_dir in import_list:
                 dtu = DtuLoader.DtuLoader(imported_dir)
                 fbx_path = dtu.get_fbx_path()
-                self.prop_import(fbx_path, dtu, sss_value, normal_value, bump_value)
+                try:
+                    self.prop_import(fbx_path, dtu, sss_value, normal_value, bump_value)
+                except Exception as e:
+                    gui.MessageDialog(
+                        "Import Failed.\nYou can check the console for more info (Shift + F10)",
+                        c4d.GEMB_OK,
+                    )
+                    print("Import Failed, with Exception: " + str(e))
+                    traceback.print_exc()
         os.chdir(current_dir)
 
     def genesis_import(self, file_path, dtu, sss_value, normal_value, bump_value):
