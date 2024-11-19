@@ -1,7 +1,6 @@
 import c4d
 from .TextureLib import texture_library
-from .MaterialHelpers import MaterialHelpers, convert_color, convert_to_vector
-
+from .MaterialHelpers import MaterialHelpers, convert_color, convert_to_vector, convert_temperature
 
 class StdMaterials(MaterialHelpers):
     use_makeup_layer = False
@@ -27,6 +26,7 @@ class StdMaterials(MaterialHelpers):
                     continue
                 self.clean_up_layers(mat)
                 # self.set_up_makeup(mat, prop)
+                self.set_up_emission(mat, prop)
                 self.set_up_transmission(mat, prop)
                 self.set_up_diffuse(mat, prop)
                 self.set_up_daz_mat(mat, prop)
@@ -50,7 +50,9 @@ class StdMaterials(MaterialHelpers):
                     mat[c4d.MATERIAL_TRANSPARENCY_COLOR] = vector
             for prop_name in lib["ior"]["Name"]:
                 if prop_name in prop.keys():
-                    mat[c4d.MATERIAL_TRANSPARENCY_REFRACTION] = prop[prop_name]["Value"]
+                    daz_ior = prop[prop_name]["Value"]
+                    c4d_ior = 1.0 + (daz_ior * 0.01)
+                    mat[c4d.MATERIAL_TRANSPARENCY_REFRACTION] = c4d_ior
 
     def set_up_makeup(self, mat, prop):  
         return
@@ -224,6 +226,38 @@ class StdMaterials(MaterialHelpers):
                             #print("DEBUG (ln 212, StandardMaterials.py): makeup_weight_path = " + str(makeup_base_path))
                         except:
                             print("Error: Could not add makeup layer to shader, requires support for AddLayer function.")
+
+        else:
+            # no diffuse texture map, so load with color data only
+            diffuse = mat.AddReflectionLayer()
+            diffuse.SetName("Diffuse Layer")
+            mat[
+                diffuse.GetDataID() + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION
+            ] = c4d.REFLECTION_DISTRIBUTION_LAMBERTIAN
+
+            for prop_name in lib["color"]["Name"]:
+                if prop_name in prop.keys():
+                    if prop[prop_name]["Value"] != "":
+                        # Color Value
+                        hex_str = prop[prop_name]["Value"]
+                        hex_str = self.check_value("hex", hex_str)
+                        color = convert_color(hex_str)
+                        vector = c4d.Vector(color[0], color[1], color[2])
+                    else:
+                        # this block should NEVER be reached, something went wrong with DTU export, failback to white
+                        vector = c4d.Vector(1, 1, 1)
+                    mat[
+                        diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_COLOR
+                    ] = vector
+                    mat[
+                        diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
+                    ] = 3
+
+                    mat[c4d.MATERIAL_USE_COLOR] = False
+                    mat[c4d.MATERIAL_COLOR_COLOR] = vector
+                    mat[c4d.MATERIAL_COLOR_SHADER] = None
+                    mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
+                    break
 
 
     def set_up_daz_mat(self, mat, prop):
@@ -456,3 +490,55 @@ class StdMaterials(MaterialHelpers):
             i += 1
             tag = obj.GetTag(c4d.Ttexture, i)
         return None
+
+    def set_up_emission(self, mat, prop):
+        lib = texture_library
+        if self.is_emission(prop):
+            temperature_vector = None
+            luminance_value = None
+            luminance_units = None
+            for prop_name in lib["emission-temperature"]["Name"]:
+                if prop_name in prop.keys():
+                    emission_K = prop[prop_name]["Value"]
+                    temperature_rgb = convert_temperature(emission_K)
+                    temperature_vector = c4d.Vector(temperature_rgb[0], temperature_rgb[1], temperature_rgb[2])
+                    break
+            for prop_name in lib["emission-color"]["Name"]:
+                if prop_name in prop.keys():
+                    emission_color_string = prop[prop_name]["Value"]
+                    emission_color = convert_color(emission_color_string)
+                    break
+            for prop_name in lib["luminance"]["Name"]:
+                if prop_name in prop.keys():
+                    luminance_value = prop[prop_name]["Value"]
+                    break
+            for prop_name in lib["luminance-units"]["Name"]:
+                if prop_name in prop.keys():
+                    luminance_units = prop[prop_name]["Value"]
+                    break
+            if emission_color == [0, 0, 0]:
+                return
+            if temperature_vector is None:
+                return
+            if emission_color != [1, 1, 1]:
+                temperature_vector = c4d.Vector(
+                    temperature_rgb[0]*emission_color[0], 
+                    temperature_rgb[1]*emission_color[1],
+                    temperature_rgb[2]*emission_color[2]
+                    )
+            mat[c4d.MATERIAL_USE_LUMINANCE] = True
+            mat[c4d.MATERIAL_LUMINANCE_COLOR] = temperature_vector
+            # hardcoded luminance value
+            if luminance_units == 5:
+                luminance_brightness = luminance_value * 0.05
+            mat[c4d.MATERIAL_LUMINANCE_BRIGHTNESS] = luminance_brightness
+            mat[c4d.MATERIAL_GLOBALILLUM_AREA] = 1
+            mat[c4d.MATERIAL_GLOBALILLUM_GENERATE] = 1
+
+
+
+
+
+                
+
+

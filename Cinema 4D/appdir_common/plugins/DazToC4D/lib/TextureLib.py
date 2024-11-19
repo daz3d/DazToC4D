@@ -1,4 +1,24 @@
 texture_library = {
+    "emission-color": {
+        "Name": [
+            "Emission Color",
+        ],
+    },
+    "emission-temperature": {
+        "Name": [
+            "Emission Temperature",
+        ],
+    },
+    "luminance": {
+        "Name": [
+            "Luminance",
+        ],
+    },
+    "luminance-units": {
+        "Name": [
+            "Luminance Units",
+        ],
+    },
     "tile-x": {
         "Name": [
             "Horizontal Tiles",
@@ -62,6 +82,7 @@ texture_library = {
             "Dual Lobe Specular Ratio",
         ],
     },
+
     "metalness-enable": {
         "Name": [
             "Metallicicty Enable",

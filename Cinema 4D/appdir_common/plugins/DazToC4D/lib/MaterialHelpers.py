@@ -41,6 +41,9 @@ def convert_to_vector(value):
     num *= value
     return c4d.Vector(num, num, num)
 
+def convert_temperature(temp):
+    color_rgb = c4d.modules.colorchooser.ColorKelvinTemperatureToRGB(temp)
+    return color_rgb
 
 class MaterialHelpers:
     material_dict = {}
@@ -83,11 +86,17 @@ class MaterialHelpers:
         self.normal_value = normal_value
         self.bump_value = bump_value
 
+    # NOTES: is_trans is actually is_refraction_enabled
     def is_trans(self, prop):
         lib = texture_library
         for prop_name in lib["transparency"]["Name"]:
             if prop_name in prop.keys():
                 if prop[prop_name]["Value"] > 0:
+                    # DB 2024-Nov-18, Bugfix: do not enable if there is a cutout opacity texture
+                    for opacity_prop_name in lib["opacity"]["Name"]:
+                        if opacity_prop_name in prop.keys():
+                            if prop[opacity_prop_name]["Texture"] != "":
+                                return False
                     return True
 
     def is_diffuse(self, prop):
@@ -133,6 +142,21 @@ class MaterialHelpers:
                     return True
                 if prop[prop_name]["Texture"] != "":
                     return True
+
+    def is_emission(self, prop):
+        lib = texture_library
+        has_emission = False
+        has_luminance = False
+        for prop_name in lib["emission-color"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Value"] != "":
+                    has_emission = True
+        for prop_name in lib["luminance"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Value"] > 0:
+                    has_luminance = True
+        if has_emission and has_luminance:
+            return True
 
     def check_value(self, type, value):
         if type == "float":
