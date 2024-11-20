@@ -137,21 +137,6 @@ class StdMaterials(MaterialHelpers):
         lib = texture_library
 
         if self.is_diffuse(prop):
-            # DB 2022-June-03: New Standard Color Channel Assignment
-            # Creating an empty "Color" layer to fix error in R25+ about...
-            #   "Unable to find..." diffuse texture during "Save Project with Assets"
-            #    operations and Rendering.
-            for prop_name in lib["color"]["Name"]:
-                if prop_name in prop.keys():
-                    hex_str = "#000000"
-                    hex_str = self.check_value("hex", hex_str)
-                    color = convert_color(hex_str)
-                    vector = c4d.Vector(color[0], color[1], color[2])
-                    mat[c4d.MATERIAL_USE_COLOR] = False
-                    mat[c4d.MATERIAL_COLOR_COLOR] = vector
-                    mat[c4d.MATERIAL_COLOR_SHADER] = None
-                    mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
-
             # Original Code: ?Adds IrayUber Diffuse Component as a Custom "Diffuse
             #   Layer" to the C4D Reflection Channel? I am uncertain about the
             #   full intent of this code block, leaving for now.
@@ -187,12 +172,29 @@ class StdMaterials(MaterialHelpers):
                         hex_str = self.check_value("hex", hex_str)
                         color = convert_color(hex_str)
                         vector = c4d.Vector(color[0], color[1], color[2])
-                        mat[
-                            diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_COLOR
-                        ] = vector
-                        mat[
-                            diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
-                        ] = 3
+                        if c4d.GetC4DVersion() >= 25000:
+                            mat[
+                                diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_COLOR
+                            ] = vector
+                            mat[
+                                diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
+                            ] = 3
+                        else:
+                            # mat[c4d.REFLECTION_LAYER_COLOR_COLOR] = vector
+                            # mat[c4d.REFLECTION_LAYER_COLOR_MIX_MODE] = 3
+                            pass
+
+                        # DB 2022-June-03: New Standard Color Channel Assignment
+                        # Creating an empty "Color" layer to fix error in R25+ about...
+                        #   "Unable to find..." diffuse texture during "Save Project with Assets"
+                        #    operations and Rendering.
+                        if c4d.GetC4DVersion() >= 25000:
+                            mat[c4d.MATERIAL_USE_COLOR] = False
+                            mat[c4d.MATERIAL_COLOR_COLOR] = vector
+                            mat[c4d.MATERIAL_COLOR_SHADER] = None
+                            mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
+
+                        break
 
             for prop_name in lib["makeup-weight"]["Name"]:
                 if prop_name in prop.keys():
@@ -246,17 +248,24 @@ class StdMaterials(MaterialHelpers):
                     else:
                         # this block should NEVER be reached, something went wrong with DTU export, failback to white
                         vector = c4d.Vector(1, 1, 1)
-                    mat[
-                        diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_COLOR
-                    ] = vector
-                    mat[
-                        diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
-                    ] = 3
+                        
+                    if c4d.GetC4DVersion() >= 25000:
+                        mat[
+                            diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_COLOR
+                        ] = vector
+                        mat[
+                            diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
+                        ] = 3
+                    else:
+                        # mat[c4d.REFLECTION_LAYER_COLOR_COLOR] = vector
+                        # mat[c4d.REFLECTION_LAYER_COLOR_MIX_MODE] = 3
+                        pass
 
-                    mat[c4d.MATERIAL_USE_COLOR] = False
-                    mat[c4d.MATERIAL_COLOR_COLOR] = vector
-                    mat[c4d.MATERIAL_COLOR_SHADER] = None
-                    mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
+                    if c4d.GetC4DVersion() >= 25000:
+                        mat[c4d.MATERIAL_USE_COLOR] = False
+                        mat[c4d.MATERIAL_COLOR_COLOR] = vector
+                        mat[c4d.MATERIAL_COLOR_SHADER] = None
+                        mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
                     break
 
 
