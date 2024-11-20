@@ -1,5 +1,6 @@
+import traceback
 import c4d
-from c4d import documents
+from c4d import documents, gui
 
 from . import Utilities as util
 from .CustomIterators import ObjectIterator
@@ -235,18 +236,26 @@ class DazToC4D:
         doc = c4d.documents.GetActiveDocument()
         obj = doc.SearchObject("hip")
         if obj:
-            AllSceneToZero().sceneToZero()
-            applyDazIK(var)
-            dazToC4Dutils().changeSkinType()
-            self.unhideProps()
-            c4d.EventAdd()
-            c4d.DrawViews(
-                c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
-                | c4d.DRAWFLAGS_NO_THREAD
-                | c4d.DRAWFLAGS_STATICBREAK
-            )
-            self.protectIKMControls()
-            self.limitFloorContact()
-            self.freezeTwistBones()
-            self.figureFixBrute()
-            self.protectTwist()
+            try:
+                AllSceneToZero().sceneToZero()
+                applyDazIK(var)
+                dazToC4Dutils().changeSkinType()
+                self.unhideProps()
+                c4d.EventAdd()
+                c4d.DrawViews(
+                    c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
+                    | c4d.DRAWFLAGS_NO_THREAD
+                    | c4d.DRAWFLAGS_STATICBREAK
+                )
+                self.protectIKMControls()
+                self.limitFloorContact()
+                self.freezeTwistBones()
+                self.figureFixBrute()
+                self.protectTwist()
+            except Exception as e:
+                gui.MessageDialog(
+                    "Auto IK Failed.\nYou can check the console for more info (Shift + F10)",
+                    c4d.GEMB_OK,
+                )
+                print("Auto IK Failed with Exception: " + str(e))
+                traceback.print_exc()
