@@ -36,6 +36,42 @@ class StdMaterials(MaterialHelpers):
                 self.set_up_tiling(mat_obj, mat, prop)
                 self.viewport_settings(mat, asset_type)
 
+    def fix_R21(self, mat, prop):
+        lib = texture_library
+        if c4d.GetC4DVersion() >= 22000:
+            return False
+        if (self.is_diffuse(prop) == False
+            # and self.is_emission(prop) == False
+            # and self.is_trans(prop) == False
+            # and self.is_metal(prop) == False
+            # and self.is_alpha(prop) == False
+            ):
+            if self.is_emission(prop):
+                print("DEBUG: material: " + mat.GetName() + " is emission")
+                return False
+            if self.is_trans(prop):
+                print("DEBUG: material: " + mat.GetName() + " is trans")
+                return False
+            if self.is_metal(prop):
+                print("DEBUG: material: " + mat.GetName() + " is metal")
+                return False
+            if self.is_alpha(prop):
+                print("DEBUG: material: " + mat.GetName() + " is alpha")
+                return False                        
+            for prop_name in lib["color"]["Name"]:
+                if prop_name in prop.keys():
+                    if prop[prop_name]["Value"] != "":
+                        # Color Value
+                        hex_str = prop[prop_name]["Value"]
+                        hex_str = self.check_value("hex", hex_str)
+                        color = convert_color(hex_str)
+                        vector = c4d.Vector(color[0], color[1], color[2])
+                        print("DEBUG: Applying R21 fix to material: " + mat.GetName() + ", color: " + str(vector))
+                        mat[c4d.REFLECTION_LAYER_COLOR_COLOR] = vector
+                        mat[c4d.REFLECTION_LAYER_COLOR_MIX_MODE] = 3
+                        return True
+        return False
+
     def clean_up_layers(self, mat):
         mat[c4d.MATERIAL_USE_COLOR] = False
         mat.RemoveReflectionAllLayers()
@@ -172,25 +208,22 @@ class StdMaterials(MaterialHelpers):
                         hex_str = self.check_value("hex", hex_str)
                         color = convert_color(hex_str)
                         vector = c4d.Vector(color[0], color[1], color[2])
-                        if c4d.GetC4DVersion() >= 25000:
-                            mat[
-                                diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_COLOR
-                            ] = vector
-                            mat[
-                                diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
-                            ] = 3
-                        else:
-                            # mat[c4d.REFLECTION_LAYER_COLOR_COLOR] = vector
-                            # mat[c4d.REFLECTION_LAYER_COLOR_MIX_MODE] = 3
-                            pass
+                        mat[
+                            diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_COLOR
+                        ] = vector
+                        mat[
+                            diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
+                        ] = 3
 
                         # DB 2022-June-03: New Standard Color Channel Assignment
                         # Creating an empty "Color" layer to fix error in R25+ about...
                         #   "Unable to find..." diffuse texture during "Save Project with Assets"
                         #    operations and Rendering.
-                        if c4d.GetC4DVersion() >= 25000:
+
+                        # if c4d.GetC4DVersion() >= 25000:
+                        if True:
                             mat[c4d.MATERIAL_USE_COLOR] = False
-                            mat[c4d.MATERIAL_COLOR_COLOR] = vector
+                            mat[c4d.MATERIAL_COLOR_COLOR] = c4d.Vector(0, 0, 0)
                             mat[c4d.MATERIAL_COLOR_SHADER] = None
                             mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
 
@@ -248,25 +281,24 @@ class StdMaterials(MaterialHelpers):
                     else:
                         # this block should NEVER be reached, something went wrong with DTU export, failback to white
                         vector = c4d.Vector(1, 1, 1)
-                        
-                    if c4d.GetC4DVersion() >= 25000:
+
+                    if self.fix_R21(mat, prop) == False:
                         mat[
                             diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_COLOR
                         ] = vector
                         mat[
                             diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
                         ] = 3
-                    else:
-                        # mat[c4d.REFLECTION_LAYER_COLOR_COLOR] = vector
-                        # mat[c4d.REFLECTION_LAYER_COLOR_MIX_MODE] = 3
-                        pass
 
-                    if c4d.GetC4DVersion() >= 25000:
+                    # if c4d.GetC4DVersion() >= 25000:
+                    if True:
                         mat[c4d.MATERIAL_USE_COLOR] = False
-                        mat[c4d.MATERIAL_COLOR_COLOR] = vector
+                        mat[c4d.MATERIAL_COLOR_COLOR] = c4d.Vector(0, 0, 0)
                         mat[c4d.MATERIAL_COLOR_SHADER] = None
                         mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
                     break
+
+
 
 
     def set_up_daz_mat(self, mat, prop):
