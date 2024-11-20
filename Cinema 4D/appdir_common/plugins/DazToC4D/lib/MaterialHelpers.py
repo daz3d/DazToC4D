@@ -98,6 +98,7 @@ class MaterialHelpers:
                             if prop[opacity_prop_name]["Texture"] != "":
                                 return False
                     return True
+        return False
 
     def is_diffuse(self, prop):
         lib = texture_library
@@ -105,6 +106,7 @@ class MaterialHelpers:
             if prop_name in prop.keys():
                 if prop[prop_name]["Texture"] != "":
                     return True
+        return False
 
     def is_metal(self, prop):
         lib = texture_library
@@ -117,6 +119,7 @@ class MaterialHelpers:
             if prop_name in prop.keys():
                 if prop[prop_name]["Value"] > 0:
                     return True
+        return False
 
     def is_sss(self, prop):
         lib = texture_library
@@ -124,6 +127,7 @@ class MaterialHelpers:
             if prop_name in prop.keys():
                 if prop[prop_name]["Value"] > 0:
                     return True
+        return False
 
     def is_makeup_base(self, prop):
         lib = texture_library
@@ -133,6 +137,7 @@ class MaterialHelpers:
                     return True
                 if prop[prop_name]["Texture"] != "":
                     return True
+        return False
                 
     def is_makeup_weight(self, prop):
         lib = texture_library
@@ -142,6 +147,7 @@ class MaterialHelpers:
                     return True
                 if prop[prop_name]["Texture"] != "":
                     return True
+        return False
 
     def is_emission(self, prop):
         lib = texture_library
@@ -150,13 +156,27 @@ class MaterialHelpers:
         for prop_name in lib["emission-color"]["Name"]:
             if prop_name in prop.keys():
                 if prop[prop_name]["Value"] != "":
-                    has_emission = True
+                    emission_color_string = prop[prop_name]["Value"]
+                    emission_color = convert_color(emission_color_string)
+                    if emission_color == [0, 0, 0]:
+                        has_emission = False
+                    else:
+                        has_emission = True
         for prop_name in lib["luminance"]["Name"]:
             if prop_name in prop.keys():
                 if prop[prop_name]["Value"] > 0:
                     has_luminance = True
         if has_emission and has_luminance:
             return True
+        return False
+
+    def is_alpha(self, prop):
+        lib = texture_library
+        for prop_name in lib["opacity"]["Name"]:
+            if prop_name in prop.keys():
+                if prop[prop_name]["Texture"] != "":
+                    return True
+        return False
 
     def check_value(self, type, value):
         if type == "float":
