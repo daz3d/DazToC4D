@@ -648,7 +648,8 @@ class dazToC4Dutils:
             else:
                 slaveObj = slave
                 masterObj = master
-            mg = slaveObj.GetMg()
+            # DB 2024-11-20: GetMg() returning None for V8.1, but unused?
+            # mg = slaveObj.GetMg()
 
             constraintTAG = c4d.BaseTag(1019364)
 
@@ -682,10 +683,13 @@ class dazToC4Dutils:
         twistJoint = doc.SearchObject(dazName + "ForearmTwist_ctrl___R")
         handJoint = doc.SearchObject("rHand")
         aimObj(twistJoint, handJoint, "AIM", 0)
+        # DB 2024-11-20: Fix for G8
         twistJoint2 = doc.SearchObject(dazName + "ForearmTwist2_ctrl")
-        aimObj(twistJoint2, handJoint, "AIM", 0)
+        if twistJoint2:
+            aimObj(twistJoint2, handJoint, "AIM", 0)
         twistJoint2 = doc.SearchObject(dazName + "ForearmTwist2_ctrl___R")
-        aimObj(twistJoint2, handJoint, "AIM", 0)
+        if twistJoint2:
+            aimObj(twistJoint2, handJoint, "AIM", 0)
 
     def fixConstraints(self):
         def fixConstraint(jointName):
