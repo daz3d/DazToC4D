@@ -307,6 +307,7 @@ class GuiImportDaz(gui.GeDialog):
 
     def Command(self, id, msg):
         if id == self.BUTTON_AUTO_IMPORT_FIG:
+            print("DEBUG: Auto Import Fig button pressed...")
             self.buttonsChangeState(False)
             sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
             normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
@@ -315,6 +316,7 @@ class GuiImportDaz(gui.GeDialog):
             self.buttonsChangeState(True)
 
         if id == self.BUTTON_AUTO_IMPORT_PROP:
+            print("DEBUG: Auto Import Prop button pressed...")
             self.buttonsChangeState(False)
             sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
             normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
