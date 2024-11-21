@@ -18,15 +18,22 @@ def srgb_to_linear_rgb(srgb):
 def hex_to_col(hex, normalize=True, precision=6):
     col = []
     it = iter(str(hex))
-    if c4d.GetC4DVersion() <= 22123:
+    # if c4d.GetC4DVersion() <= 22123:
+    if True:
         for index, char in enumerate(it):
-            col.append(int(char + next(it), 16))
+            if index % 2 == 0:
+                hex_pair = str(char)
+            else:
+                hex_pair += str(char)
+                col.append(int(hex_pair, 16))
     else:
         for char in it:
             col.append(int(char + it.__next__(), 16))
     if normalize:
-        col = map(lambda x: x / 255, col)
-        col = map(lambda x: round(x, precision), col)
+        float_col = map(lambda x: float(x) / 255.0, col)
+        rounded_float_col = map(lambda x: round(x, precision), float_col)
+        col = rounded_float_col
+    # print("DEBUG: hex_to_col(): hex: " + str(hex) + ", it: " + str(list(enumerate(str(hex)))) + ", col: " + str(col))
     return list(c for c in col)
 
 
