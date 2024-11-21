@@ -1,6 +1,6 @@
 import c4d
 from .TextureLib import texture_library
-from .MaterialHelpers import MaterialHelpers, convert_color, convert_to_vector, convert_temperature
+from .MaterialHelpers import MaterialHelpers, convert_color, convert_to_vector, convert_color_temperature
 
 class StdMaterials(MaterialHelpers):
     use_makeup_layer = False
@@ -37,6 +37,7 @@ class StdMaterials(MaterialHelpers):
                 self.viewport_settings(mat, asset_type)
 
     def fix_R21(self, mat, prop):
+        return False
         lib = texture_library
         if c4d.GetC4DVersion() >= 22000:
             return False
@@ -47,16 +48,16 @@ class StdMaterials(MaterialHelpers):
             # and self.is_alpha(prop) == False
             ):
             if self.is_emission(prop):
-                print("DEBUG: material: " + mat.GetName() + " is emission")
+                # print("DEBUG: material: " + mat.GetName() + " is emission")
                 return False
             if self.is_trans(prop):
-                print("DEBUG: material: " + mat.GetName() + " is trans")
+                # print("DEBUG: material: " + mat.GetName() + " is trans")
                 return False
             if self.is_metal(prop):
-                print("DEBUG: material: " + mat.GetName() + " is metal")
+                # print("DEBUG: material: " + mat.GetName() + " is metal")
                 return False
             if self.is_alpha(prop):
-                print("DEBUG: material: " + mat.GetName() + " is alpha")
+                # print("DEBUG: material: " + mat.GetName() + " is alpha")
                 return False                        
             for prop_name in lib["color"]["Name"]:
                 if prop_name in prop.keys():
@@ -66,7 +67,7 @@ class StdMaterials(MaterialHelpers):
                         hex_str = self.check_value("hex", hex_str)
                         color = convert_color(hex_str)
                         vector = c4d.Vector(color[0], color[1], color[2])
-                        print("DEBUG: Applying R21 fix to material: " + mat.GetName() + ", color: " + str(vector))
+                        print("DEBUG: Applying R21 fix to material: " + mat.GetName() + ", vector: " + str(vector)  + ", color: " + str(color) + ", hex: " + hex_str)
                         mat[c4d.REFLECTION_LAYER_COLOR_COLOR] = vector
                         mat[c4d.REFLECTION_LAYER_COLOR_MIX_MODE] = 3
                         return True
@@ -78,7 +79,7 @@ class StdMaterials(MaterialHelpers):
 
     def set_up_transmission(self, mat, prop):
         lib = texture_library
-        if self.is_trans(prop):
+        if self.is_trans(prop, mat):
             mat[c4d.MATERIAL_USE_TRANSPARENCY] = True
             for prop_name in lib["transparency"]["Name"]:
                 if prop_name in prop.keys():
@@ -219,9 +220,7 @@ class StdMaterials(MaterialHelpers):
                         # Creating an empty "Color" layer to fix error in R25+ about...
                         #   "Unable to find..." diffuse texture during "Save Project with Assets"
                         #    operations and Rendering.
-
-                        # if c4d.GetC4DVersion() >= 25000:
-                        if True:
+                        if c4d.GetC4DVersion() >= 25000:
                             mat[c4d.MATERIAL_USE_COLOR] = False
                             mat[c4d.MATERIAL_COLOR_COLOR] = c4d.Vector(0, 0, 0)
                             mat[c4d.MATERIAL_COLOR_SHADER] = None
@@ -280,7 +279,13 @@ class StdMaterials(MaterialHelpers):
                         vector = c4d.Vector(color[0], color[1], color[2])
                     else:
                         # this block should NEVER be reached, something went wrong with DTU export, failback to white
+                        print("DEBUG: WARNING: set_up_diffuse: no color value found, using white, material: " + mat.GetName())
                         vector = c4d.Vector(1, 1, 1)
+
+                    if self.is_trans(prop, mat):
+                        # work around to fix Tranparency (Iray Refraction-based materials)
+                        print("DEBUG: setting diffuse to black for transparency compatibility, material: " + mat.GetName())
+                        vector = c4d.Vector(0, 0, 0)
 
                     if self.fix_R21(mat, prop) == False:
                         mat[
@@ -290,8 +295,7 @@ class StdMaterials(MaterialHelpers):
                             diffuse.GetDataID() + c4d.REFLECTION_LAYER_COLOR_MIX_MODE
                         ] = 3
 
-                    # if c4d.GetC4DVersion() >= 25000:
-                    if True:
+                    if c4d.GetC4DVersion() >= 25000:
                         mat[c4d.MATERIAL_USE_COLOR] = False
                         mat[c4d.MATERIAL_COLOR_COLOR] = c4d.Vector(0, 0, 0)
                         mat[c4d.MATERIAL_COLOR_SHADER] = None
@@ -545,7 +549,7 @@ class StdMaterials(MaterialHelpers):
             for prop_name in lib["emission-temperature"]["Name"]:
                 if prop_name in prop.keys():
                     emission_K = prop[prop_name]["Value"]
-                    temperature_rgb = convert_temperature(emission_K)
+                    temperature_rgb = convert_color_temperature(emission_K)
                     temperature_vector = c4d.Vector(temperature_rgb[0], temperature_rgb[1], temperature_rgb[2])
                     break
             for prop_name in lib["emission-color"]["Name"]:
@@ -579,11 +583,4 @@ class StdMaterials(MaterialHelpers):
             mat[c4d.MATERIAL_LUMINANCE_BRIGHTNESS] = luminance_brightness
             mat[c4d.MATERIAL_GLOBALILLUM_AREA] = 1
             mat[c4d.MATERIAL_GLOBALILLUM_GENERATE] = 1
-
-
-
-
-
-                
-
 

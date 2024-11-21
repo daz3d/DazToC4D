@@ -48,7 +48,7 @@ def convert_to_vector(value):
     num *= value
     return c4d.Vector(num, num, num)
 
-def convert_temperature(temp):
+def convert_color_temperature(temp):
     color_rgb = c4d.modules.colorchooser.ColorKelvinTemperatureToRGB(temp)
     return color_rgb
 
@@ -94,7 +94,7 @@ class MaterialHelpers:
         self.bump_value = bump_value
 
     # NOTES: is_trans is actually is_refraction_enabled
-    def is_trans(self, prop):
+    def is_trans(self, prop, mat=None):
         lib = texture_library
         for prop_name in lib["transparency"]["Name"]:
             if prop_name in prop.keys():
@@ -103,6 +103,13 @@ class MaterialHelpers:
                     for opacity_prop_name in lib["opacity"]["Name"]:
                         if opacity_prop_name in prop.keys():
                             if prop[opacity_prop_name]["Texture"] != "":
+                                # DB 2024-11-20: Disable transparency (Iray Refraction-based) if there is a cutout opacity texture
+                                # ... unless material is Tear or Moisture
+                                if mat and (
+                                    "tear" in mat.GetName().lower() or 
+                                    "moisture" in mat.GetName().lower()
+                                    ):
+                                    return True
                                 return False
                     return True
         return False
