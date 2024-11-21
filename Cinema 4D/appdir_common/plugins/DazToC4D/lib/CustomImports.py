@@ -53,10 +53,12 @@ class CustomImports:
                     self.genesis_import(fbx_path, dtu, sss_value, normal_value, bump_value)
                 except Exception as e:
                     gui.MessageDialog(
-                        "Import Failed.\nYou can check the console for more info (Shift + F10)",
+                        "Import Failed.\n" + 
+                        "\nException: " + str(e) + "\n\n" +
+                        "You can check the console for more info (Shift + F10)",
                         c4d.GEMB_OK,
                     )
-                    print("Import Failed, with Exception: " + str(e))
+                    print("Import Failed with Exception: " + str(e))
                     traceback.print_exc()
         os.chdir(current_dir)
 
@@ -72,10 +74,12 @@ class CustomImports:
                     self.prop_import(fbx_path, dtu, sss_value, normal_value, bump_value)
                 except Exception as e:
                     gui.MessageDialog(
-                        "Import Failed.\nYou can check the console for more info (Shift + F10)",
+                        "Import Failed.\n" + 
+                        "\nException: " + str(e) + "\n\n" +
+                        "You can check the console for more info (Shift + F10)",
                         c4d.GEMB_OK,
                     )
-                    print("Import Failed, with Exception: " + str(e))
+                    print("Import Failed with Exception: " + str(e))
                     traceback.print_exc()
         os.chdir(current_dir)
 

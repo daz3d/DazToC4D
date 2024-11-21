@@ -254,7 +254,9 @@ class DazToC4D:
                 self.protectTwist()
             except Exception as e:
                 gui.MessageDialog(
-                    "Auto IK Failed.\nYou can check the console for more info (Shift + F10)",
+                    "Auto IK Failed.\n" + 
+                    "\nException: " + str(e) + "\n\n" +
+                    "You can check the console for more info (Shift + F10)",
                     c4d.GEMB_OK,
                 )
                 print("Auto IK Failed with Exception: " + str(e))

@@ -1,5 +1,6 @@
 import os
 import webbrowser
+import traceback
 
 import c4d
 from c4d import gui
@@ -50,6 +51,9 @@ class GuiImportDaz(gui.GeDialog):
     img_btnAutoIK = os.path.join(res_dir, "btnAutoIK.png")
     img_btnAutoIKOff = os.path.join(res_dir, "btnAutoIK0.png")
     img_btnConfig = os.path.join(res_dir, "btnConfig.png")
+
+    # DB 2024-11-21: support for interactive dialog update ("Please Wait") in version R25+
+    delayed_operation = None
 
     def __init__(self):
         try:
@@ -312,8 +316,15 @@ class GuiImportDaz(gui.GeDialog):
             sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
             normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
             bump_value = self.GetFloat(self.SLIDER_BUMP_MULTIPLIER)
-            CustomImports().auto_import_genesis(sss_value, normal_value, bump_value)
-            self.buttonsChangeState(True)
+            if c4d.GetC4DVersion() < 25000:
+                CustomImports().auto_import_genesis(sss_value, normal_value, bump_value)
+                self.buttonsChangeState(True)
+            else:
+                self.delayed_operation = lambda: (
+                    CustomImports().auto_import_genesis(sss_value, normal_value, bump_value),
+                    self.buttonsChangeState(True)
+                )
+                self.SetTimer(10)
 
         if id == self.BUTTON_AUTO_IMPORT_PROP:
             print("DEBUG: Auto Import Prop button pressed...")
@@ -321,8 +332,15 @@ class GuiImportDaz(gui.GeDialog):
             sss_value = self.GetFloat(self.SLIDER_SSS_MULTIPLIER)
             normal_value = self.GetFloat(self.SLIDER_NORMAL_MULTIPLIER)
             bump_value = self.GetFloat(self.SLIDER_BUMP_MULTIPLIER)
-            CustomImports().auto_import_prop(sss_value, normal_value, bump_value)
-            self.buttonsChangeState(True)
+            if c4d.GetC4DVersion() < 25000:
+                CustomImports().auto_import_prop(sss_value, normal_value, bump_value)
+                self.buttonsChangeState(True)
+            else:
+                self.delayed_operation = lambda: (
+                    CustomImports().auto_import_prop(sss_value, normal_value, bump_value),
+                    self.buttonsChangeState(True)
+                )
+                self.SetTimer(10)
 
         if id == self.BUTTON_AUTO_IK:
             self.buttonsChangeState(False)
@@ -384,32 +402,33 @@ class GuiImportDaz(gui.GeDialog):
                         c4d.GEMB_YESNO,
                     )
                     if answer == c4d.GEMB_R_YES:
-                        current_dir = os.getcwd()
-                        os.chdir(EXPORT_DIR)
-                        if comboRender == 1:
-                            convertMaterials().convertTo("Vray")
-                            c4d.CallCommand(1026375)  # Reload Python Plugins
+                        # current_dir = os.getcwd()
+                        # os.chdir(EXPORT_DIR)
+                        # if comboRender == 1:
+                        #     convertMaterials().convertTo("Vray")
+                        #     c4d.CallCommand(1026375)  # Reload Python Plugins
 
-                        if comboRender == 2:
-                            var = Variables()
-                            var.restore_variables()
-                            rs_mat = RedshiftMaterials()
-                            if rs_mat.check_for_redshift():
-                                rs_mat.store_materials(var.dtu)
-                                rs_mat.store_sliders(
-                                    sss_value, normal_value, bump_value
-                                )
-                                rs_mat.execute()
-                                c4d.CallCommand(100004766, 100004766)  # Select All
-                                c4d.CallCommand(100004767, 100004767)  # Deselect All
-                            else:
-                                gui.MessageDialog("Redshift is Not Installed...")
+                        # if comboRender == 2:
+                        #     var = Variables()
+                        #     var.restore_variables()
+                        #     rs_mat = RedshiftMaterials()
+                        #     if rs_mat.check_for_redshift():
+                        #         rs_mat.store_materials(var.dtu)
+                        #         rs_mat.store_sliders(
+                        #             sss_value, normal_value, bump_value
+                        #         )
+                        #         rs_mat.execute()
+                        #         c4d.CallCommand(100004766, 100004766)  # Select All
+                        #         c4d.CallCommand(100004767, 100004767)  # Deselect All
+                        #     else:
+                        #         gui.MessageDialog("Redshift is Not Installed...")
 
-                        if comboRender == 3:
-                            mat.convertToOctane()
-                            c4d.CallCommand(100004766, 100004766)  # Select All
-                            c4d.CallCommand(100004767, 100004767)  # Deselect All
-                        os.chdir(current_dir)
+                        # if comboRender == 3:
+                        #     mat.convertToOctane()
+                        #     c4d.CallCommand(100004766, 100004766)  # Select All
+                        #     c4d.CallCommand(100004767, 100004767)  # Deselect All
+                        # os.chdir(current_dir)
+                        self.helper_convert_materials(comboRender, sss_value, normal_value, bump_value)
 
         if id == self.BUTTON_HELP:
             new = 2  # open in a new tab, if possible
@@ -417,3 +436,79 @@ class GuiImportDaz(gui.GeDialog):
             webbrowser.open(url, new=new)
 
         return True
+
+    # DB 2024-11-21: support for interactive dialog update ("Please Wait") in version R25+
+    def Timer(self, msg):
+        self.SetTimer(0)
+        if self.delayed_operation is not None:
+            self.delayed_operation()
+            self.delayed_operation = None
+        return True
+
+    def helper_convert_materials(self, comboRender, sss_value, normal_value, bump_value):
+        mat = Materials()
+        current_dir = os.getcwd()
+        os.chdir(EXPORT_DIR)
+        if comboRender == 1:
+            try:
+                convertMaterials().convertTo("Vray")
+                c4d.CallCommand(1026375)  # Reload Python Plugins
+            except Exception as e:
+                gui.MessageDialog(
+                    "Convert Materials Failed.\n" + 
+                    "\nException: " + str(e) + "\n\n" +
+                    "You can check the console for more info (Shift + F10)",
+                    c4d.GEMB_OK,
+                )
+                print("Convert Materials Failed with Exception: " + str(e))
+                traceback.print_exc()
+            except BaseException as e:
+                gui.MessageDialog(
+                    "Convert Materials Failed.\n" + 
+                    "\nException: " + str(e) + "\n\n" +
+                    "You can check the console for more info (Shift + F10)",
+                    c4d.GEMB_OK,
+                )
+                print("Convert Materials Failed with Exception: " + str(e))
+                traceback.print_exc()
+
+        if comboRender == 2:
+            var = Variables()
+            var.restore_variables()
+            rs_mat = RedshiftMaterials()
+            if rs_mat.check_for_redshift():
+                rs_mat.store_materials(var.dtu)
+                rs_mat.store_sliders(
+                    sss_value, normal_value, bump_value
+                )
+                try:
+                    rs_mat.execute()
+                except Exception as e:
+                    gui.MessageDialog(
+                        "Convert Materials Failed.\n" + 
+                        "\nException: " + str(e) + "\n\n" +
+                        "You can check the console for more info (Shift + F10)",
+                        c4d.GEMB_OK,
+                    )
+                    print("Convert Materials Failed with Exception: " + str(e))
+                    traceback.print_exc()
+                c4d.CallCommand(100004766, 100004766)  # Select All
+                c4d.CallCommand(100004767, 100004767)  # Deselect All
+            else:
+                gui.MessageDialog("Redshift is Not Installed...")
+
+        if comboRender == 3:
+            try:
+                mat.convertToOctane()
+            except Exception as e:
+                gui.MessageDialog(
+                    "Convert Materials Failed.\n" + 
+                    "\nException: " + str(e) + "\n\n" +
+                    "You can check the console for more info (Shift + F10)",
+                    c4d.GEMB_OK,
+                )
+                print("Convert Materials Failed with Exception: " + str(e))
+                traceback.print_exc()
+            c4d.CallCommand(100004766, 100004766)  # Select All
+            c4d.CallCommand(100004767, 100004767)  # Deselect All
+        os.chdir(current_dir)
