@@ -9,7 +9,34 @@ class StdMaterials(MaterialHelpers):
     def __init__(self):
         self.use_makeup_layer = False
 
-    def update_materials(self):
+    def safe_update_materials(self):
+        doc = c4d.documents.GetActiveDocument()
+        doc_mat = doc.GetMaterials()
+        for mat in doc_mat:
+            mat_name = mat.GetName()
+            mat_link = mat[c4d.ID_MATERIALASSIGNMENTS]
+            mat_count = mat_link.GetObjectCount()
+            for i in range(mat_count):
+                link = mat_link.ObjectFromIndex(doc, i)
+                mat_obj = link.GetObject()
+                obj_name = mat_obj.GetName().replace(".Shape", "")
+                prop = self.find_mat_properties(obj_name, mat_name)
+                asset_type = self.find_mat_type(obj_name, mat_name)
+                if not prop:
+                    continue
+                # self.clean_up_layers(mat)
+                mat.RemoveReflectionAllLayers()
+                self.set_up_emission(mat, prop)
+                self.set_up_transmission(mat, prop)
+                # self.set_up_diffuse(mat, prop)
+                self.set_up_daz_mat(mat, prop)
+                self.set_up_bump_normal(mat, prop)
+                self.set_up_alpha(mat, prop)
+                # self.set_up_translucency(mat, prop)
+                self.set_up_tiling(mat_obj, mat, prop)
+                # self.viewport_settings(mat, asset_type)
+
+    def convert_to_standard(self):
         doc = c4d.documents.GetActiveDocument()
         doc_mat = doc.GetMaterials()
         for mat in doc_mat:
@@ -90,6 +117,10 @@ class StdMaterials(MaterialHelpers):
                     daz_ior = prop[prop_name]["Value"]
                     c4d_ior = 1.0 + (daz_ior * 0.01)
                     mat[c4d.MATERIAL_TRANSPARENCY_REFRACTION] = c4d_ior
+                    # DB 2024-11-21, set color to black for Refraction-based transparency
+                    mat[c4d.MATERIAL_COLOR_COLOR] = c4d.Vector(0, 0, 0)
+                    mat[c4d.MATERIAL_COLOR_SHADER] = None
+                    mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
 
     def set_up_makeup(self, mat, prop):  
         return

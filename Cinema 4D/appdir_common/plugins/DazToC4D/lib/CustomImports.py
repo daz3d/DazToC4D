@@ -132,7 +132,7 @@ class CustomImports:
         dzc4d.del_unused_mats()
         mat.store_materials(dtu)
         mat.store_sliders(sss_value, normal_value, bump_value)
-        mat.update_materials()
+        mat.safe_update_materials()
 
         print("Material Conversion Done")
         c4d.EventAdd()
@@ -282,7 +282,7 @@ class CustomImports:
         dzc4d.del_unused_mats()
         mat.store_materials(dtu)
         mat.store_sliders(sss_value, normal_value, bump_value)
-        mat.update_materials()
+        mat.safe_update_materials()
 
         print("Material Conversion Done")
         c4d.EventAdd()

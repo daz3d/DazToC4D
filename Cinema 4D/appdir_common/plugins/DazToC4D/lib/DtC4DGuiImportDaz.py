@@ -6,6 +6,7 @@ import c4d
 from c4d import gui
 
 from .Materials import Materials, convertMaterials
+from . import StandardMaterials
 from .RedshfitMaterials import RedshiftMaterials
 from .CustomImports import CustomImports
 from .DtC4DDialogs import EXTRADialog
@@ -251,6 +252,7 @@ class GuiImportDaz(gui.GeDialog):
         self.AddChild(2001, 1, "V-Ray")
         self.AddChild(2001, 2, "Redshift")
         self.AddChild(2001, 3, "Octane")
+        self.AddChild(2001, 4, "Standard")
 
         self.GroupEnd()  # END ///////////////////////////////////////////////
 
@@ -511,4 +513,14 @@ class GuiImportDaz(gui.GeDialog):
                 traceback.print_exc()
             c4d.CallCommand(100004766, 100004766)  # Select All
             c4d.CallCommand(100004767, 100004767)  # Deselect All
+
+        if comboRender == 4:
+            var = Variables()
+            var.restore_variables()
+            std_mat = StandardMaterials.StdMaterials()
+            std_mat.store_materials(var.dtu)
+            std_mat.store_sliders(sss_value, normal_value, bump_value)
+            std_mat.convert_to_standard()
+            pass
+
         os.chdir(current_dir)
