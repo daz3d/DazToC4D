@@ -626,6 +626,7 @@ class StdMaterials(MaterialHelpers):
             temperature_vector = None
             luminance_value = None
             luminance_units = None
+            texture = None
             for prop_name in lib["emission-temperature"]["Name"]:
                 if prop_name in prop.keys():
                     emission_K = prop[prop_name]["Value"]
@@ -636,6 +637,9 @@ class StdMaterials(MaterialHelpers):
                 if prop_name in prop.keys():
                     emission_color_string = prop[prop_name]["Value"]
                     emission_color = convert_color(emission_color_string)
+                    emission_color_map = prop[prop_name]["Texture"]
+                    if emission_color_map != "":
+                        texture = StdMaterials.create_texture(mat, emission_color_map)
                     break
             for prop_name in lib["luminance"]["Name"]:
                 if prop_name in prop.keys():
@@ -657,23 +661,29 @@ class StdMaterials(MaterialHelpers):
                     )
             mat[c4d.MATERIAL_USE_LUMINANCE] = True
             mat[c4d.MATERIAL_LUMINANCE_COLOR] = temperature_vector
+            mat[c4d.MATERIAL_LUMINANCE_SHADER] = texture
+            mat[c4d.MATERIAL_LUMINANCE_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
             # hardcoded luminance value
             unit_scale = 1.0
+            correction_factor = 0.0001
             if luminance_units == 0: ## cd/m^2
                 unit_scale = 1.0
+                correction_factor = 0.0002
             elif luminance_units == 1: ## kcd/m^2
                 unit_scale = 1000.0
             elif luminance_units == 2: ## cd/ft^2
                 unit_scale = 10.7639
             elif luminance_units == 3: ## cd/cm^2
                 unit_scale = 10000.0
+                correction_factor = (0.1667 / 10000.0)
             elif luminance_units == 4: ## lumens
                 unit_scale = 0.2919
             elif luminance_units == 5: ## Watts
                 unit_scale = 6830000
+                correction_factor = (0.02 / 6830000)
             # standard renderer conversion factor
-            conversion_factor = (0.01 / 6830000)
-            luminance_brightness = luminance_value * unit_scale * conversion_factor
+            luminance_brightness = luminance_value * unit_scale * correction_factor
+            print("DEBUG: Brightness: " + str(luminance_brightness) + ", Luminance Value: " + str(luminance_value) + ", unit_scale: " + str(unit_scale) + ", correction_factor: " + str(correction_factor) + ", material: " + mat.GetName())
             mat[c4d.MATERIAL_LUMINANCE_BRIGHTNESS] = luminance_brightness
             mat[c4d.MATERIAL_GLOBALILLUM_AREA] = 1
             mat[c4d.MATERIAL_GLOBALILLUM_GENERATE] = 1
