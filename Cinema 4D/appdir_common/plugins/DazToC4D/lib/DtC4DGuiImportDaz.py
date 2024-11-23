@@ -55,6 +55,12 @@ class GuiImportDaz(gui.GeDialog):
 
     # DB 2024-11-21: support for interactive dialog update ("Please Wait") in version R25+
     delayed_operation = None
+    def Timer(self, msg):
+        self.SetTimer(0)
+        if self.delayed_operation is not None:
+            self.delayed_operation()
+            self.delayed_operation = None
+        return True
 
     def __init__(self):
         try:
@@ -404,32 +410,6 @@ class GuiImportDaz(gui.GeDialog):
                         c4d.GEMB_YESNO,
                     )
                     if answer == c4d.GEMB_R_YES:
-                        # current_dir = os.getcwd()
-                        # os.chdir(EXPORT_DIR)
-                        # if comboRender == 1:
-                        #     convertMaterials().convertTo("Vray")
-                        #     c4d.CallCommand(1026375)  # Reload Python Plugins
-
-                        # if comboRender == 2:
-                        #     var = Variables()
-                        #     var.restore_variables()
-                        #     rs_mat = RedshiftMaterials()
-                        #     if rs_mat.check_for_redshift():
-                        #         rs_mat.store_materials(var.dtu)
-                        #         rs_mat.store_sliders(
-                        #             sss_value, normal_value, bump_value
-                        #         )
-                        #         rs_mat.execute()
-                        #         c4d.CallCommand(100004766, 100004766)  # Select All
-                        #         c4d.CallCommand(100004767, 100004767)  # Deselect All
-                        #     else:
-                        #         gui.MessageDialog("Redshift is Not Installed...")
-
-                        # if comboRender == 3:
-                        #     mat.convertToOctane()
-                        #     c4d.CallCommand(100004766, 100004766)  # Select All
-                        #     c4d.CallCommand(100004767, 100004767)  # Deselect All
-                        # os.chdir(current_dir)
                         self.helper_convert_materials(comboRender, sss_value, normal_value, bump_value)
 
         if id == self.BUTTON_HELP:
@@ -437,14 +417,6 @@ class GuiImportDaz(gui.GeDialog):
             url = "http://www.daz3d.com"
             webbrowser.open(url, new=new)
 
-        return True
-
-    # DB 2024-11-21: support for interactive dialog update ("Please Wait") in version R25+
-    def Timer(self, msg):
-        self.SetTimer(0)
-        if self.delayed_operation is not None:
-            self.delayed_operation()
-            self.delayed_operation = None
         return True
 
     def helper_convert_materials(self, comboRender, sss_value, normal_value, bump_value):
@@ -456,71 +428,141 @@ class GuiImportDaz(gui.GeDialog):
                 convertMaterials().convertTo("Vray")
                 c4d.CallCommand(1026375)  # Reload Python Plugins
             except Exception as e:
-                gui.MessageDialog(
-                    "Convert Materials Failed.\n" + 
-                    "\nException: " + str(e) + "\n\n" +
-                    "You can check the console for more info (Shift + F10)",
-                    c4d.GEMB_OK,
-                )
-                print("Convert Materials Failed with Exception: " + str(e))
-                traceback.print_exc()
-            except BaseException as e:
-                gui.MessageDialog(
-                    "Convert Materials Failed.\n" + 
-                    "\nException: " + str(e) + "\n\n" +
-                    "You can check the console for more info (Shift + F10)",
-                    c4d.GEMB_OK,
-                )
-                print("Convert Materials Failed with Exception: " + str(e))
-                traceback.print_exc()
+                print("DEBUG: Vray Conversion exception: " + str(e) + ", using alternative command...")
+                self.buttonsChangeState(False)
+                if c4d.GetC4DVersion() < 25000:
+                    self.helper_convert_to_vray()
+                    self.buttonsChangeState(True)
+                else:
+                    self.delayed_operation = lambda: (
+                        self.helper_convert_to_vray(),
+                        self.buttonsChangeState(True)
+                    )
+                    self.SetTimer(10)
 
         if comboRender == 2:
-            var = Variables()
-            var.restore_variables()
-            rs_mat = RedshiftMaterials()
-            if rs_mat.check_for_redshift():
-                rs_mat.store_materials(var.dtu)
-                rs_mat.store_sliders(
-                    sss_value, normal_value, bump_value
-                )
-                try:
-                    rs_mat.execute()
-                except Exception as e:
-                    gui.MessageDialog(
-                        "Convert Materials Failed.\n" + 
-                        "\nException: " + str(e) + "\n\n" +
-                        "You can check the console for more info (Shift + F10)",
-                        c4d.GEMB_OK,
+            try:
+                var = Variables()
+                var.restore_variables()
+                rs_mat = RedshiftMaterials()
+                if rs_mat.check_for_redshift():
+                    rs_mat.store_materials(var.dtu)
+                    rs_mat.store_sliders(
+                        sss_value, normal_value, bump_value
                     )
-                    print("Convert Materials Failed with Exception: " + str(e))
-                    traceback.print_exc()
+                    rs_mat.execute()
+                else:
+                    gui.MessageDialog("Redshift is Not Installed...")
                 c4d.CallCommand(100004766, 100004766)  # Select All
                 c4d.CallCommand(100004767, 100004767)  # Deselect All
-            else:
-                gui.MessageDialog("Redshift is Not Installed...")
+            except Exception as e:
+                print("DEBUG: Redshift Conversion exception: " + str(e) + ", using alternative command...")
+                self.buttonsChangeState(False)
+                if c4d.GetC4DVersion() < 25000:
+                    self.helper_convert_to_redshift()
+                    self.buttonsChangeState(True)
+                else:
+                    self.delayed_operation = lambda: (
+                        self.helper_convert_to_redshift(),
+                        self.buttonsChangeState(True)
+                    )
+                    self.SetTimer(10)
 
         if comboRender == 3:
-            try:
-                mat.convertToOctane()
-            except Exception as e:
-                gui.MessageDialog(
-                    "Convert Materials Failed.\n" + 
-                    "\nException: " + str(e) + "\n\n" +
-                    "You can check the console for more info (Shift + F10)",
-                    c4d.GEMB_OK,
+            self.buttonsChangeState(False)
+            if c4d.GetC4DVersion() < 25000:
+                self.helper_convert_to_octane(mat)
+                self.buttonsChangeState(True)
+            else:
+                self.delayed_operation = lambda: (
+                    self.helper_convert_to_octane(mat),
+                    self.buttonsChangeState(True)
                 )
-                print("Convert Materials Failed with Exception: " + str(e))
-                traceback.print_exc()
-            c4d.CallCommand(100004766, 100004766)  # Select All
-            c4d.CallCommand(100004767, 100004767)  # Deselect All
+                self.SetTimer(10)
 
         if comboRender == 4:
+            self.buttonsChangeState(False)
+            if c4d.GetC4DVersion() < 25000:
+                self.helper_convert_to_standard(sss_value, normal_value, bump_value)
+                self.buttonsChangeState(True)
+            else:
+                self.delayed_operation = lambda: (
+                    self.helper_convert_to_standard(sss_value, normal_value, bump_value),
+                    self.buttonsChangeState(True)
+                )
+                self.SetTimer(10)
+
+        os.chdir(current_dir)
+
+    def helper_convert_to_octane(self, mat):
+        try:
+            mat.convertToOctane()
+        except Exception as e:
+            gui.MessageDialog(
+                "Convert Materials Failed.\n" + 
+                "\nException: " + str(e) + "\n\n" +
+                "You can check the console for more info (Shift + F10)",
+                c4d.GEMB_OK,
+            )
+            print("Convert Materials Failed with Exception: " + str(e))
+            traceback.print_exc()
+        c4d.CallCommand(100004766, 100004766)  # Select All
+        c4d.CallCommand(100004767, 100004767)  # Deselect All
+
+    def helper_convert_to_redshift(self):
+        try:
+            c4d.CallCommand(1040221, 1001) # Convert All Materials (RS)
+        except Exception as e:
+            gui.MessageDialog(
+                "Convert Materials Failed.\n" + 
+                "\nException: " + str(e) + "\n\n" +
+                "You can check the console for more info (Shift + F10)",
+                c4d.GEMB_OK,
+            )
+            print("Convert Materials Failed with Exception: " + str(e))
+            traceback.print_exc()
+        c4d.CallCommand(100004766) # Select All
+        c4d.CallCommand(100004767) # Deselect All        
+
+    def helper_convert_to_vray(self):
+        try:
+            c4d.CallCommand(1059205) # Convert Materials (Vray)
+        except Exception as e:
+            gui.MessageDialog(
+                "Convert Materials Failed.\n" + 
+                "\nException: " + str(e) + "\n\n" +
+                "You can check the console for more info (Shift + F10)",
+                c4d.GEMB_OK,
+            )
+            print("Convert Materials Failed with Exception: " + str(e))
+            traceback.print_exc()
+        except BaseException as e:
+            gui.MessageDialog(
+                "Convert Materials Failed.\n" + 
+                "\nException: " + str(e) + "\n\n" +
+                "You can check the console for more info (Shift + F10)",
+                c4d.GEMB_OK,
+            )
+            print("Convert Materials Failed with Exception: " + str(e))
+            traceback.print_exc()
+
+    def helper_convert_to_standard(self, sss_value, normal_value, bump_value):
+        try:
             var = Variables()
             var.restore_variables()
             std_mat = StandardMaterials.StdMaterials()
             std_mat.store_materials(var.dtu)
             std_mat.store_sliders(sss_value, normal_value, bump_value)
             std_mat.convert_to_standard()
-            pass
+        except Exception as e:
+            gui.MessageDialog(
+                "Convert Materials Failed.\n" + 
+                "\nException: " + str(e) + "\n\n" +
+                "You can check the console for more info (Shift + F10)",
+                c4d.GEMB_OK,
+            )
+            print("Convert Materials Failed with Exception: " + str(e))
+            traceback.print_exc()
 
-        os.chdir(current_dir)
+
+
