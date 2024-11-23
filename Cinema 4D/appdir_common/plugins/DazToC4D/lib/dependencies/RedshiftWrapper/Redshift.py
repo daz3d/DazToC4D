@@ -53,6 +53,8 @@ class Redshift(MetaName):
         if not isinstance(mat, c4d.BaseMaterial):
             raise TypeError("material is not a c4d.BaseMaterial")
         if not mat.IsInstanceOf(redshift.Mrsmaterial):
+            print("DEBUG: Redshift Conversion: unable to convert material, removing material: " + mat.GetName())
+            mat.Remove()
             raise TypeError("material is not a redshift material")
 
         self._mat = mat
