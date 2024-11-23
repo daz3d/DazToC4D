@@ -658,8 +658,22 @@ class StdMaterials(MaterialHelpers):
             mat[c4d.MATERIAL_USE_LUMINANCE] = True
             mat[c4d.MATERIAL_LUMINANCE_COLOR] = temperature_vector
             # hardcoded luminance value
-            if luminance_units == 5:
-                luminance_brightness = luminance_value * 0.01
+            unit_scale = 1.0
+            if luminance_units == 0: ## cd/m^2
+                unit_scale = 1.0
+            elif luminance_units == 1: ## kcd/m^2
+                unit_scale = 1000.0
+            elif luminance_units == 2: ## cd/ft^2
+                unit_scale = 10.7639
+            elif luminance_units == 3: ## cd/cm^2
+                unit_scale = 10000.0
+            elif luminance_units == 4: ## lumens
+                unit_scale = 0.2919
+            elif luminance_units == 5: ## Watts
+                unit_scale = 6830000
+            # standard renderer conversion factor
+            conversion_factor = (0.01 / 6830000)
+            luminance_brightness = luminance_value * unit_scale * conversion_factor
             mat[c4d.MATERIAL_LUMINANCE_BRIGHTNESS] = luminance_brightness
             mat[c4d.MATERIAL_GLOBALILLUM_AREA] = 1
             mat[c4d.MATERIAL_GLOBALILLUM_GENERATE] = 1
