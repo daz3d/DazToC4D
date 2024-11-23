@@ -134,7 +134,7 @@ class CustomImports:
         mat.store_sliders(sss_value, normal_value, bump_value)
         mat.safe_update_materials()
 
-        print("Material Conversion Done")
+        print("Material Updates Done")
         c4d.EventAdd()
 
         # DB 2023-Aug-08: Joint and Skeleton Corrections moved to after Materials
@@ -246,14 +246,6 @@ class CustomImports:
         print("Import FBX from : {0}".format(os.path.dirname(file_path)))
         self.import_daz_fbx(file_path)
 
-        # # change to standard renderer
-        # c4d_version = c4d.GetC4DVersion()
-        # print("DEBUG: C4D Version = " + str(c4d_version))
-        # if c4d.GetC4DVersion() >= 2024200:
-        #     doc = c4d.documents.GetActiveDocument()
-        #     render_data = doc.GetActiveRenderData()
-        #     render_data[c4d.RDATA_RENDERENGINE] = c4d.RDATA_RENDERENGINE_STANDARD
-
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW
             | c4d.DRAWFLAGS_NO_THREAD
@@ -284,8 +276,13 @@ class CustomImports:
         mat.store_sliders(sss_value, normal_value, bump_value)
         mat.safe_update_materials()
 
-        print("Material Conversion Done")
+        print("Material Updates Done")
         c4d.EventAdd()
+
+        # DB 2024-11-22: support DTU-based material conversion
+        var = Utilities.Variables()
+        var.store_dtu(dtu)
+        var.store_to_scene()
 
         c4d.DrawViews(
             c4d.DRAWFLAGS_ONLY_ACTIVE_VIEW

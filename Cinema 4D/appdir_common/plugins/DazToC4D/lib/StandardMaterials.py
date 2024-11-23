@@ -37,6 +37,7 @@ class StdMaterials(MaterialHelpers):
                 # self.viewport_settings(mat, asset_type)
 
     def convert_to_standard(self):
+        print("DEBUG: Converting to full Standard Materials with SSS, makeup, etc.")
         doc = c4d.documents.GetActiveDocument()
         doc_mat = doc.GetMaterials()
         for mat in doc_mat:
