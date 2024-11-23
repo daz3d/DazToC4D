@@ -251,12 +251,14 @@ class Poses:
         if obj:
             doc = documents.GetActiveDocument()
             if is_genesis9():
+                # print("DEBUG: preAutoIK(): is_genesis9() detected")
+                self.dazManualRotationFixTpose()
+            elif doc.SearchObject("lThighTwist"):
+                # print("DEBUG: preAutoIK(): lThighTwist detected")
                 if self.checkIfPosedResetPose(False) == False:
                     self.dazManualRotationFixTpose()
-            if doc.SearchObject("lThighTwist"):
-                if self.checkIfPosedResetPose(False) == False:
-                    self.dazManualRotationFixTpose()
-            if not doc.SearchObject("lThighTwist"):
+            elif doc.SearchObject("lThighTwist") is None:
+                # print("DEBUG: preAutoIK(): lThighTwist not detected")
                 if self.checkIfPosedResetPose(False) == False:
                     forceTpose().dazFix_All_To_T_Pose()
 
@@ -268,9 +270,11 @@ class Poses:
         c4d.EventAdd()
 
     def checkIfPosedResetPose(self, checkAndReset=True):
+        # print("DEBUG: checkIfPosedResetPose() called")
         ### DB 2023-July-10: *** WARNING! this function is defined multiple places ****
         ### TODO: Rewrite this entire function because it is hardcoded with many flawed assumptions
         def checkIfPosed():
+            # print("DEBUG: checkIfPosedResetPose.checkIfPosed() called")
             # Until updated, hardcode to always return True if G9
             if is_genesis9():
                 return True
@@ -398,6 +402,7 @@ class Poses:
     ### DB 2023-July-10: *** WARNING! this function is defined multiple places ****
     ### TODO: Rewrite this entire function because it is hardcoded with many flawed assumptions
     def checkIfPosed(self):
+        # print("DEBUG: checkIfPosed() called")
         # Until updated, hardcode to always return True if G9
         if is_genesis9():
             return True
