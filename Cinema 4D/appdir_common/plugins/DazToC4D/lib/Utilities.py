@@ -14,11 +14,14 @@ from .TextureLib import texture_library
 ## ***** utility function to check if figure is based on Genesis 9 ****
 ## TODO: refactor Utilities.py and consolidate with other Bridge python projects
 def is_genesis9():
+    # print("DEBUG: is_genesis9() called")
     doc = documents.GetActiveDocument()
     if doc.SearchObject("l_shoulder"):
         if doc.SearchObject("l_forearmtwist1"):
             if doc.SearchObject("l_forearmtwist2"):
+                # print("DEBUG: is_genesis9() returning True")
                 return True
+    # print("DEBUG: is_genesis9() returning False")
     return False
 
 class Variables:
@@ -164,11 +167,15 @@ class Variables:
         doc = c4d.documents.GetActiveDocument()
         dtu_dict = json.loads(doc[self.unique_id][1000])
         self.store_dtu(dtu_dict)
-        self.find_skeleton(self.import_name)
-        self.find_skeleton_name()
-        self.find_body(self.import_name)
-        self.find_body_name()
-        self.find_children(self.skeleton)
+        # DB 2024-11-22: data below may not be valid for props and environments
+        try:
+            self.find_skeleton(self.import_name)
+            self.find_skeleton_name()
+            self.find_body(self.import_name)
+            self.find_body_name()
+            self.find_children(self.skeleton)
+        except Exception as e:
+            print("WARNING: Error trying to restore_variables(): " + str(e))
 
 
 def get_daz_mesh():
