@@ -387,10 +387,10 @@ class GuiImportDaz(gui.GeDialog):
 
         if id == self.BUTTON_CONVERT_MATERIALS:
             # CONVERT MATERIAL
-            gui.MessageDialog(
-                "Material Rework is in Progress\nYour results may vary...",
-                type=c4d.GEMB_ICONEXCLAMATION,
-            )
+            # gui.MessageDialog(
+            #     "Material Rework is in Progress\nYour results may vary...",
+            #     type=c4d.GEMB_ICONEXCLAMATION,
+            # )
             doc = c4d.documents.GetActiveDocument()
             comboRender = self.GetInt32(2001)
             redshiftBumpType = self.GetInt32(2002)

@@ -29,12 +29,60 @@ class StdMaterials(MaterialHelpers):
                 self.set_up_emission(mat, prop)
                 self.set_up_transmission(mat, prop)
                 # self.set_up_diffuse(mat, prop)
+                self.safe_update_diffuse(mat, prop)
                 self.set_up_daz_mat(mat, prop)
                 self.set_up_bump_normal(mat, prop)
                 self.set_up_alpha(mat, prop)
                 # self.set_up_translucency(mat, prop)
                 self.set_up_tiling(mat_obj, mat, prop)
                 # self.viewport_settings(mat, asset_type)
+
+    def safe_update_diffuse(self, mat, prop):
+        # add to base color channel
+        lib = texture_library
+
+        if self.is_diffuse(prop):
+            for prop_name in lib["color"]["Name"]:
+                if prop_name in prop.keys():
+                    if prop[prop_name]["Texture"] != "":
+                        # Color Value
+                        hex_str = prop[prop_name]["Value"]
+                        hex_str = self.check_value("hex", hex_str)
+                        color = convert_color(hex_str)
+                        color_vector = c4d.Vector(color[0], color[1], color[2])
+                        # Texture to new layer
+                        path = prop[prop_name]["Texture"]
+                        texture = StdMaterials.create_texture(mat, path)
+                        mat[c4d.MATERIAL_USE_COLOR] = True
+                        mat[c4d.MATERIAL_COLOR_COLOR] = color_vector
+                        mat[c4d.MATERIAL_COLOR_SHADER] = texture
+                        mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
+                        break
+
+        else:
+            for prop_name in lib["color"]["Name"]:
+                if prop_name in prop.keys():
+                    if prop[prop_name]["Value"] != "":
+                        # Color Value
+                        hex_str = prop[prop_name]["Value"]
+                        hex_str = self.check_value("hex", hex_str)
+                        color = convert_color(hex_str)
+                        color_vector = c4d.Vector(color[0], color[1], color[2])
+                    else:
+                        # this block should NEVER be reached, something went wrong with DTU export, failback to white
+                        print("DEBUG: WARNING: set_up_diffuse: no color value found, using white, material: " + mat.GetName())
+                        color_vector = c4d.Vector(1, 1, 1)
+
+                    if self.is_trans(prop, mat):
+                        # work around to fix Tranparency (Iray Refraction-based materials)
+                        print("DEBUG: setting diffuse to black for transparency compatibility, material: " + mat.GetName())
+                        color_vector = c4d.Vector(0, 0, 0)
+
+                    mat[c4d.MATERIAL_USE_COLOR] = True
+                    mat[c4d.MATERIAL_COLOR_COLOR] = color_vector
+                    mat[c4d.MATERIAL_COLOR_SHADER] = None
+                    mat[c4d.MATERIAL_COLOR_TEXTUREMIXING] = c4d.MATERIAL_TEXTUREMIXING_MULTIPLY
+                    break        
 
     def convert_to_standard(self):
         print("DEBUG: Converting to full Standard Materials with SSS, makeup, etc.")
