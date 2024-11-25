@@ -64,12 +64,19 @@ bool GenerateExporterBatchFile(QString batchFilePath, QString sExecutablePath, Q
 	QDir().mkdir(sBatchFileFolder);
 
 	// 4. Generate manual batch file to launch exporter scripts
-	
+
+#ifdef WIN32
 	QString sBatchString = QString("\
 chcp 65001\n\n\
 cd /d \"%1\"\n\n\
 \"%2\"\
 ").arg(sCWD).arg(sExecutablePath);
+#else defined(__APPLE__)
+    QString sBatchString = QString("\
+cd \"%1\"\n\n\
+\"%2\"\
+").arg(sCWD).arg(sExecutablePath);
+#endif
 	foreach(QString arg, sCommandArgs.split(";"))
 	{
 		if (arg.contains(" "))
@@ -161,15 +168,18 @@ DzError	DzC4DExporter::write(const QString& filename, const DzFileIOSettings* op
 
 	//////////////////////////////////////////////////////////////////////////////////////////
 
-	//QString sC4DLogPath = sIntermediatePath + "/" + "create_c4d_file.log";
-	//QString sScriptPath = sIntermediateScriptsPath + "/" + "create_c4d_file.py";
 	//QString sCommandArgs = QString("%1;%2").arg(sScriptPath).arg(pC4DAction->m_sDestinationFBX);
+#ifdef WIN32
 	QString sC4DLogPath = QString(".") + "/" + "create_c4d_file.log";
 	QString sScriptPath = QString("./Scripts") + "/" + "create_c4d_file.py";
+#else defined(__APPLE__)
+    QString sC4DLogPath = sIntermediatePath + "/" + "create_c4d_file.log";
+    QString sScriptPath = sIntermediateScriptsPath + "/" + "create_c4d_file.py";
+#endif
 	QString sCommandArgs = QString("%1;%2").arg(sScriptPath).arg(pC4DAction->m_sDestinationFBX);
-#if WIN32
+#ifdef WIN32
 	QString batchFilePath = sIntermediatePath + "/" + "create_c4d_file.bat";
-#else
+#else defined(__APPLE__)
 	QString batchFilePath = sIntermediatePath + "/" + "create_c4d_file.sh";
 #endif
 	QString sC4DPyExecutable = FindC4DPyExe(pC4DAction->m_sC4DExecutablePath);
