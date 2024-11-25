@@ -566,10 +566,10 @@ bool DzC4DDialog::isC4DTextBoxValid(const QString& text)
 		temp_text = m_wC4DExecutablePathEdit->text();
 	}
 
-	// validate blender executable
+	// validate c4d executable
 	QFileInfo fi(temp_text);
 	if (fi.exists() == false) {
-		dzApp->log("DzBridge: disableAcceptUntilBlenderValid: DEBUG: file does not exist: " + temp_text);
+		dzApp->log("DzBridge: isC4DTextBoxValid: DEBUG: file does not exist: " + temp_text);
 		return false;
 	}
 
